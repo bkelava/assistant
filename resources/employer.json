@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "company_name": "conpany 1",
+    "address": {
+      "street": "street",
+      "city": "city",
+      "postal": 12345
+    },
+    "vat": 12345678901,
+    "director": "person person"
+  },
+  {
+    "id": 2,
+    "company_name": "conpany tes123t",
+    "address": {
+      "street": "street223",
+      "city": "cit4y",
+      "postal": 12341
+    },
+    "vat": 12342378901,
+    "director": "person zpersozon"
+  }
+]
