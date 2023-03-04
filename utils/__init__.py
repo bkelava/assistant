@@ -1,1 +1,1 @@
-from .combobox_helper import ComboboxHelper
+from .database_helper import DatabaseHelper

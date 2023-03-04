@@ -1,4 +1,5 @@
 WRITE: str = "normal"
+
 READ_ONLY: str = "readonly"
 
 DELETE: str = "end"
@@ -11,8 +12,14 @@ START_DATE_DESCRIPTION_DEFAULT: str = "OPIS POČETKA RADA"
 
 SALARY_DEFAUL: str = "0.00"
 
-RIGHTS_AND_OBLIGATIONS_DEFAULT: str = "prema Zakonu o radu"
+RIGHTS_AND_OBLIGATIONS_DEFAULT: str = "Ostala prava i obveze utvrđuju se prema Zakonu o radu"
 
 DASH_DEFAULT: str = "(-)"
 
 WORKING_SHIFT_DESCRIPTION_DEFAULT: str = "OPIS RADNOG VREMENA"
+
+__PERCENGATE: str = "%"
+
+PERCENTAGE_20: str = f"20{__PERCENGATE}"
+PERCENTAGE_30: str = f"30{__PERCENGATE}"
+PERCENTAGE_50: str = f"50{__PERCENGATE}"
