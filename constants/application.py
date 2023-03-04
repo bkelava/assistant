@@ -1,0 +1,6 @@
+APP_WIDTH = 1280
+APP_HEIGHT = 720
+
+APP_GRID_SIZE = 20
+
+ZOOMED_MOD = "-zoomed"
