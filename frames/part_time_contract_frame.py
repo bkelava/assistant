@@ -1,8 +1,10 @@
 import customtkinter as ctk
+import datetime
+import re
+import tkinter.messagebox as tkMessageBox
 
-from math import isclose
 from tkcalendar import DateEntry
-from typing import Any
+from typing import Dict, List
 
 import constants.application as App
 import constants.buttons as Btn
@@ -12,23 +14,31 @@ import constants.combobox as Cb
 import constants.date_entry as De
 import constants.entry as Entry
 import constants.fonts as Font
+import constants.message_box as MessageBox
 import constants.part_time_contract as PTC
 
 from database import DatabaseHandler
+from constants.bindings import BUTTON_4, BUTTON_5, FOCUS_IN, FOCUS_OUT
+from constants.part_time_contract_pdf import *
+from constants.regex import (
+    TWO_DECIMALS_REGEX,
+    ONE_DECIMAL_REGEX,
+    BACKSPACE_TWO_DECIMAL_REGEX,
+    BACKSPACE_ONE_DECIMAL_REGEX,
+)
 from constants.specials import *
-from utils import ComboboxHelper
-from widgets import FloatSpinbox, ScrollbarFrame, TimePicker
+from pdf import PDFGenerator
+from utils import DatabaseHelper
+from widgets import FloatSpinbox, TimePicker
 
 from .program_frame import ProgramFrame
-
-WRITE = "write"
 
 
 class PartTimeContractFrame(ProgramFrame):
     def __init__(self, *args, **kwargs):
         super(PartTimeContractFrame, self).__init__(*args, **kwargs)
 
-        self.configure(fg_color=Color.GREEN)
+        self.configure(fg_color=Color.BLUE_1529)
         self._set_up_grid(20, 20)
         self.__set_up_ui()
 
@@ -39,21 +49,39 @@ class PartTimeContractFrame(ProgramFrame):
             weight=Font.BOLD,
         )
 
-        _button_clear_fields: ctk.CTkButton = ctk.CTkButton(self, text=Btn.CLEAR_FIELD, font=self._font)
-        _button_clear_fields.grid(padx=10, pady=10, column=0, row=0, columnspan=5, sticky=ctk.NSEW)
-
-        _button_validate_contract: ctk.CTkButton = ctk.CTkButton(self, text=Btn.VALIDATE_CONTRACT, font=self._font)
-        _button_validate_contract.grid(
-            padx=(0, 10),
-            pady=10,
-            column=5,
-            row=0,
-            columnspan=5,
-            sticky=ctk.NSEW,
+        self.reset_to_defaults: ctk.CTkButton = ctk.CTkButton(
+            self,
+            text=Btn.RESET_TO_DEFAULTS,
+            font=self._font,
+            command=self.__set_defaults,
+            fg_color=Color.BLUE_LIGHT_1529,
+            text_color=Color.BLUE_1529,
+            hover_color=Color.GREY_1529,
         )
+        self.reset_to_defaults.grid(padx=10, pady=10, column=0, row=0, columnspan=5, sticky=ctk.NSEW)
 
-        _button_generate_pdf: ctk.CTkButton = ctk.CTkButton(self, text=Btn.GENERATE_PDF, font=self._font)
-        _button_generate_pdf.grid(
+        self.button_validate_contract: ctk.CTkButton = ctk.CTkButton(
+            self,
+            text=Btn.VALIDATE_CONTRACT,
+            font=self._font,
+            command=self.__validate_input_fields,
+            fg_color=Color.BLUE_LIGHT_1529,
+            text_color=Color.BLUE_1529,
+            hover_color=Color.GREY_1529,
+        )
+        self.button_validate_contract.grid(padx=(0, 10), pady=10, column=5, row=0, columnspan=5, sticky=ctk.NSEW)
+
+        self.button_generate_pdf: ctk.CTkButton = ctk.CTkButton(
+            self,
+            text=Btn.GENERATE_PDF,
+            font=self._font,
+            state=ctk.DISABLED,
+            command=self.__generate_pdf,
+            fg_color=Color.BLUE_LIGHT_1529,
+            text_color=Color.BLUE_1529,
+            hover_color=Color.GREY_1529,
+        )
+        self.button_generate_pdf.grid(
             padx=(0, 10),
             pady=10,
             column=10,
@@ -62,8 +90,16 @@ class PartTimeContractFrame(ProgramFrame):
             sticky=ctk.NSEW,
         )
 
-        _button_print: ctk.CTkButton = ctk.CTkButton(self, text=Btn.PRINT, font=self._font)
-        _button_print.grid(
+        self.button_print: ctk.CTkButton = ctk.CTkButton(
+            self,
+            text=Btn.PRINT,
+            font=self._font,
+            state=ctk.DISABLED,
+            fg_color=Color.BLUE_LIGHT_1529,
+            text_color=Color.BLUE_1529,
+            hover_color=Color.GREY_1529,
+        )
+        self.button_print.grid(
             padx=(0, 10),
             pady=10,
             column=15,
@@ -72,8 +108,8 @@ class PartTimeContractFrame(ProgramFrame):
             sticky=ctk.NSEW,
         )
 
-        self._contract_frame: ctk.CTkScrollableFrame = ctk.CTkScrollableFrame(self, fg_color=Color.BLACK)
-        self._contract_frame.grid(
+        self.contract_frame: ctk.CTkScrollableFrame = ctk.CTkScrollableFrame(self, fg_color=Color.BLACK_1529)
+        self.contract_frame.grid(
             padx=10,
             pady=(0, 10),
             column=0,
@@ -82,37 +118,196 @@ class PartTimeContractFrame(ProgramFrame):
             columnspan=20,
             sticky=ctk.NSEW,
         )
-        self._contract_frame.bind("<Button-4>", lambda _: self.scroll_up())
-        self._contract_frame.bind("<Button-5>", lambda _: self.scroll_down())
+        self.contract_frame.bind(BUTTON_4, lambda _: self.scroll_up())
+        self.contract_frame.bind(BUTTON_5, lambda _: self.scroll_down())
 
-        self.__generate_contract_form(self._contract_frame)
+        self.__generate_contract_form(self.contract_frame)
+
+    def __generate_pdf(self) -> None:
+        data: Dict = {
+            EMPLOYERS: self.combobox_employers.get(),
+            EMPLOYER_INFO: self.entry_employer_info.get(),
+            DIRECTOR: self.entry_director.get(),
+            EMPLOYEES: self.combobox_employees.get(),
+            EMPLOYEE_PERSONAL_ID: self.entry_employee_personal_id.get(),
+            CONTRACT_DATE: str((self.date_entry_contract_date.get_date()).strftime(DATE_FORMAT)),
+            END_JOB_DATE: str((self.date_entry_end_job_date.get_date()).strftime(DATE_FORMAT)),
+            JOB_DESCRIPTION: self.entry_job_description.get(),
+            TRAIL_NUMBERS: self.combobox_select_trail_numbers.get(),
+            TRAIL_OPTION: self.combobox_select_trail_option.get(),
+            WORKING_PLACE: self.entry_working_place.get(),
+            SALARY: self.entry_salary.get(),
+            SALARY_BONUS: self.entry_salary_bonus.get(),
+            SALARY_INCREMENT_1: self.entry_salary_increment_1.get(),
+            SALARY_INCREMENT_2: self.entry_salary_increment_2.get(),
+            SALARY_INCREMENT_3: self.entry_salary_increment_3.get(),
+            SALARY_INCREMENT_4: self.entry_salary_increment_4.get(),
+            SALARY_INCREMENT_5: self.entry_salary_increment_5.get(),
+            SALARY_INCREMENT_6: self.entry_salary_increment_6.get(),
+            WORK_TYPE: self.combobox_work_type.get(),
+            WEEKLY_WORKING_HOURS: self.spinbox_weekly_working_hours.get(),
+            WEEKLY_TIME_OFF: self.combobox_weekly_time_off.get(),
+            VACATION: self.combobox_vacation.get(),
+            VACATION_DESCRIPTION: self.entry_vacation_description.get(),
+            CONTRACT_TERMINATION: self.combobox_contract_termination.get(),
+            CONTRACT_TERMINATION_EMPLOYER: self.spinbox_contract_termination_employer.get(),
+            CONTRACT_TERMINATION_EMPLOYEE: self.spinbox_contract_termination_employee.get(),
+            RIGHTS_AND_OBLIGATIONS: self.entry_rights_and_obligations.get(),
+            COURT: self.combobox_court.get(),
+        }
+        if str(self.date_entry_start_date.cget("state")) == De.DISABLED:
+            data[START_DATE] = EMPTY_STRING
+        else:
+            data[START_DATE] = str((self.date_entry_start_date.get_date()).strftime(DATE_FORMAT))
+        data[START_DATE_DESCRIPTION] = self.entry_start_date_description.get()
+
+        if str(self.date_entry_contract_starting_with.cget("state")) == De.DISABLED:
+            data[CONTRACT_STARTING_WITH] = EMPTY_STRING
+        else:
+            data[CONTRACT_STARTING_WITH] = str(
+                (self.date_entry_contract_starting_with.get_date()).strftime(DATE_FORMAT)
+            )
+        data[CONTRACT_START_WITH_DESCRIPTION] = self.entry_contract_starts_with_description.get()
+
+        data[WORKING_SHIFT] = self.combobox_working_shift.get()
+        if (
+            self.combobox_working_shift.get() == Cb.WORK_TIME_SHIFT[0]
+            or self.combobox_working_shift.get() == Cb.WORK_TIME_SHIFT[2]
+        ):
+            data[WORKING_TIME_START] = self.time_picker_working_time_start.get()
+            data[WORKING_TIME_END] = self.time_picker_working_time_end.get()
+            data[WORKING_SHIFT_DESCRIPTION] = EMPTY_STRING
+        else:
+            data[WORKING_SHIFT_DESCRIPTION] = self.entry_working_shift_description.get()
+            data[WORKING_TIME_START] = EMPTY_STRING
+            data[WORKING_TIME_END] = EMPTY_STRING
+
+        PDFGenerator.generate_part_time_contract(data)
+
+    def __validate_input_fields(self) -> None:
+        if str(self.entry_start_date_description.cget("state")) == De.WRITE:
+            if self.entry_start_date_description.get() != EMPTY_STRING:
+                pass
+            else:
+                tkMessageBox.showwarning(MessageBox.VALIDATION_WARNING_TITLE, MessageBox.VALIDATION_WARNING_MESSAGE)
+                return
+
+        if str(self.entry_contract_starts_with_description.cget("state")) == De.WRITE:
+            if self.entry_contract_starts_with_description.get() != EMPTY_STRING:
+                pass
+            else:
+                tkMessageBox.showwarning(MessageBox.VALIDATION_WARNING_TITLE, MessageBox.VALIDATION_WARNING_MESSAGE)
+                return
+
+        if (
+            self.combobox_employers.get() == EMPTY_STRING
+            or self.combobox_employees.get() == EMPTY_STRING
+            or self.entry_working_place.get() == EMPTY_STRING
+            or self.entry_job_description.get() == EMPTY_STRING
+            or self.entry_working_place.get() == EMPTY_STRING
+            or self.entry_vacation_description.get() == EMPTY_STRING
+            or self.entry_rights_and_obligations.get() == EMPTY_STRING
+        ):
+            tkMessageBox.showwarning(MessageBox.VALIDATION_WARNING_TITLE, MessageBox.VALIDATION_WARNING_MESSAGE)
+        else:
+            if self.entry_working_shift_description.winfo_ismapped():
+                if self.entry_working_shift_description.get() == EMPTY_STRING:
+                    tkMessageBox.showwarning(MessageBox.VALIDATION_WARNING_TITLE, MessageBox.VALIDATION_WARNING_MESSAGE)
+                else:
+                    tkMessageBox.showinfo(MessageBox.VALIDATION_INFO_TITLE, MessageBox.VALIDATION_INFO_MESSAGE)
+                    self.button_generate_pdf.configure(state=ctk.NORMAL)
+            else:
+                tkMessageBox.showinfo(MessageBox.VALIDATION_INFO_TITLE, MessageBox.VALIDATION_INFO_MESSAGE)
+                self.button_generate_pdf.configure(state=ctk.NORMAL)
+
+    def __entry_delete_insert_readonly(self, entry: ctk.CTkEntry, text: str = "") -> None:
+        entry.configure(state=Entry.WRITE)
+        entry.delete(0, ctk.END)
+        entry.insert(0, text)
+        entry.configure(state=Entry.READ_ONLY)
+
+    def __set_defaults(self) -> None:
+        self.combobox_employers.set("")
+        self.__entry_delete_insert_readonly(self.entry_employer_info)
+        self.__entry_delete_insert_readonly(self.entry_director)
+        self.combobox_employees.set("")
+        self.__entry_delete_insert_readonly(self.entry_employee_personal_id)
+        self.date_entry_contract_date.set_date(datetime.date.today())
+
+        self.date_entry_end_job_date.set_date(datetime.date.today())
+        self.__entry_delete_and_insert(self.entry_job_description, Entry.JOB_DESCRIPTION_DEFAULT)
+        self.combobox_select_trail_numbers.set(Cb.NUMBERS_1_TO_30[1])
+        self.combobox_select_trail_numbers.configure(values=Cb.NUMBERS_1_TO_30)
+        self.combobox_select_trail_option.set(Cb.TRAIL_OPTIONS[0])
+        self.combobox_select_trail_option.configure(values=Cb.TRAIL_OPTIONS)
+        self.__entry_delete_insert_readonly(self.entry_working_place, Entry.WORK_PLACE_DEFAULT)
+        self.checkbox_start_job_date.configure(state=ctk.NORMAL)
+        self.checkbox_start_job_description.configure(state=ctk.NORMAL)
+        self.checkbox_start_job_date.select()
+        self.checkbox_start_job_description.deselect()
+        self.__toggle_start_job_description_checkbox()
+        self.date_entry_start_date.configure(state=ctk.NORMAL)
+        self.date_entry_start_date.set_date(datetime.date.today())
+
+        self.__entry_delete_and_insert(self.entry_salary, Entry.SALARY_DEFAUL)
+        self.__entry_delete_and_insert(self.entry_salary_bonus, Entry.SALARY_DEFAUL)
+        self.__entry_delete_and_insert(self.entry_salary_increment_1, Entry.PERCENTAGE_20)
+        self.__entry_delete_and_insert(self.entry_salary_increment_2, Entry.PERCENTAGE_30)
+        self.__entry_delete_and_insert(self.entry_salary_increment_3, Entry.PERCENTAGE_50)
+        self.__entry_delete_and_insert(self.entry_salary_increment_4, Entry.PERCENTAGE_20)
+        self.__entry_delete_and_insert(self.entry_salary_increment_5, Entry.PERCENTAGE_20)
+        self.__entry_delete_and_insert(self.entry_salary_increment_6, Entry.PERCENTAGE_20)
+
+        self.combobox_work_type.set(Cb.WORK_TIME_TYPE[0])
+        self.__validate_combobox_work_type()
+        self.combobox_working_shift.set(Cb.WORK_TIME_SHIFT[0])
+        self.__validate_combobox_working_shift()
+        self.combobox_weekly_time_off.set(Cb.WEEKLY_TIME_OFF[2])
+        self.combobox_vacation.set(Cb.VACATION[16])
+        self.__entry_delete_and_insert(self.entry_vacation_description, Entry.DASH_DEFAULT)
+
+        self.combobox_contract_termination.set(Cb.CONTRACT_TERMINATION[0])
+        self.spinbox_contract_termination_employer.set(str(15))
+        self.spinbox_contract_termination_employee.set(str(15))
+
+        self.__entry_delete_and_insert(self.entry_rights_and_obligations, Entry.RIGHTS_AND_OBLIGATIONS_DEFAULT)
+
+        self.combobox_court.set(Cb.COURTS[14])
+        self.date_entry_contract_starting_with.set_date(datetime.date.today())
+        self.checkbox_contract_starts_with_date.configure(state=ctk.NORMAL)
+        self.checkbox_contract_starts_with_description.configure(state=ctk.NORMAL)
+        self.checkbox_contract_starts_with_date.select()
+        self.checkbox_contract_starts_with_description.deselect()
+        self.__toggle_contract_starts_with_description_checkbox()
+
+        self.button_generate_pdf.configure(state=ctk.DISABLED)
 
     def scroll_up(self) -> None:
-        self._contract_frame._parent_canvas.yview_scroll(-1, ctk.UNITS)
+        self.contract_frame._parent_canvas.yview_scroll(-1, ctk.UNITS)
 
     def scroll_down(self) -> None:
-        self._contract_frame._parent_canvas.yview_scroll(1, ctk.UNITS)
+        self.contract_frame._parent_canvas.yview_scroll(1, ctk.UNITS)
 
     def __generate_contract_form(self, container: ctk.CTkScrollableFrame) -> None:
-        frame_1: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK)
+        frame_1: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK_1529)
         self._font.configure(size=Font.SIZE_14, weight=Font.NORMAL)
 
         label_1: ctk.CTkLabel = ctk.CTkLabel(frame_1, text=PTC.label_1, font=self._font)
-        self.entry_employer_info: ctk.CTkEntry = ctk.CTkEntry(
-            frame_1, font=self._font, state=Entry.READ_ONLY, justify=ctk.CENTER
-        )
-        entry_director: ctk.CTkEntry = ctk.CTkEntry(frame_1, font=self._font, state=Entry.READ_ONLY, justify=ctk.CENTER)
         self.combobox_employers: ctk.CTkComboBox = ctk.CTkComboBox(
             frame_1,
             font=self._font,
-            values=ComboboxHelper.get_list_of_employers(),
+            values=DatabaseHelper.get_list_of_employers(),
             state=Cb.READ_ONLY,
             command=lambda choice: self.__populate_employer_info(
                 choice=choice,
-                entry_info=self.entry_employer_info,
-                entry_director=entry_director,
             ),
             justify=ctk.CENTER,
+        )
+        self.entry_employer_info: ctk.CTkEntry = ctk.CTkEntry(
+            frame_1, font=self._font, state=Entry.READ_ONLY, justify=ctk.CENTER
+        )
+        self.entry_director: ctk.CTkEntry = ctk.CTkEntry(
+            frame_1, font=self._font, state=Entry.READ_ONLY, justify=ctk.CENTER
         )
         lable_2: ctk.CTkLabel = ctk.CTkLabel(frame_1, text=PTC.label_2, font=self._font)
         label_3: ctk.CTkLabel = ctk.CTkLabel(frame_1, text=PTC.label_3, font=self._font)
@@ -122,7 +317,7 @@ class PartTimeContractFrame(ProgramFrame):
         self.combobox_employees: ctk.CTkComboBox = ctk.CTkComboBox(
             frame_1,
             font=self._font,
-            values=ComboboxHelper.get_list_of_employee_names(),
+            values=DatabaseHelper.get_list_of_employee_names(),
             state=Cb.READ_ONLY,
             command=lambda choice: self.__populate_employee_info(choice=choice, entry=self.entry_employee_personal_id),
             justify=ctk.CENTER,
@@ -142,7 +337,7 @@ class PartTimeContractFrame(ProgramFrame):
         label_6: ctk.CTkLabel = ctk.CTkLabel(container, text=PTC.label_6, font=self._font)
         label_7: ctk.CTkLabel = ctk.CTkLabel(container, text=PTC.label_7, font=self._font)
 
-        frame_2: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK)
+        frame_2: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK_1529)
         label_8: ctk.CTkLabel = ctk.CTkLabel(frame_2, text=PTC.label_8, font=self._font)
         label_9: ctk.CTkLabel = ctk.CTkLabel(frame_2, text=PTC.label_9, font=self._font)
         self.date_entry_end_job_date: DateEntry = DateEntry(
@@ -183,27 +378,27 @@ class PartTimeContractFrame(ProgramFrame):
         label_14: ctk.CTkLabel = ctk.CTkLabel(frame_2, text=PTC.label_14, font=self._font)
         label_15: ctk.CTkLabel = ctk.CTkLabel(frame_2, text=PTC.label_15, font=self._font)
         label_16: ctk.CTkLabel = ctk.CTkLabel(frame_2, text=PTC.label_16, font=self._font)
-        self.checkbox_date_strvar: ctk.StringVar() = ctk.StringVar()
-        self.checkbox_date: ctk.CTkCheckBox = ctk.CTkCheckBox(
+        self.checkbox_start_job_date_strvar: ctk.StringVar() = ctk.StringVar()
+        self.checkbox_start_job_date: ctk.CTkCheckBox = ctk.CTkCheckBox(
             frame_2,
             text=Chbx.DATE,
-            command=self.__toggle_date_checkbox,
+            command=self.__toggle_start_job_date_checkbox,
             state=ctk.DISABLED,
-            variable=self.checkbox_date_strvar,
+            variable=self.checkbox_start_job_date_strvar,
             onvalue=Chbx.ON_STATE,
             offvalue=Chbx.OFF_STATE,
         )
-        self.checkbox_date.select()
-        self.checkbox_description_strvar: ctk.StringVar = ctk.StringVar()
-        self.checkbox_description: ctk.CTkCheckBox = ctk.CTkCheckBox(
+        self.checkbox_start_job_date.select()
+        self.checkbox_start_job_description_strvar: ctk.StringVar = ctk.StringVar()
+        self.checkbox_start_job_description: ctk.CTkCheckBox = ctk.CTkCheckBox(
             frame_2,
             text=Chbx.DESCRIPTION,
-            command=self.__togglee_description_checkbox,
-            variable=self.checkbox_description_strvar,
+            command=self.__toggle_start_job_description_checkbox,
+            variable=self.checkbox_start_job_description_strvar,
             onvalue=Chbx.ON_STATE,
             offvalue=Chbx.OFF_STATE,
         )
-        self.checkbox_description.deselect()
+        self.checkbox_start_job_description.deselect()
         self.date_entry_start_date: DateEntry = DateEntry(
             frame_2,
             date_pattern=De.DATE_PATTERN,
@@ -216,7 +411,7 @@ class PartTimeContractFrame(ProgramFrame):
             frame_2, font=self._font, justify=ctk.CENTER, state=Entry.READ_ONLY
         )
         label_18: ctk.CTkLabel = ctk.CTkLabel(container, text=PTC.label_18, font=self._font)
-        frame_3: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK)
+        frame_3: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK_1529)
 
         label_19: ctk.CTkLabel = ctk.CTkLabel(frame_3, text=PTC.label_19, font=self._font)
         self.entry_salary_strvar: ctk.StringVar = ctk.StringVar()
@@ -224,6 +419,8 @@ class PartTimeContractFrame(ProgramFrame):
             frame_3, font=self._font, justify=ctk.CENTER, textvariable=self.entry_salary_strvar
         )
         self.entry_salary.insert(0, Entry.SALARY_DEFAUL)
+        self.entry_salary.bind(FOCUS_IN, lambda *args: self.__entry_salary_focus_in(*args))
+        self.entry_salary.bind(FOCUS_OUT, lambda *args: self.__entry_salary_focus_out(*args))
         self.entry_salary_strvar.trace_add(
             WRITE,
             lambda *args: self.__validate_numeric(
@@ -267,7 +464,7 @@ class PartTimeContractFrame(ProgramFrame):
                 minimum=20
             ),
         )
-        self.entry_salary_increment_1.insert(0, PERCENTAGE_20)
+        self.entry_salary_increment_1.insert(0, Entry.PERCENTAGE_20)
 
         self.entry_salary_increment_2_strvar: ctk.StringVar = ctk.StringVar()
         self.entry_salary_increment_2: ctk.CTkEntry = ctk.CTkEntry(
@@ -279,10 +476,10 @@ class PartTimeContractFrame(ProgramFrame):
                 *args,
                 entry=self.entry_salary_increment_2,
                 entry_str_var=self.entry_salary_increment_2_strvar,
-                minimum=50
+                minimum=30
             ),
         )
-        self.entry_salary_increment_2.insert(0, PERCENTAGE_50)
+        self.entry_salary_increment_2.insert(0, Entry.PERCENTAGE_30)
 
         self.entry_salary_increment_3_strvar: ctk.StringVar = ctk.StringVar()
         self.entry_salary_increment_3: ctk.CTkEntry = ctk.CTkEntry(
@@ -294,10 +491,10 @@ class PartTimeContractFrame(ProgramFrame):
                 *args,
                 entry=self.entry_salary_increment_3,
                 entry_str_var=self.entry_salary_increment_3_strvar,
-                minimum=30
+                minimum=50
             ),
         )
-        self.entry_salary_increment_3.insert(0, PERCENTAGE_30)
+        self.entry_salary_increment_3.insert(0, Entry.PERCENTAGE_50)
 
         self.entry_salary_increment_4_strvar: ctk.StringVar = ctk.StringVar()
         self.entry_salary_increment_4: ctk.CTkEntry = ctk.CTkEntry(
@@ -312,7 +509,7 @@ class PartTimeContractFrame(ProgramFrame):
                 minimum=20
             ),
         )
-        self.entry_salary_increment_4.insert(0, PERCENTAGE_20)
+        self.entry_salary_increment_4.insert(0, Entry.PERCENTAGE_20)
 
         self.entry_salary_increment_5_strvar: ctk.StringVar = ctk.StringVar()
         self.entry_salary_increment_5: ctk.CTkEntry = ctk.CTkEntry(
@@ -327,7 +524,7 @@ class PartTimeContractFrame(ProgramFrame):
                 minimum=20
             ),
         )
-        self.entry_salary_increment_5.insert(0, PERCENTAGE_20)
+        self.entry_salary_increment_5.insert(0, Entry.PERCENTAGE_20)
 
         self.entry_salary_increment_6_strvar: ctk.StringVar = ctk.StringVar()
         self.entry_salary_increment_6: ctk.CTkEntry = ctk.CTkEntry(
@@ -342,14 +539,14 @@ class PartTimeContractFrame(ProgramFrame):
                 minimum=20
             ),
         )
-        self.entry_salary_increment_6.insert(0, PERCENTAGE_20)
+        self.entry_salary_increment_6.insert(0, Entry.PERCENTAGE_20)
 
         label_32: ctk.CTkLabel = ctk.CTkLabel(container, text=PTC.label_32, font=self._font)
-        frame_4: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK)
+        frame_4: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK_1529)
 
         label_33: ctk.CTkLabel = ctk.CTkLabel(frame_4, text=PTC.label_33, font=self._font)
 
-        frame_5: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK)
+        frame_5: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK_1529)
         label_34: ctk.CTkLabel = ctk.CTkLabel(container, text=PTC.label_34, font=self._font)
         label_35: ctk.CTkLabel = ctk.CTkLabel(frame_5, text=PTC.label_35, font=self._font)
         self.combobox_work_type: ctk.CTkComboBox = ctk.CTkComboBox(
@@ -394,7 +591,7 @@ class PartTimeContractFrame(ProgramFrame):
         self.combobox_vacation: ctk.CTkComboBox = ctk.CTkComboBox(
             frame_5, font=self._font, values=Cb.VACATION, state=Cb.READ_ONLY, command=None, justify=ctk.CENTER
         )
-        self.combobox_vacation.set(Cb.VACATION[17])
+        self.combobox_vacation.set(Cb.VACATION[16])
         self.entry_vacation_description: ctk.CTkEntry = ctk.CTkEntry(frame_5, font=self._font, justify=ctk.CENTER)
         self.entry_vacation_description.insert(0, Entry.DASH_DEFAULT)
         label_43: ctk.CTkLabel = ctk.CTkLabel(container, text=PTC.label_43, font=self._font)
@@ -402,7 +599,7 @@ class PartTimeContractFrame(ProgramFrame):
         # LABEL 45 IS NO LONGER NEEDED
         label_46: ctk.CTkLabel = ctk.CTkLabel(container, text=PTC.label_46, font=self._font)
 
-        frame_6: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK)
+        frame_6: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK_1529)
         label_47: ctk.CTkLabel = ctk.CTkLabel(frame_6, text=PTC.label_47, font=self._font)
         self.combobox_contract_termination: ctk.CTkComboBox = ctk.CTkComboBox(
             frame_6,
@@ -416,27 +613,29 @@ class PartTimeContractFrame(ProgramFrame):
         label_48: ctk.CTkLabel = ctk.CTkLabel(frame_6, text=PTC.label_48, font=self._font)
         label_49: ctk.CTkLabel = ctk.CTkLabel(frame_6, text=PTC.label_49, font=self._font)
         label_50: ctk.CTkLabel = ctk.CTkLabel(frame_6, text=PTC.label_50, font=self._font)
-        self.entry_contract_termination_employer: ctk.CTkEntry = ctk.CTkEntry(
-            frame_6, font=self._font, validatecommand=None, justify=ctk.CENTER
+        self.spinbox_contract_termination_employer: FloatSpinbox = FloatSpinbox(
+            frame_6, step_size=1, numeric_type=int, start_from=15
         )
-        self.entry_contract_termination_employer.insert(0, str(15))
+        self.spinbox_contract_termination_employer.entry_str_var.trace(
+            ctk.W, lambda *args: self.__spinbox_positive_only(*args, spinbox=self.spinbox_contract_termination_employer)
+        )
         label_51: ctk.CTkLabel = ctk.CTkLabel(frame_6, text=PTC.label_51, font=self._font)
-        self.entry_contract_termination_employee: ctk.CTkEntry = ctk.CTkEntry(
-            frame_6, font=self._font, validatecommand=None, justify=ctk.CENTER
+        self.spinbox_contract_termination_employee: FloatSpinbox = FloatSpinbox(
+            frame_6, step_size=1, numeric_type=int, start_from=15
         )
-        self.entry_contract_termination_employee.insert(0, str(15))
+        self.spinbox_contract_termination_employee.entry_str_var.trace(
+            ctk.W, lambda *args: self.__spinbox_positive_only(*args, spinbox=self.spinbox_contract_termination_employee)
+        )
 
         label_52: ctk.CTkLabel = ctk.CTkLabel(container, text=PTC.label_52, font=self._font)
 
         # FRAME 7 IS NO LONGER NEEDED
-        self.entry_rights_and_obligations: ctk.CTkEntry = ctk.CTkEntry(
-            container, font=self._font, validatecommand=None, justify=ctk.CENTER
-        )
+        self.entry_rights_and_obligations: ctk.CTkEntry = ctk.CTkEntry(container, font=self._font, justify=ctk.CENTER)
         self.entry_rights_and_obligations.insert(0, Entry.RIGHTS_AND_OBLIGATIONS_DEFAULT)
 
         label_53: ctk.CTkLabel = ctk.CTkLabel(container, text=PTC.label_53, font=self._font)
 
-        frame_8: ctk.CTkFrame = ctk.CTkFrame(container)
+        frame_8: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK_1529)
         label_54: ctk.CTkLabel = ctk.CTkLabel(frame_8, text=PTC.label_54, font=self._font)
         self.combobox_court: ctk.CTkComboBox = ctk.CTkComboBox(
             frame_8,
@@ -448,12 +647,36 @@ class PartTimeContractFrame(ProgramFrame):
         )
         self.combobox_court.set(Cb.COURTS[14])
         label_55: ctk.CTkLabel = ctk.CTkLabel(frame_8, text=PTC.label_55, font=self._font)
+
+        self.checkbox_contract_starts_with_date_strvar: ctk.StringVar() = ctk.StringVar()
+        self.checkbox_contract_starts_with_date: ctk.CTkCheckBox = ctk.CTkCheckBox(
+            frame_8,
+            text=Chbx.DATE,
+            command=self.__toggle_contract_starts_with_date_checkbox,
+            state=ctk.DISABLED,
+            variable=self.checkbox_contract_starts_with_date_strvar,
+            onvalue=Chbx.ON_STATE,
+            offvalue=Chbx.OFF_STATE,
+        )
+        self.checkbox_contract_starts_with_date.select()
+        self.checkbox_contract_starts_with_description_strvar: ctk.StringVar = ctk.StringVar()
+        self.checkbox_contract_starts_with_description: ctk.CTkCheckBox = ctk.CTkCheckBox(
+            frame_8,
+            text=Chbx.DESCRIPTION,
+            command=self.__toggle_contract_starts_with_description_checkbox,
+            variable=self.checkbox_contract_starts_with_description_strvar,
+            onvalue=Chbx.ON_STATE,
+            offvalue=Chbx.OFF_STATE,
+        )
+        self.checkbox_contract_starts_with_description.deselect()
+
         self.date_entry_contract_starting_with: DateEntry = DateEntry(
             frame_8, selectmode=De.DAY_MODE, state=De.READ_ONLY, justify=ctk.CENTER, locale="hr_HR"
         )
+        self.entry_contract_starts_with_description: ctk.CTkEntry = ctk.CTkEntry(
+            frame_8, font=self._font, justify=ctk.CENTER, state=Entry.READ_ONLY
+        )
         label_56: ctk.CTkLabel = ctk.CTkLabel(frame_8, text=PTC.label_56, font=self._font)
-
-        # label_53:ctk.CTkLabel=ctk.CTkLabel(_, text=label_53, font=self._font)
 
         # CONTAINER, LINE 1
         # FRAME 1
@@ -463,7 +686,7 @@ class PartTimeContractFrame(ProgramFrame):
         self.combobox_employers.pack(pady=10, side=ctk.LEFT)
         self.entry_employer_info.pack(padx=10, pady=10, side=ctk.LEFT)
         lable_2.pack(padx=(0, 10), pady=10, side=ctk.LEFT)
-        entry_director.pack(pady=10, side=ctk.LEFT)
+        self.entry_director.pack(pady=10, side=ctk.LEFT)
         label_3.pack(padx=10, pady=10, side=ctk.LEFT)
         self.combobox_employees.pack(pady=10, side=ctk.LEFT)
         self.entry_employee_personal_id.pack(padx=10, pady=10, side=ctk.LEFT)
@@ -499,8 +722,8 @@ class PartTimeContractFrame(ProgramFrame):
         label_15.grid(padx=10, column=0, row=5, columnspan=20, sticky=ctk.W)
         # LINE 7
         label_16.grid(padx=10, pady=5, column=0, row=6, columnspan=3, sticky=ctk.W)
-        self.checkbox_date.grid(padx=10, pady=5, column=3, row=6, sticky=ctk.EW)
-        self.checkbox_description.grid(padx=10, pady=5, column=4, row=6, sticky=ctk.EW)
+        self.checkbox_start_job_date.grid(padx=10, pady=5, column=3, row=6, sticky=ctk.EW)
+        self.checkbox_start_job_description.grid(padx=10, pady=5, column=4, row=6, sticky=ctk.EW)
         self.date_entry_start_date.grid(padx=10, column=5, row=6, columnspan=5, sticky=ctk.EW)
         self.entry_start_date_description.grid(padx=10, column=10, row=6, columnspan=10, sticky=ctk.EW)
 
@@ -564,12 +787,12 @@ class PartTimeContractFrame(ProgramFrame):
         label_38.grid(padx=10, column=0, row=1, columnspan=3, sticky=ctk.W)
         self.combobox_working_shift.grid(padx=10, column=3, row=1, columnspan=4, sticky=ctk.EW)
         self.__set_up_ui_for_working_shift_one_time_and_flexible()
-        # # LINE 3
+        # LINE 3
         label_40.grid(padx=10, pady=5, column=0, row=2, columnspan=20, sticky=ctk.W)
-        # # LINE 4
+        # LINE 4
         label_41.grid(padx=10, column=0, row=3, columnspan=3, sticky=ctk.W)
         self.combobox_weekly_time_off.grid(padx=10, column=3, row=3, columnspan=7, sticky=ctk.EW)
-        # # LINE 5
+        # LINE 5
         label_42.grid(padx=10, pady=5, column=0, row=4, columnspan=6, sticky=ctk.W)
         self.combobox_vacation.grid(padx=10, pady=5, column=6, row=4, columnspan=3, sticky=ctk.EW)
         self.entry_vacation_description.grid(padx=10, pady=5, column=9, row=4, columnspan=11, sticky=ctk.EW)
@@ -589,9 +812,9 @@ class PartTimeContractFrame(ProgramFrame):
         label_48.grid(padx=10, pady=5, column=2, row=0, columnspan=18, sticky=ctk.W)
         # LINE 2
         label_49.grid(padx=10, column=0, row=1, columnspan=6, sticky=ctk.W)
-        self.entry_contract_termination_employer.grid(padx=10, pady=5, column=6, row=1, sticky=ctk.EW)
+        self.spinbox_contract_termination_employer.grid(padx=10, pady=5, column=6, row=1, sticky=ctk.EW)
         label_50.grid(padx=10, column=7, row=1, columnspan=11, sticky=ctk.W)
-        self.entry_contract_termination_employee.grid(padx=10, pady=5, column=18, row=1, sticky=ctk.EW)
+        self.spinbox_contract_termination_employee.grid(padx=10, pady=5, column=18, row=1, sticky=ctk.EW)
         label_51.grid(padx=10, column=19, row=1, sticky=ctk.W)
 
         # CONTAINER, LINE 15
@@ -605,27 +828,80 @@ class PartTimeContractFrame(ProgramFrame):
         frame_8.pack(padx=10, pady=(5, 200), side=ctk.TOP)
         self.__set_up_frame_grid(frame_8, App.APP_GRID_SIZE)
         # FRAME 8, LINE 1
-        label_54.grid(padx=10, pady=5, column=0, row=0, columnspan=10, sticky=ctk.W)
-        self.combobox_court.grid(padx=10, column=10, row=0, columnspan=5, sticky=ctk.EW)
+        label_54.grid(padx=10, pady=5, column=0, row=0, columnspan=4, sticky=ctk.W)
+        self.combobox_court.grid(padx=(0, 500), column=4, row=0, columnspan=16, sticky=ctk.EW)
         # LINE 2
-        label_55.grid(padx=10, pady=5, column=0, row=1, columnspan=5, sticky=ctk.W)
-        self.date_entry_contract_starting_with.grid(padx=10, column=5, row=1, columnspan=3, sticky=ctk.EW)
+        label_55.grid(padx=10, pady=5, column=0, row=1, sticky=ctk.W)
+        self.checkbox_contract_starts_with_date.grid(padx=10, pady=5, column=1, row=1, sticky=ctk.W)
+        self.checkbox_contract_starts_with_description.grid(padx=10, pady=5, column=2, row=1, sticky=ctk.W)
+        self.date_entry_contract_starting_with.grid(padx=10, column=3, row=1, columnspan=3, sticky=ctk.EW)
+        self.entry_contract_starts_with_description.grid(padx=10, pady=5, column=6, row=1, columnspan=14, sticky=ctk.EW)
         # LINE 3
         label_56.grid(padx=10, pady=5, column=0, row=2, columnspan=20, sticky=ctk.W)
+
+    def __toggle_contract_starts_with_date_checkbox(self) -> None:
+        checkbox_date_state: str = self.checkbox_contract_starts_with_date_strvar.get()
+        if checkbox_date_state == Chbx.ON_STATE:
+            self.date_entry_contract_starting_with.configure(state=De.READ_ONLY)
+            self.checkbox_contract_starts_with_description.configure(state=ctk.NORMAL)
+        else:
+            self.date_entry_contract_starting_with.configure(state=De.DISABLED)
+            self.checkbox_contract_starts_with_description.configure(state=ctk.DISABLED)
+
+    def __toggle_contract_starts_with_description_checkbox(self):
+        checkbox_description_state: str = self.checkbox_contract_starts_with_description_strvar.get()
+        self.entry_contract_starts_with_description.delete(0, ctk.END)
+        if checkbox_description_state == Chbx.ON_STATE:
+            self.entry_contract_starts_with_description.configure(state=Entry.WRITE)
+            self.entry_contract_starts_with_description.insert(0, Entry.START_DATE_DESCRIPTION_DEFAULT)
+            self.checkbox_contract_starts_with_date.configure(state=ctk.NORMAL)
+        else:
+            self.entry_contract_starts_with_description.configure(state=Entry.READ_ONLY)
+            self.checkbox_contract_starts_with_date.configure(state=ctk.DISABLED)
+
+    def __toggle_start_job_date_checkbox(self) -> None:
+        checkbox_date_state: str = self.checkbox_start_job_date_strvar.get()
+        if checkbox_date_state == Chbx.ON_STATE:
+            self.date_entry_start_date.configure(state=De.READ_ONLY)
+            self.checkbox_start_job_description.configure(state=ctk.NORMAL)
+        else:
+            self.date_entry_start_date.configure(state=De.DISABLED)
+            self.checkbox_start_job_description.configure(state=ctk.DISABLED)
+
+    def __toggle_start_job_description_checkbox(self) -> None:
+        checkbox_description_state: str = self.checkbox_start_job_description_strvar.get()
+        self.entry_start_date_description.delete(0, ctk.END)
+        if checkbox_description_state == Chbx.ON_STATE:
+            self.entry_start_date_description.configure(state=Entry.WRITE)
+            self.entry_start_date_description.insert(0, Entry.START_DATE_DESCRIPTION_DEFAULT)
+            self.checkbox_start_job_date.configure(state=ctk.NORMAL)
+        else:
+            self.entry_start_date_description.configure(state=Entry.READ_ONLY)
+            self.checkbox_start_job_date.configure(state=ctk.DISABLED)
+
+    def __spinbox_positive_only(self, *args, spinbox: FloatSpinbox):
+        try:
+            current_value: int = spinbox.get()
+            if current_value < 0:
+                self.__entry_delete_insert_readonly(spinbox.entry, str(0))
+        except TypeError:
+            pass
+
+    def __entry_salary_focus_in(self, *args) -> None:
+        self.entry_salary.bind("<Button-1>", "break")
+
+    def __entry_salary_focus_out(self, *args) -> None:
+        self.entry_salary.unbind("<Button-1>")
 
     def __validate_combobox_working_shift(self) -> None:
         current_value: str = self.combobox_working_shift.get()
         if current_value == ONE_TIME:
-            print(ONE_TIME)
             self.__set_up_ui_for_working_shift_one_time_and_flexible()
         elif current_value == TWICE:
-            print(TWICE)
             self.__set_up_ui_for_working_shift_twice_and_description()
         elif current_value == FLEXIBLE:
-            print(FLEXIBLE)
             self.__set_up_ui_for_working_shift_one_time_and_flexible()
         else:
-            print(DESCRIPTION)
             self.__set_up_ui_for_working_shift_twice_and_description()
 
     def __set_up_ui_for_working_shift_one_time_and_flexible(self) -> None:
@@ -648,8 +924,7 @@ class PartTimeContractFrame(ProgramFrame):
             self.spinbox_weekly_working_hours.entry_str_var.trace_remove(
                 WRITE, self.spinbox_weekly_working_hours.entry_str_var.trace_info()[0][1]
             )
-            self.spinbox_weekly_working_hours.entry.delete(0, ctk.END)
-            self.spinbox_weekly_working_hours.entry.insert(0, str(40.0))
+            self.__entry_delete_insert_readonly(self.spinbox_weekly_working_hours.entry, str(40.0))
             self.spinbox_weekly_working_hours.entry_str_var.trace_add(
                 WRITE, lambda *args: self.__set_up_spinbox_weekly_working_hours_for_full_time(*args)
             )
@@ -657,8 +932,7 @@ class PartTimeContractFrame(ProgramFrame):
             self.spinbox_weekly_working_hours.entry_str_var.trace_remove(
                 WRITE, self.spinbox_weekly_working_hours.entry_str_var.trace_info()[0][1]
             )
-            self.spinbox_weekly_working_hours.entry.delete(0, ctk.END)
-            self.spinbox_weekly_working_hours.entry.insert(0, str(20.0))
+            self.__entry_delete_insert_readonly(self.spinbox_weekly_working_hours.entry, str(20.0))
             self.spinbox_weekly_working_hours.entry_str_var.trace_add(
                 WRITE, lambda *args: self.__set_up_spinbox_weekly_working_hours_for_part_time(*args)
             )
@@ -668,11 +942,9 @@ class PartTimeContractFrame(ProgramFrame):
         try:
             current_value: float = round(float(self.spinbox_weekly_working_hours.get()), 2)
             if current_value < 40.0:
-                self.spinbox_weekly_working_hours.entry.delete(0, ctk.END)
-                self.spinbox_weekly_working_hours.entry.insert(0, str(40.0))
+                self.__entry_delete_insert_readonly(self.spinbox_weekly_working_hours.entry, str(40.0))
             if current_value > 56.0:
-                self.spinbox_weekly_working_hours.entry.delete(0, ctk.END)
-                self.spinbox_weekly_working_hours.entry.insert(0, str(56.0))
+                self.__entry_delete_insert_readonly(self.spinbox_weekly_working_hours.entry, str(56.0))
         except TypeError:
             pass
 
@@ -680,11 +952,9 @@ class PartTimeContractFrame(ProgramFrame):
         try:
             current_value: float = round(float(self.spinbox_weekly_working_hours.get()), 2)
             if current_value < 0.5:
-                self.spinbox_weekly_working_hours.entry.delete(0, ctk.END)
-                self.spinbox_weekly_working_hours.entry.insert(0, str(0.5))
+                self.__entry_delete_insert_readonly(self.spinbox_weekly_working_hours.entry, str(0.5))
             if current_value > 39.5:
-                self.spinbox_weekly_working_hours.entry.delete(0, ctk.END)
-                self.spinbox_weekly_working_hours.entry.insert(0, str(39.5))
+                self.__entry_delete_insert_readonly(self.spinbox_weekly_working_hours.entry, str(39.5))
         except TypeError:
             pass
 
@@ -700,23 +970,16 @@ class PartTimeContractFrame(ProgramFrame):
         entry.insert(0, personal_id)
         entry.configure(state=Entry.READ_ONLY)
 
-    def __populate_employer_info(
-        self,
-        choice: str,
-        entry_info: ctk.CTkEntry,
-        entry_director: ctk.CTkEntry,
-    ) -> None:
-        address: str = DatabaseHandler.get_company_address_from_company_name(choice)
-        entry_info.configure(state=Entry.WRITE)
-        entry_info.delete(0, Entry.DELETE)
-        entry_info.insert(0, address)
-        entry_info.configure(state=Entry.READ_ONLY)
+    def __populate_employer_info(self, choice: str) -> None:
+        address: str = DatabaseHandler.get_company_info(choice)
+        self.__entry_delete_insert_readonly(self.entry_employer_info, address)
 
         director: str = DatabaseHandler.get_company_director_from_company_name(choice)
-        entry_director.configure(state=Entry.WRITE)
-        entry_director.delete(0, Entry.DELETE)
-        entry_director.insert(0, director)
-        entry_director.configure(state=Entry.READ_ONLY)
+        self.__entry_delete_insert_readonly(self.entry_director, director)
+
+    def __entry_delete_and_insert(self, entry: ctk.CTkEntry, text: str = "") -> None:
+        entry.insert(0, text)
+        entry.delete(len(text), ctk.END)
 
     def __validate_numeric(self, *args, **kwargs) -> None:
         entry: ctk.CTkEntry = kwargs[ENTRY]
@@ -727,37 +990,31 @@ class PartTimeContractFrame(ProgramFrame):
         try:
             item_type = type(float(item))
             if item_type == type(float(1.0)):
-                entry.icursor(entry.index(ctk.INSERT) - 1)
+                if re.search(TWO_DECIMALS_REGEX, entry.get()):
+                    self.__entry_delete_and_insert(entry, str(0.0) + entry.get()[-1])
+                elif re.search(ONE_DECIMAL_REGEX, entry.get()):
+                    self.__entry_delete_and_insert(entry, str(0) + DOT + entry.get()[len(entry.get()) - 2 :])
+                elif re.search(BACKSPACE_TWO_DECIMAL_REGEX, entry.get()):
+                    self.__entry_delete_and_insert(entry, str(0) + DOT + entry.get()[0] + entry.get()[-1])
+                elif re.search(BACKSPACE_ONE_DECIMAL_REGEX, entry.get()):
+                    self.__entry_delete_and_insert(entry, str(0.00))
+                else:
+                    digits: List = [digit for digit in entry.get() if digit.isdigit()]
+                    output: str = EMPTY_STRING
+                    for index in range(len(digits) - 2):
+                        if index == 0 and digits[index] == str(0):
+                            pass
+                        else:
+                            output += digits[index]
+                    output += DOT + digits[-2] + digits[-1]
+                    self.__entry_delete_and_insert(entry, output)
         except:
             entry.delete(last_character_index - 1, last_character_index)
-
-        if item == "":
-            entry.insert(0, str(0))
 
     def __set_trail_connection(self) -> None:
         value: str = self.combobox_select_trail_option_strvar.get()
         self.combobox_select_trail_numbers.set(Cb.TRAIL[value][0])
         self.combobox_select_trail_numbers.configure(values=Cb.TRAIL[value])
-
-    def __toggle_date_checkbox(self) -> None:
-        checkbox_date_state: str = self.checkbox_date_strvar.get()
-        if checkbox_date_state == Chbx.ON_STATE:
-            self.date_entry_start_date.configure(state=De.READ_ONLY)
-            self.checkbox_description.configure(state=ctk.NORMAL)
-        else:
-            self.date_entry_start_date.configure(state=De.DISABLED)
-            self.checkbox_description.configure(state=ctk.DISABLED)
-
-    def __togglee_description_checkbox(self) -> None:
-        checkbox_description_state: str = self.checkbox_description_strvar.get()
-        self.entry_start_date_description.delete(0, ctk.END)
-        if checkbox_description_state == Chbx.ON_STATE:
-            self.entry_start_date_description.configure(state=Entry.WRITE)
-            self.entry_start_date_description.insert(0, Entry.START_DATE_DESCRIPTION_DEFAULT)
-            self.checkbox_date.configure(state=ctk.NORMAL)
-        else:
-            self.entry_start_date_description.configure(state=Entry.READ_ONLY)
-            self.checkbox_date.configure(state=ctk.DISABLED)
 
     def __validate_salary_increment(self, *args, **kwargs) -> None:
         entry: ctk.CTkEntry = kwargs[ENTRY]

@@ -1,24 +1,13 @@
 [
     {
-        "id": 1,
-        "name": "test",
-        "last_name": "last_name_1",
+        "id": "",
+        "name": "",
+        "last_name": "",
         "address": {
-            "street": "street",
-            "city": "city",
-            "postal": 12345
+            "street": "",
+            "city": "",
+            "postal": ""
         },
-        "personal_id": 12345678901
-    },
-    {
-        "id": 2,
-        "name": "test246",
-        "last_name": "last_name_2",
-        "address": {
-            "street": "street2",
-            "city": "cit2y",
-            "postal": 12344
-        },
-        "personal_id": 12345658901
+        "personal_id": ""
     }
 ]

@@ -2,6 +2,10 @@ import customtkinter as ctk
 
 from typing import Callable, Union, Type
 
+from constants.bindings import BUTTON_4, BUTTON_5
+
+READONLY = "readonly"
+
 
 class FloatSpinbox(ctk.CTkFrame):
     def __init__(
@@ -43,37 +47,28 @@ class FloatSpinbox(ctk.CTkFrame):
             validatecommand=self.validatecommand,
             textvariable=self.entry_str_var,
         )
-        self.entry_str_var.trace("w", self.validate_numeric)
-        self.entry.grid(row=0, column=1, columnspan=1, padx=3, pady=3, sticky="ew")
+        self.entry.grid(row=0, column=1, columnspan=1, padx=3, pady=3, sticky=ctk.EW)
 
         self.add_button: ctk.CTkButton = ctk.CTkButton(
             self, text="+", width=height - 6, height=height - 6, command=self.add_button_callback
         )
         self.add_button.grid(row=0, column=2, padx=(0, 3), pady=3)
 
-        # default value
         self.entry.insert(0, self.numeric_type(start_from))
+        self.entry.configure(state=READONLY)
 
-        self.entry.bind("<Button-4>", lambda event: self.add_button_callback())
-        self.entry.bind("<Button-5>", lambda event: self.subtract_button_callback())
-
-    def validate_numeric(self, *args):
-        last_character_index = self.entry.index(ctk.INSERT)
-        item = self.entry_str_var.get()
-        try:
-            item_type = type(float(item))
-            if item_type == type(float(1.0)):
-                pass
-        except:
-            self.entry.delete(last_character_index - 1, last_character_index)
+        self.entry.bind(BUTTON_4, lambda _: self.add_button_callback())
+        self.entry.bind(BUTTON_5, lambda _: self.subtract_button_callback())
 
     def add_button_callback(self):
         if self.command is not None:
             self.command()
         try:
             value: Union[int, float] = self.numeric_type(self.entry.get()) + self.step_size
-            self.entry.delete(0, "end")
+            self.entry.configure(state=ctk.NORMAL)
+            self.entry.delete(0, ctk.END)
             self.entry.insert(0, value)
+            self.entry.configure(state=READONLY)
         except ValueError:
             return
 
@@ -81,9 +76,11 @@ class FloatSpinbox(ctk.CTkFrame):
         if self.command is not None:
             self.command()
         try:
+            self.entry.configure(state=ctk.NORMAL)
             value: Union[int, float] = self.numeric_type(self.entry.get()) - self.step_size
-            self.entry.delete(0, "end")
+            self.entry.delete(0, ctk.END)
             self.entry.insert(0, value)
+            self.entry.configure(state=READONLY)
         except ValueError:
             return
 
@@ -94,5 +91,7 @@ class FloatSpinbox(ctk.CTkFrame):
             return None
 
     def set(self, value: Union[int, float]):
+        self.entry.configure(state=ctk.NORMAL)
         self.entry.delete(0, "end")
         self.entry.insert(0, str(self.numeric_type(value)))
+        self.entry.configure(state=READONLY)
