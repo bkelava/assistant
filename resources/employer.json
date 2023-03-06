@@ -1,13 +1,12 @@
 [
-  {
-    "id": "",
-    "company_name": "",
-    "address": {
-      "street": "",
-      "city": "",
-      "postal": ""
-    },
-    "vat": "",
-    "director": ""
-  }
+    {
+        "company_name": "",
+        "address": {
+            "street": "",
+            "city": "",
+            "postal": ""
+        },
+        "vat": "",
+        "director": ""
+    }
 ]

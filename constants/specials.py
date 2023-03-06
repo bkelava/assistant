@@ -1,5 +1,7 @@
+CHECKBOX: str = "checkbox"
+DATE_ENTRY: str = "date_entry"
 ENTRY: str = "entry"
-ENTRY_STR_VAR: str = "entry_str_var"
+STRVAR: str = "strvar"
 MINIMUM: str = "minimum"
 PERCENTAGE: str = "%"
 
@@ -7,16 +9,27 @@ EMPTY_STRING: str = ""
 
 DOT: str = "."
 COLON: str = ":"
+COMMA: str = ","
 DASH: str = "-"
 DOWN_DASH: str = "_"
+SPACE: str = " "
 
 FULL_TIME: str = "puno"
 
-ONE_TIME = "jednokratno"
-TWICE = "dvokratno"
-FLEXIBLE = "klizno"
-DESCRIPTION = "prema opisu"
+ONE_TIME: str = "jednokratno"
+TWICE: str = "dvokratno"
+FLEXIBLE: str = "klizno"
+DESCRIPTION: str = "prema opisu"
 
-WRITE = "write"
+WRITE: str = "write"
+
+STATE: str = "state"
 
 DATE_FORMAT: str = "%d.%m.%Y."
+
+LOCALE_CROATIA: str = "hr_HR"
+
+RIGHT = "right"
+LEFT = "left"
+
+VAT: str = "OIB"
