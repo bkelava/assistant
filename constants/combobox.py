@@ -2,8 +2,6 @@ from typing import Dict, List
 
 READ_ONLY: str = "readonly"
 
-COMBOBOX_SELECTED_EVENT: str = "<<ComboboxSelected>>"
-
 TRAIL_OPTIONS: List[str] = ["dan/a", "mjesec/a/i"]
 
 NUMBERS_1_TO_12: List[str] = [
@@ -104,3 +102,5 @@ COURTS: List[str] = [
     "Zadru",
     "Zagrebu",
 ]
+
+CONTRACT_TYPE: List[str] = ["određeno vrijeme", "određeno vrijeme"]

@@ -3,6 +3,10 @@ BLUE: str = "blue"
 GREEN: str = "green"
 RED: str = "red"
 YELLOW: str = "yellow"
+WHITE: str = "white"
+
+LIGHT_GREY: str = "#EEEEE9"
+
 GREY_15: str = "grey15"
 GOLD_4: str = "gold4"
 
