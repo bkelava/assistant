@@ -20,8 +20,7 @@ from constants.contract_anex_a1_pdf import *
 from constants.specials import EMPTY_STRING, LOCALE_CROATIA, DATE_FORMAT
 from database import DatabaseHandler
 from pdf import PDFGenerator
-
-from .helper_functions import (
+from utils import (
     entry_insert_and_delete,
     entry_delete_insert_readonly,
     parse_personal_id_from_string,
@@ -130,7 +129,7 @@ class ContractAnexA1(ProgramFrame):
         self.__combobox_employers: ctk.CTkComboBox = ctk.CTkComboBox(
             frame_1,
             font=form_font,
-            values=DatabaseHandler.get_list_of_employers(),
+            values=DatabaseHandler.get_list_of_employer_names(),
             state=Cb.READ_ONLY,
             command=lambda choice: self.__populate_employer_info(
                 choice=choice,

@@ -1,57 +1,14 @@
+import datetime
+
 from typing import Dict, List
 
 READ_ONLY: str = "readonly"
 
 TRAIL_OPTIONS: List[str] = ["dan/a", "mjesec/a/i"]
 
-NUMBERS_1_TO_12: List[str] = [
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "11",
-    "12",
-]
+NUMBERS_1_TO_12: List[str] = [str(x + 1) for x in range(0, 12)]
 
-NUMBERS_1_TO_30: List[str] = [
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "11",
-    "12",
-    "13",
-    "14",
-    "15",
-    "16",
-    "17",
-    "18",
-    "19",
-    "20",
-    "21",
-    "22",
-    "23",
-    "24",
-    "25",
-    "26",
-    "27",
-    "28",
-    "29",
-    "30",
-    "31",
-]
+NUMBERS_1_TO_30: List[str] = [str(x + 1) for x in range(0, 31)]
 
 TRAIL: Dict = {TRAIL_OPTIONS[0]: NUMBERS_1_TO_30, TRAIL_OPTIONS[1]: NUMBERS_1_TO_12}
 
@@ -104,3 +61,5 @@ COURTS: List[str] = [
 ]
 
 CONTRACT_TYPE: List[str] = ["određeno vrijeme", "određeno vrijeme"]
+
+YEARS: List[str] = [str(year) for year in range(datetime.date.today().year, datetime.date.today().year + 5)]

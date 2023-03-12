@@ -14,11 +14,10 @@ from database import DatabaseHandler
 from constants.specials import EMPTY_STRING
 from constants.bindings import KEY_RELEASE, LISTBOX_SELECT
 from tables import Employer
-from utils import ErrorCode
+from utils import ErrorCode, entry_insert_and_delete
 from widgets import SearchBox
 
 from .program_frame import ProgramFrame
-from .helper_functions import entry_insert_and_delete
 
 
 class EmployerFrame(ProgramFrame):

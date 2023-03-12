@@ -18,3 +18,4 @@ from .part_time_contract import *
 from .regex import *
 from .specials import *
 from .types import *
+from .working_hours_sheet_pdf import *

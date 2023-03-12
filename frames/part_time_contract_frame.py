@@ -28,9 +28,9 @@ from constants.regex import (
 )
 from constants.specials import *
 from pdf import PDFGenerator
+from utils import parse_personal_id_from_string, parse_employee_name_and_lastname_from_string
 from widgets import FloatSpinbox, TimePicker
 
-from .helper_functions import parse_personal_id_from_string, parse_employee_name_and_lastname_from_string
 from .program_frame import ProgramFrame
 
 
@@ -328,7 +328,7 @@ class PartTimeContractFrame(ProgramFrame):
         self.__combobox_employers: ctk.CTkComboBox = ctk.CTkComboBox(
             frame_1,
             font=self._form_font,
-            values=DatabaseHandler.get_list_of_employers(),
+            values=DatabaseHandler.get_list_of_employer_names(),
             state=Cb.READ_ONLY,
             command=lambda choice: self.__populate_employer_info(
                 choice=choice,

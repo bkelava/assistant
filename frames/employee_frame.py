@@ -14,11 +14,10 @@ from constants.bindings import LISTBOX_SELECT, KEY_RELEASE
 from constants.specials import EMPTY_STRING, LEFT, RIGHT
 from database import DatabaseHandler
 from tables import Employee
-from utils import ErrorCode
+from utils import ErrorCode, entry_insert_and_delete, parse_personal_id_from_string
 from widgets import Switchbox, SearchBox
 
 from .program_frame import ProgramFrame
-from .helper_functions import entry_insert_and_delete, parse_personal_id_from_string
 
 
 class EmployeeFrame(ProgramFrame):
