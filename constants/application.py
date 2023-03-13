@@ -3,4 +3,4 @@ APP_HEIGHT: int = 720
 
 APP_GRID_SIZE: int = 20
 
-ZOOMED_MOD: str = "-zoomed"
+ZOOMED_MOD: str = "-fullscreen"

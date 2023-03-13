@@ -13,6 +13,7 @@ from .employer_frame import EmployerFrame
 from .full_time_contract_frame import FullTimeContractFrame
 from .part_time_contract_frame import PartTimeContractFrame
 from .program_frame import ProgramFrame
+from .working_hours_sheet import WorkingHoursSheetFrame
 
 
 class MainWorkspace(ProgramFrame):
@@ -78,6 +79,19 @@ class Menu(ProgramFrame):
         self._frames.append(self._employee_frame)
         self._contract_anex_a1: ContractAnexA1 = None
         self._frames.append(self._contract_anex_a1)
+        self._working_hours_sheet: WorkingHoursSheetFrame = None
+
+        self._button_exit: ctk.CTkButton = ctk.CTkButton(
+            self,
+            text=Btn.EXIT,
+            font=button_font,
+            command=self.__exit,
+            fg_color=Color.BLUE_LIGHT_1529,
+            text_color=Color.BLUE_1529,
+            hover_color=Color.GREY_1529,
+        )
+        self._button_exit.grid(padx=15, pady=15, column=0, row=0, rowspan=2, sticky=ctk.NSEW)
+        self._buttons[nameof(self._button_exit)] = self._button_exit
 
         self._button_employers: ctk.CTkButton = ctk.CTkButton(
             self,
@@ -88,7 +102,7 @@ class Menu(ProgramFrame):
             text_color=Color.BLUE_1529,
             hover_color=Color.GREY_1529,
         )
-        self._button_employers.grid(padx=15, pady=15, column=0, row=0, rowspan=2, sticky=ctk.NSEW)
+        self._button_employers.grid(padx=15, pady=15, column=0, row=2, rowspan=2, sticky=ctk.NSEW)
         self._buttons[nameof(self._button_employers)] = self._button_employers
 
         self._button_employees: ctk.CTkButton = ctk.CTkButton(
@@ -100,7 +114,7 @@ class Menu(ProgramFrame):
             text_color=Color.BLUE_1529,
             hover_color=Color.GREY_1529,
         )
-        self._button_employees.grid(padx=15, pady=15, column=0, row=2, rowspan=2, sticky=ctk.NSEW)
+        self._button_employees.grid(padx=15, pady=15, column=0, row=4, rowspan=2, sticky=ctk.NSEW)
         self._buttons[nameof(self._button_employees)] = self._button_employees
 
         self._button_part_time_contract: ctk.CTkButton = ctk.CTkButton(
@@ -112,7 +126,7 @@ class Menu(ProgramFrame):
             text_color=Color.BLUE_1529,
             hover_color=Color.GREY_1529,
         )
-        self._button_part_time_contract.grid(padx=15, pady=15, column=0, row=4, rowspan=2, sticky=ctk.NSEW)
+        self._button_part_time_contract.grid(padx=15, pady=15, column=0, row=6, rowspan=2, sticky=ctk.NSEW)
         self._buttons[nameof(self._button_part_time_contract)] = self._button_part_time_contract
 
         self._button_full_time_contract: ctk.CTkButton = ctk.CTkButton(
@@ -124,7 +138,7 @@ class Menu(ProgramFrame):
             text_color=Color.BLUE_1529,
             hover_color=Color.GREY_1529,
         )
-        self._button_full_time_contract.grid(padx=15, pady=15, column=0, row=6, rowspan=2, sticky=ctk.NSEW)
+        self._button_full_time_contract.grid(padx=15, pady=15, column=0, row=8, rowspan=2, sticky=ctk.NSEW)
         self._buttons[nameof(self._button_full_time_contract)] = self._button_full_time_contract
 
         self._button_anex_a1: ctk.CTkButton = ctk.CTkButton(
@@ -136,8 +150,28 @@ class Menu(ProgramFrame):
             text_color=Color.BLUE_1529,
             hover_color=Color.GREY_1529,
         )
-        self._button_anex_a1.grid(padx=15, pady=15, column=0, row=8, rowspan=2, sticky=ctk.NSEW)
+        self._button_anex_a1.grid(padx=15, pady=15, column=0, row=10, rowspan=2, sticky=ctk.NSEW)
         self._buttons[nameof(self._button_anex_a1)] = self._button_anex_a1
+
+        self._button_working_hours_sheet: ctk.CTkButton = ctk.CTkButton(
+            self,
+            text=Btn.WORKING_HOURS_SHEET,
+            font=button_font,
+            command=self.__create_working_hours_sheet,
+            fg_color=Color.BLUE_LIGHT_1529,
+            text_color=Color.BLUE_1529,
+            hover_color=Color.GREY_1529,
+        )
+        self._button_working_hours_sheet.grid(padx=15, pady=15, column=0, row=12, rowspan=2, sticky=ctk.NSEW)
+        self._buttons[nameof(self._button_working_hours_sheet)] = self._button_working_hours_sheet
+
+    def __exit(self) -> None:
+        self._controller.master.destroy()
+
+    def __create_working_hours_sheet(self) -> None:
+        self.__set_up_workspace(nameof(self._button_working_hours_sheet))
+        self._working_hours_sheet = WorkingHoursSheetFrame(self._controller.frame_workspace)
+        self._working_hours_sheet.grid(padx=5, pady=5, column=0, row=0, columnspan=20, rowspan=20, sticky=ctk.NSEW)
 
     def __create_contract_anex_a1(self) -> None:
         self.__set_up_workspace(nameof(self._button_anex_a1))

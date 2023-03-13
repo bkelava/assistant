@@ -249,7 +249,7 @@ class DatabaseHandler:
         return employee_names_list
 
     @staticmethod
-    def get_list_of_employers() -> List[str]:
+    def get_list_of_employer_names() -> List[str]:
         employers: List[Employer] = DatabaseHandler.get_employers()
         employers_names: List[str] = []
         for employer in employers:

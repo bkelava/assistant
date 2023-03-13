@@ -93,7 +93,7 @@ class Employer:
         self.__director = new_director
 
     def __str__(self) -> str:
-        return f"{self.__company_name}, {self.__street}, {self.__postal} {self.__city}, OIB: {self.__vat}, Odgovorna osoba: {self.__director}"
+        return f"{self.__company_name}, {self.__street}, {self.__postal} {self.__city}, OIB: {self.__vat}, odgovorna osoba: {self.__director}"
 
     def __eq__(self, other: Any) -> Union[bool, None]:
         if other == None:

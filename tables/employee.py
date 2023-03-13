@@ -96,7 +96,10 @@ class Employee:
         self.__personal_id = new_id
 
     def __str__(self) -> str:
-        return f"{self.__name} {self.__lastname}, {self.__street}, {self.__postal} {self.__city}, OIB/Putovnica: {self.__personal_id}"
+        if self.__street == "" or self.__city == "" or self.__postal == "":
+            return f"{self.__name} {self.__lastname}, OIB/Putovnica: {self.__personal_id}"
+        else:
+            return f"{self.__name} {self.__lastname}, {self.__street}, {self.__postal} {self.__city}, OIB/Putovnica: {self.__personal_id}"
 
     @property
     def employer_names(self) -> List[str]:

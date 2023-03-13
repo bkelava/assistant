@@ -1,0 +1,39 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python application
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Build python application
+        run: |
+          pyinstaller --onefile --add-data "c:\hostedtoolcache\windows\python\3.10.10\x64\lib\site-packages\customtkinter;customtkinter\" --hidden-import babel.numbers app.py --paths ./
+      - name: Copy assets folder
+        run: |
+          xcopy D:\a\assistant\assistant\assets\ D:\a\assistant\assistant\dist\assets\ /E/H/C/I
+      - name: Copy resources folder
+        run: |
+          xcopy D:\a\assistant\assistant\resources D:\a\assistant\assistant\dist\resources\
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Assets-for-download
+          path: D:\a\assistant\assistant\dist

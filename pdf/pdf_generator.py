@@ -1,34 +1,38 @@
+import calendar
+import datetime
+import locale
+
 from typing import Dict
+from varname import nameof
 
 import constants.contract_anex_a1_pdf as A1P
 import constants.contract_pdf as C
+import constants.working_hours_sheet_pdf as Sheet
 import constants.part_time_contract as PTC
 import constants.full_time_contract as FTC
 import constants.contract_anex_a1 as A1
 
-from constants.specials import EMPTY_STRING, DASH, DOT, COLON
+from constants.specials import EMPTY_STRING, DASH, DOT, COLON, DOWN_DASH, LOCALE_CROATIA, SPACE
+from database import DatabaseHandler
+from tables import Employer, Employee
+from utils import (
+    create_date,
+    create_line,
+    replace_character,
+    parse_personal_id_from_string,
+    remove_unnecesary_dates_from_calendar,
+)
 
-from .pdf_base import PDF
+from .pdf_base import PDFContractAnexA1, PDFPartTimeContract, PDFFullTimeContract, PDFWorkingHoursSheet
 from .pdf_constants import *
-from .pdf_helper import create_line
 
 
 class PDFGenerator:
     @staticmethod
     def generate_part_time_contract(data: Dict) -> None:
-        pdf: PDF = PDF()
+        pdf: PDFPartTimeContract = PDFPartTimeContract(orientation=PORTRAIT, format=A4)
         pdf.alias_nb_pages()
         pdf.add_page()
-
-        pdf.add_font(NOTO_SANS, "", NOTO_SANS_REGULAR_PATH, uni=True)
-        pdf.add_font(NOTO_SANS, BOLD, NOTO_SANS_BOLD_PATH, uni=True)
-        pdf.add_font(NOTO_SANS, ITALIC, NOTO_SANS_ITALIC_PATH, uni=True)
-
-        pdf.image(LOGO, 10, 0, 22)
-        pdf.set_font(NOTO_SANS, BOLD, 5)
-        pdf.ln(12)
-        pdf.cell(w=69, h=0, txt=HEADER_MARK, border=0, ln=0, align=ALIGN_CENTER)
-        pdf.ln(12)
 
         pdf.set_font(NOTO_SANS, "", 12)
         pdf.write(h=0, txt=f"{PTC.label_1} ")
@@ -257,23 +261,16 @@ class PDFGenerator:
         pdf.cell(w=0, h=0, txt=f"{create_line(len(employer))}", align=ALIGN_LEFT)
         pdf.cell(w=0, h=0, txt=f"{create_line(len(employee))}", align=ALIGN_RIGHT)
 
-        pdf.output(f"{data[C.EMPLOYERS].upper()}{DASH}{data[C.EMPLOYEES].upper()}{PDF_EXTENSION}")
+        output: str = replace_character(
+            f"{nameof(PTC)}{DOWN_DASH}{data[C.EMPLOYERS].upper()}{DOWN_DASH}{data[C.EMPLOYEES].upper()}{PDF_EXTENSION}"
+        )
+        pdf.output(output)
 
     @staticmethod
     def generate_full_time_contract(data: Dict) -> None:
-        pdf: PDF = PDF()
+        pdf: PDFFullTimeContract = PDFFullTimeContract(orientation=PORTRAIT, format=A4)
         pdf.alias_nb_pages()
         pdf.add_page()
-
-        pdf.add_font(NOTO_SANS, "", NOTO_SANS_REGULAR_PATH, uni=True)
-        pdf.add_font(NOTO_SANS, BOLD, NOTO_SANS_BOLD_PATH, uni=True)
-        pdf.add_font(NOTO_SANS, ITALIC, NOTO_SANS_ITALIC_PATH, uni=True)
-
-        pdf.image(LOGO, 10, 0, 22)
-        pdf.set_font(NOTO_SANS, BOLD, 5)
-        pdf.ln(12)
-        pdf.cell(w=69, h=0, txt=HEADER_MARK, border=0, ln=0, align=ALIGN_CENTER)
-        pdf.ln(12)
 
         pdf.set_font(NOTO_SANS, "", 12)
         pdf.write(h=0, txt=f"{FTC.label_1} ")
@@ -488,22 +485,15 @@ class PDFGenerator:
         pdf.cell(w=0, h=0, txt=f"{create_line(len(employer))}", align=ALIGN_LEFT)
         pdf.cell(w=0, h=0, txt=f"{create_line(len(employee))}", align=ALIGN_RIGHT)
 
-        pdf.output(f"{data[C.EMPLOYERS].upper()}{DASH}{data[C.EMPLOYEES].upper()}{PDF_EXTENSION}")
+        output: str = replace_character(
+            f"{nameof(FTC)}{DOWN_DASH}{data[C.EMPLOYERS].upper()}{DOWN_DASH}{data[C.EMPLOYEES].upper()}{PDF_EXTENSION}"
+        )
+        pdf.output(output)
 
     def generate_anex_for_a1(data: Dict) -> None:
-        pdf: PDF = PDF()
+        pdf: PDFContractAnexA1 = PDFContractAnexA1(orientation=PORTRAIT, format=A4)
         pdf.alias_nb_pages()
         pdf.add_page()
-
-        pdf.add_font(NOTO_SANS, "", NOTO_SANS_REGULAR_PATH, uni=True)
-        pdf.add_font(NOTO_SANS, BOLD, NOTO_SANS_BOLD_PATH, uni=True)
-        pdf.add_font(NOTO_SANS, ITALIC, NOTO_SANS_ITALIC_PATH, uni=True)
-
-        pdf.image(LOGO, 10, 0, 22)
-        pdf.set_font(NOTO_SANS, BOLD, 5)
-        pdf.ln(12)
-        pdf.cell(w=69, h=0, txt=HEADER_MARK, border=0, ln=0, align=ALIGN_CENTER)
-        pdf.ln(12)
 
         pdf.set_font(NOTO_SANS, BOLD, 12)
         pdf.write(h=0, txt=f"{data[A1P.EMPLOYER]}")
@@ -655,4 +645,62 @@ class PDFGenerator:
         pdf.cell(w=0, h=0, txt=f"{create_line(len(employer))}", align=ALIGN_LEFT)
         pdf.cell(w=0, h=0, txt=f"{create_line(len(employee))}", align=ALIGN_RIGHT)
 
-        pdf.output("test.pdf")
+        output: str = replace_character(
+            f"{nameof(A1)}{DOWN_DASH}{data[A1P.EMPLOYER].upper()}{DOWN_DASH}{data[A1P.EMPLOYEE].upper()}{PDF_EXTENSION}"
+        )
+        pdf.output(output)
+
+    @staticmethod
+    def generate_working_hours_sheet(data: Dict) -> None:
+        employer: Employer = DatabaseHandler.get_employer_from_employer_name(data[Sheet.EMPLOYER])
+        employee: Employee = DatabaseHandler.get_employee_from_personal_id(
+            parse_personal_id_from_string(data[Sheet.EMPLOYEE])
+        )
+        pdf: PDFWorkingHoursSheet = PDFWorkingHoursSheet(
+            employer, employee, data[Sheet.MONTH], data[Sheet.YEAR], orientation=LANDSCAPE, format=A4
+        )
+        pdf.alias_nb_pages()
+        pdf.add_page()
+
+        pdf.set_margin(11)
+        locale.setlocale(locale.LC_ALL, f"{LOCALE_CROATIA}{DOT}utf8")
+        cal = calendar.Calendar(calendar.MONDAY)
+
+        pdf.set_font(NOTO_SANS, BOLD, 8)
+        for index, item in enumerate(SHEET_DATA):
+            if index == 1:
+                pdf.cell(w=19, h=None, txt=item, border=True, align=ALIGN_CENTER)
+            else:
+                pdf.cell(w=16, h=None, txt=item, border=True, align=ALIGN_CENTER)
+
+        dates: List = remove_unnecesary_dates_from_calendar(
+            cal.itermonthdays4(int(data[Sheet.YEAR]), int(data[Sheet.MONTH])), int(data[Sheet.MONTH])
+        )
+        pdf.ln()
+        size = 4.5
+        for date in dates:
+            pdf.cell(w=16, h=size, txt=create_date(date), border=True, align=ALIGN_CENTER)
+            pdf.cell(w=19, h=size, txt=calendar.day_name[date[3]], border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.cell(w=16, h=size, txt=SPACE, border=True)
+            pdf.ln()
+
+        print(OUTPUT_DIR)
+
+        output: str = replace_character(
+            f"{WHS}{DOWN_DASH}{data[Sheet.EMPLOYER].upper()}{DOWN_DASH}{data[Sheet.EMPLOYEE].upper()}{DOWN_DASH}{str(data[Sheet.MONTH]).upper()}{DOWN_DASH}{str(data[Sheet.YEAR]).upper()}{PDF_EXTENSION}"
+        )
+        pdf.output(output)
