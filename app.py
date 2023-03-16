@@ -12,7 +12,7 @@ class MainApp(ctk.CTk):
 
         ctk.set_appearance_mode(Color.DARK_APPERANCE)
         ctk.set_default_color_theme(Color.DARK_THEME)
-        self.attributes(App.ZOOMED_MOD, True)
+        # self.attributes(App.ZOOMED_MOD, True)
         self.geometry(f"{App.APP_WIDTH}x{App.APP_HEIGHT}")
         self.title(Label.APPLICATION_TITLE)
 
