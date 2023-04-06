@@ -720,7 +720,7 @@ class PartTimeContractFrame(ProgramFrame):
         frame_22: ctk.CTkFrame = ctk.CTkFrame(container, fg_color=Color.BLACK_1529)
         label_50: ctk.CTkLabel = ctk.CTkLabel(frame_22, text=PTC.label_50, font=self._form_font)
         self.__combobox_court: ctk.CTkComboBox = ctk.CTkComboBox(
-            frame_8,
+            frame_22,
             font=self._form_font,
             values=Cb.COURTS,
             state=Cb.READ_ONLY,
