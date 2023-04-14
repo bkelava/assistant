@@ -23,15 +23,18 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+      - name: Find customtkinter
+        run: |
+          pip show customtkinter
       - name: Build python application
         run: |
-          pyinstaller --onefile --add-data "c:\hostedtoolcache\windows\python\3.10.10\x64\lib\site-packages\customtkinter;customtkinter\" --hidden-import babel.numbers app.py --paths ./
+          pyinstaller --onefile --add-data "c:\hostedtoolcache\windows\python\3.10.11\x64\lib\site-packages\customtkinter;customtkinter\" --hidden-import babel.numbers app.py --paths ./
       - name: Copy assets folder
         run: |
-          xcopy D:\a\assistant\assistant\assets\ D:\a\assistant\assistant\dist\assets\ /E/H/C/I
+          xcopy D:\a\assistant\assistant\src\assets\ D:\a\assistant\assistant\dist\src\assets\ /E/H/C/I
       - name: Copy resources folder
         run: |
-          xcopy D:\a\assistant\assistant\resources D:\a\assistant\assistant\dist\resources\
+          xcopy D:\a\assistant\assistant\src\resources D:\a\assistant\assistant\dist\src\resources\
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:

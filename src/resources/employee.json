@@ -1,0 +1,80 @@
+[
+    {
+        "name": "Amel",
+        "lastname": "Dedi\u0107",
+        "address": {
+            "street": "Alije Had\u017e\u017ei\u0107a 3",
+            "city": "Kalesija - BiH",
+            "postal": "75265"
+        },
+        "personal_id": "B1265547",
+        "employer_name": [
+            "AMZ Gradnja d.o.o."
+        ]
+    },
+    {
+        "name": "Mirza",
+        "lastname": "Bjeli\u0107",
+        "address": {
+            "street": "Barice BB",
+            "city": "\u017divinice - BiH",
+            "postal": "75270"
+        },
+        "personal_id": "B3333475",
+        "employer_name": [
+            "AMZ Gradnja d.o.o."
+        ]
+    },
+    {
+        "name": "Mirsad",
+        "lastname": "Penji\u0107",
+        "address": {
+            "street": "",
+            "city": "Kakanj",
+            "postal": "72240"
+        },
+        "personal_id": "B2260813",
+        "employer_name": [
+            "A. D. Solutions j.d.o.o."
+        ]
+    },
+    {
+        "name": "Mirko",
+        "lastname": "Primorac",
+        "address": {
+            "street": "",
+            "city": "",
+            "postal": ""
+        },
+        "personal_id": "31736872790",
+        "employer_name": [
+            "AMZ Gradnja d.o.o."
+        ]
+    },
+    {
+        "name": "Adis",
+        "lastname": "D\u017eini\u0107",
+        "address": {
+            "street": "G. Petrovice BB",
+            "city": "Kalesija - BiH",
+            "postal": 75265
+        },
+        "personal_id": "B2217638",
+        "employer_name": [
+            "AMZ Gradnja d.o.o."
+        ]
+    },
+    {
+        "name": "Fahrudin",
+        "lastname": "Delali\u0107",
+        "address": {
+            "street": "Barice BB",
+            "city": "\u017divinice - BiH",
+            "postal": 75270
+        },
+        "personal_id": "63687907915",
+        "employer_name": [
+            "AMZ Gradnja d.o.o."
+        ]
+    }
+]
