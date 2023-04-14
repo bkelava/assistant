@@ -1,0 +1,22 @@
+[
+    {
+        "company_name": "AMZ Gradnja d.o.o.",
+        "address": {
+            "street": "Kolodvrska 37",
+            "city": "Stari Perkovci - Vrpolje",
+            "postal": "35214"
+        },
+        "vat": "72018608521",
+        "director": "Josip Josipovi\u0107"
+    },
+    {
+        "company_name": "A. D. Solutions j.d.o.o.",
+        "address": {
+            "street": "Topola 18",
+            "city": "Bo\u0161njaci",
+            "postal": "32275"
+        },
+        "vat": "93588155132",
+        "director": "Ilija Dretvi\u0107"
+    }
+]

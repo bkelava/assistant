@@ -1,9 +1,9 @@
 import customtkinter as ctk
-import constants.application as App
-import constants.colors as Color
-import constants.label as Label
+import src.constants.application as App
+import src.constants.colors as Color
+import src.constants.label as Label
 
-from frames import MainWorkspace
+from src.frames import MainWorkspace
 
 
 class MainApp(ctk.CTk):

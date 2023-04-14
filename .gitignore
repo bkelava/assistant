@@ -1,7 +1,11 @@
 env/
 __pycache__/
-resources/
+src/resources/
 build/
 dist/
 app.spec
 Dockerfile
+.vscode/
+*.pdf
+*.xls
+*.xlsx
