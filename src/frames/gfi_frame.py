@@ -99,7 +99,7 @@ class GFIFrame(ProgramFrame):
             Excel.MB: str(sheet.cell(26, 12).value),
             Excel.OWNERSHIP: str(sheet.cell(51, 3).value).lower(),
             Excel.COMPANY_SIZE: str(sheet.cell(49, 3).value).lower(),
-            Excel.REPORT_YEAR: str(sheet.cell(11, 5).value),
+            Excel.REPORT_YEAR: str(int(float(sheet.cell(11, 5).value))),
             Excel.REPORT_DATE: date.today().strftime(DATE_FORMAT),
             Excel.DIRECTOR: str(sheet.cell(74, 0).value),
             Excel.FOREIGN: str("%.2f" % sheet.cell(53, 5).value),
