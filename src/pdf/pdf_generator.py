@@ -404,6 +404,7 @@ class PDFGenerator:
         pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
         pdf.write(h=0, txt=f"{GFI.REPORT_2_PART_76}")
         pdf.set_font(NOTO_SANS, BOLD, 12)
+        add_new_features
         if int(float(str(data[Excel.EXPENSES_DIFF_PERCT]))) > 0:
             pdf.write(h=0, txt=f"+{data[Excel.EXPENSES_DIFF_PERCT]}%")
         else:
