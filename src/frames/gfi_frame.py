@@ -146,8 +146,7 @@ class GFIFrame(ProgramFrame):
         data[Excel.EXPENSES_DIFF_PERCT] = locale.currency(
             round(
                 (float(sheet.cell(60, 9).value) - float(sheet.cell(60, 8).value))
-                / float(sheet.cell(60, 9).value)
-                * 100,
+                / (float(sheet.cell(60, 9).value) * 100),
                 2,
             ),
             grouping=True,
