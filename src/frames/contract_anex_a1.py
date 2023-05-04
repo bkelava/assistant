@@ -247,7 +247,7 @@ class ContractAnexA1(ProgramFrame):
         self.__combobox_court: ctk.CTkComboBox = ctk.CTkComboBox(
             frame_7,
             font=form_font,
-            values=Cb.CONTRACT_TYPE,
+            values=Cb.COURTS,
             state=Cb.READ_ONLY,
             justify=ctk.CENTER,
         )
