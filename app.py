@@ -37,4 +37,5 @@ class MainApp(ctk.CTk):
 
 if __name__ == "__main__":
     root: MainApp = MainApp()
+    root.attributes("-fullscreen", True)
     root.mainloop()

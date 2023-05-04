@@ -44,3 +44,7 @@ GAIN_BEFORE_TAX: str = "gain_before_tax"
 GAIN_AFTER_TAX: str = "gain_after_tax"
 SAVINGS: str = "saving"
 GAIN_KEPT: str = "gain_kept"
+
+TOTAL_GAIN: str = "total_gain"
+PAYOUT: str = "payout"
+KEPT_FOR_LOSS_COVERAGE: str = "kept_for_loss_coverage"

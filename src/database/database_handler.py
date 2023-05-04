@@ -150,13 +150,13 @@ class DatabaseHandler:
         employees: List[Employee] = DatabaseHandler.get_employees()
         for _employee in employees:
             if _employee == employee:
-                _employee.name = employee.name
-                _employee.lastname = employee.lastname
-                _employee.street = employee.street
-                _employee.city = employee.city
-                _employee.postal = employee.postal
-                _employee.personal_id = employee.personal_id
-                _employee.employer_names = employee.employer_names
+                _employee.name = new_employee_data.name
+                _employee.lastname = new_employee_data.lastname
+                _employee.street = new_employee_data.street
+                _employee.city = new_employee_data.city
+                _employee.postal = new_employee_data.postal
+                _employee.personal_id = new_employee_data.personal_id
+                _employee.employer_names = new_employee_data.employer_names
                 status = ErrorCode.NO_ERROR
                 break
         if status == ErrorCode.NO_ERROR:

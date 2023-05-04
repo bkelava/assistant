@@ -1,4 +1,5 @@
 import calendar
+import locale
 
 from typing import Dict
 from varname import nameof
@@ -157,18 +158,21 @@ class PDFGenerator:
                 pdf.ln()
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_9_DOO}")
                 pdf.set_font(NOTO_SANS, BOLD, 12)
-                pdf.write(h=0, txt=f"0,00")  # CHANGE IN THE FUTURE
+                pdf.write(h=0, txt=f"{data[Excel.PAYOUT]}")
                 pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_10_DOO}")
                 pdf.ln()
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_11_DOO}")
                 pdf.set_font(NOTO_SANS, BOLD, 12)
-                pdf.write(h=0, txt=f"{data[Excel.GAIN_KEPT]}")
+                pdf.write(h=0, txt=f"{data[Excel.TOTAL_GAIN]}")
                 pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_12_DOO}")
                 pdf.ln()
-                pdf.ln()
-                pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_13_DOO}")  # CHANGE/CHECK IN THE FUTURE
+                pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_13_DOO}")
+                pdf.set_font(NOTO_SANS, BOLD, 12)
+                pdf.write(h=0, txt=f"{data[Excel.KEPT_FOR_LOSS_COVERAGE]}")
+                pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
+                pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_10_DOO}")
         pdf.ln(40)
         pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
         pdf.cell(w=0, h=0, txt=f"{GFI.REPORT_3_PART_8}", align=ALIGN_CENTER)
@@ -1135,6 +1139,7 @@ class PDFGenerator:
 
     @staticmethod
     def generate_working_hours_sheet(data: Dict) -> None:
+        locale.setlocale(locale.LC_ALL, LOCALE_CROATIA)
         employer: Employer = DatabaseHandler.get_employer_from_employer_name(data[Sheet.EMPLOYER])
         employee: Employee = DatabaseHandler.get_employee_from_personal_id(
             parse_personal_id_from_string(data[Sheet.EMPLOYEE])

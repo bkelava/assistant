@@ -60,7 +60,7 @@ COURTS: List[str] = [
     "Zagrebu",
 ]
 
-CONTRACT_TYPE: List[str] = ["određeno vrijeme", "određeno vrijeme"]
+CONTRACT_TYPE: List[str] = ["određeno vrijeme", "ne određeno vrijeme"]
 
 YEARS: List[str] = [str(year) for year in range(datetime.date.today().year, datetime.date.today().year + 5)]
 

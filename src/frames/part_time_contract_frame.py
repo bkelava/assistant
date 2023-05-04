@@ -290,8 +290,8 @@ class PartTimeContractFrame(ProgramFrame):
         )
         self.__date_entry_start_job_date.configure(state=De.READ_ONLY)
         self.__date_entry_start_job_date.set_date(datetime.date.today())
-        entry_insert_and_delete(self.__entry_salary, Entry.SALARY_DEFAUL)
-        entry_insert_and_delete(self.__entry_salary_bonus, Entry.SALARY_DEFAUL)
+        entry_insert_and_delete(self.__entry_salary, Entry.SALARY_DEFAULT)
+        entry_insert_and_delete(self.__entry_salary_bonus, Entry.SALARY_DEFAULT)
         entry_insert_and_delete(self.__entry_salary_increment_1, Entry.PERCENTAGE_20)
         entry_insert_and_delete(self.__entry_salary_increment_2, Entry.PERCENTAGE_30)
         entry_insert_and_delete(self.__entry_salary_increment_3, Entry.PERCENTAGE_50)
@@ -509,7 +509,7 @@ class PartTimeContractFrame(ProgramFrame):
         self.__entry_salary: ctk.CTkEntry = ctk.CTkEntry(
             frame_8, font=self._form_font, justify=ctk.CENTER, textvariable=self.__entry_salary_strvar
         )
-        self.__entry_salary.insert(0, Entry.SALARY_DEFAUL)
+        self.__entry_salary.insert(0, Entry.SALARY_DEFAULT)
         self.__entry_salary.bind(
             FOCUS_IN, lambda *args: self.__entry_numeric_add_bindings(*args, entry=self.__entry_salary)
         )
@@ -528,7 +528,7 @@ class PartTimeContractFrame(ProgramFrame):
         self.__entry_salary_bonus: ctk.CTkEntry = ctk.CTkEntry(
             frame_9, font=self._form_font, justify=ctk.CENTER, textvariable=self.__entry_salary_bonus_strvar
         )
-        self.__entry_salary_bonus.insert(0, Entry.SALARY_DEFAUL)
+        self.__entry_salary_bonus.insert(0, Entry.SALARY_DEFAULT)
         self.__entry_salary_bonus.bind(
             FOCUS_IN, lambda *args: self.__entry_numeric_add_bindings(*args, entry=self.__entry_salary_bonus)
         )
@@ -769,7 +769,7 @@ class PartTimeContractFrame(ProgramFrame):
         )
         self.__checkbox_contract_starts_with_description.deselect()
         self.__date_entry_contract_starting_with: DateEntry = DateEntry(
-            frame_23, selectmode=De.DAY_MODE, state=De.READ_ONLY, justify=ctk.CENTER, locale="hr_HR"
+            frame_23, selectmode=De.DAY_MODE, state=De.READ_ONLY, justify=ctk.CENTER, locale=LOCALE_CROATIA
         )
         self.__entry_contract_starts_with_description: ctk.CTkEntry = ctk.CTkEntry(
             frame_23, font=self._form_font, justify=ctk.CENTER, state=Entry.READ_ONLY
@@ -1110,6 +1110,8 @@ class PartTimeContractFrame(ProgramFrame):
                     entry_insert_and_delete(entry, output)
         except:
             entry.delete(last_character_index - 1, last_character_index)
+        if entry_str_var.get() == "":
+            entry_insert_and_delete(entry, Entry.SALARY_DEFAULT)
 
     def __set_combobox_trail_connection(self) -> None:
         value: str = self.__combobox_select_trail_option_strvar.get()
