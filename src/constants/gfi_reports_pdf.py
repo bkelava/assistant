@@ -166,7 +166,7 @@ REPORT_3_PART_15_JDOO: str = (
 )
 
 REPORT_3_PART_1_DOO: str = "1. Utvrđuje se ostvareni dobitak za "
-REPORT_3_PART_2_DOO: str = "u svoti od "
+REPORT_3_PART_2_DOO: str = " u svoti od "
 REPORT_3_PART_3_DOO: str = " €."
 REPORT_3_PART_4_DOO: str = "  1.1. Utvrđuje se porez na dobit u svoti od "
 REPORT_3_PART_5_DOO: str = " €."

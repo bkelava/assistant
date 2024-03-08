@@ -284,7 +284,7 @@ class PDFGenerator:
         pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
         pdf.write(h=0, txt=f"{GFI.REPORT_2_PART_22} {GFI.REPORT_2_PART_23}")
         pdf.set_font(NOTO_SANS, BOLD, 12)
-        pdf.write(h=0, txt=f"{str(int(float(data[Excel.REPORT_YEAR]))-1)}")
+        pdf.write(h=0, txt=f"{str(int(float(data[Excel.REPORT_YEAR]))-1)}{DOT}")
         pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
         pdf.write(h=0, txt=f"{GFI.REPORT_2_PART_24}")
         pdf.set_font(NOTO_SANS, BOLD, 12)
