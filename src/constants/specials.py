@@ -22,6 +22,7 @@ FLEXIBLE: str = "klizno"
 DESCRIPTION: str = "prema opisu"
 
 WRITE: str = "write"
+CALLBACK: str = "callback"
 
 STATE: str = "state"
 
