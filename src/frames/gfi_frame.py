@@ -337,10 +337,9 @@ class GFIFrame(ProgramFrame):
         entry.unbind(ARROW_RIGHT)
 
     def __gain_logic_callback(self) -> None:
-        locale.setlocale(locale.LC_ALL, f"{LOCALE_CROATIA}.utf8")
-        self._total_gain = round(locale.atof(str(self._data[Excel.GAIN])), 2)
+        self._total_gain = locale.atof(str(self._data[Excel.GAIN]))
         self._entry_gain_strvar.trace_remove(WRITE, self._entry_gain_strvar_id)
-        entry_delete_insert_readonly(self._entry_gain, str(round(float(self._total_gain), 2)))
+        entry_delete_insert_readonly(self._entry_gain, str(self._total_gain))
 
     def __validate_numeric(self, *args, **kwargs) -> None:
         entry: ctk.CTkEntry = kwargs[ENTRY]
