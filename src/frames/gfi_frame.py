@@ -333,7 +333,8 @@ class GFIFrame(ProgramFrame):
         entry.unbind(ARROW_RIGHT)
 
     def __gain_logic_callback(self) -> None:
-        self._total_gain = round(float(str(self._data[Excel.GAIN].replace(COMMA, DOT))), 2)
+        locale.setlocale(locale.LC_ALL, f"{LOCALE_CROATIA}.utf8")
+        self._total_gain = round(float(str(self._data[Excel.GAIN])), 2)
         self._entry_gain_strvar.trace_remove(WRITE, self._entry_gain_strvar_id)
         entry_delete_insert_readonly(self._entry_gain, str(round(float(self._total_gain), 2)))
 
