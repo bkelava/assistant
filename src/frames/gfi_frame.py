@@ -269,6 +269,10 @@ class GFIFrame(ProgramFrame):
         sheet = workbook.sheet_by_name(Excel.SHEET_BALANCE)
         self._data[Excel.BALANCE] = locale.currency(round(float(sheet.cell(133, 9).value), 2), grouping=True)[:-3]
 
+        self._data[Excel.TOTAL_GAIN] = locale.currency(Entry.SALARY_DEFAULT, grouping=True)[:-3]
+        self._data[Excel.PAYOUT] = locale.currency(Entry.SALARY_DEFAULT, grouping=True)[:-3]
+        self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(Entry.SALARY_DEFAULT, grouping=True)[:-3]
+
     def _generate_reports(self) -> None:
         self._button_generate_GFI.configure(state=ctk.DISABLED)
 
@@ -334,7 +338,7 @@ class GFIFrame(ProgramFrame):
 
     def __gain_logic_callback(self) -> None:
         locale.setlocale(locale.LC_ALL, f"{LOCALE_CROATIA}.utf8")
-        self._total_gain = round(float(self._data[Excel.GAIN]), 2)
+        self._total_gain = round(locale.atof(str(self._data[Excel.GAIN])), 2)
         self._entry_gain_strvar.trace_remove(WRITE, self._entry_gain_strvar_id)
         entry_delete_insert_readonly(self._entry_gain, str(round(float(self._total_gain), 2)))
 
