@@ -269,9 +269,9 @@ class GFIFrame(ProgramFrame):
         sheet = workbook.sheet_by_name(Excel.SHEET_BALANCE)
         self._data[Excel.BALANCE] = locale.currency(round(float(sheet.cell(133, 9).value), 2), grouping=True)[:-3]
 
-        self._data[Excel.TOTAL_GAIN] = locale.currency(Entry.SALARY_DEFAULT, grouping=True)[:-3]
-        self._data[Excel.PAYOUT] = locale.currency(Entry.SALARY_DEFAULT, grouping=True)[:-3]
-        self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(Entry.SALARY_DEFAULT, grouping=True)[:-3]
+        self._data[Excel.TOTAL_GAIN] = locale.currency(float(Entry.SALARY_DEFAULT), grouping=True)[:-3]
+        self._data[Excel.PAYOUT] = locale.currency(float(Entry.SALARY_DEFAULT), grouping=True)[:-3]
+        self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(float(Entry.SALARY_DEFAULT), grouping=True)[:-3]
 
     def _generate_reports(self) -> None:
         self._button_generate_GFI.configure(state=ctk.DISABLED)
@@ -306,7 +306,7 @@ class GFIFrame(ProgramFrame):
             self._load_excel_data()
             self.__validate_gain_or_loss(workbook)
         except TypeError as err:
-            print(err)
+            print("Error is: ", err)
         self._button_load_GFI.configure(state=ctk.DISABLED)
 
     def __validate_gain_or_loss(self, workbook: xl.Book) -> None:
@@ -384,11 +384,11 @@ class GFIFrame(ProgramFrame):
         self._loss_coverage = float(self._entry_loss_coverage.get())
         toggled_value = self._total_gain - self._payout_to_members - self._loss_coverage
         print(self._total_gain, self._payout_to_members, self._loss_coverage, toggled_value)
-        # entry_delete_insert_readonly(self._entry_gain, str(round(float(toggled_value), 2)))
-        # if self._entry_gain.get() == "0.0":
-        #     entry_delete_insert_readonly(self._entry_gain, Entry.SALARY_DEFAULT)
-        # self._data[Excel.TOTAL_GAIN] = locale.currency(float(self._entry_gain.get()), grouping=True)[:-3]
-        # self._data[Excel.PAYOUT] = locale.currency(float(self._entry_payout_to_members.get()), grouping=True)[:-3]
-        # self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(
-        #     float(self._entry_loss_coverage.get()), grouping=True
-        # )[:-3]
+        entry_delete_insert_readonly(self._entry_gain, str(round(float(toggled_value), 2)))
+        if self._entry_gain.get() == "0.0":
+            entry_delete_insert_readonly(self._entry_gain, Entry.SALARY_DEFAULT)
+        self._data[Excel.TOTAL_GAIN] = locale.currency(float(self._entry_gain.get()), grouping=True)[:-3]
+        self._data[Excel.PAYOUT] = locale.currency(float(self._entry_payout_to_members.get()), grouping=True)[:-3]
+        self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(
+            float(self._entry_loss_coverage.get()), grouping=True
+        )[:-3]
