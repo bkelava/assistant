@@ -384,11 +384,11 @@ class GFIFrame(ProgramFrame):
         self._loss_coverage = float(self._entry_loss_coverage.get())
         toggled_value = self._total_gain - self._payout_to_members - self._loss_coverage
         print(self._total_gain, self._payout_to_members, self._loss_coverage, toggled_value)
-        entry_delete_insert_readonly(self._entry_gain, str(round(float(toggled_value), 2)))
-        if self._entry_gain.get() == "0.0":
-            entry_delete_insert_readonly(self._entry_gain, Entry.SALARY_DEFAULT)
-        self._data[Excel.TOTAL_GAIN] = locale.currency(float(self._entry_gain.get()), grouping=True)[:-3]
-        self._data[Excel.PAYOUT] = locale.currency(float(self._entry_payout_to_members.get()), grouping=True)[:-3]
-        self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(
-            float(self._entry_loss_coverage.get()), grouping=True
-        )[:-3]
+        # entry_delete_insert_readonly(self._entry_gain, str(round(float(toggled_value), 2)))
+        # if self._entry_gain.get() == "0.0":
+        #     entry_delete_insert_readonly(self._entry_gain, Entry.SALARY_DEFAULT)
+        # self._data[Excel.TOTAL_GAIN] = locale.currency(float(self._entry_gain.get()), grouping=True)[:-3]
+        # self._data[Excel.PAYOUT] = locale.currency(float(self._entry_payout_to_members.get()), grouping=True)[:-3]
+        # self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(
+        #     float(self._entry_loss_coverage.get()), grouping=True
+        # )[:-3]
