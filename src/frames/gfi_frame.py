@@ -313,8 +313,10 @@ class GFIFrame(ProgramFrame):
         sheet: xl.sheet.Sheet = workbook.sheet_by_name(Excel.SHEET_RDG)
         loss: int = sheet.cell(67, 9).value
         if int(loss) > 0:
+            print("LOSS")
             self._entry_loss_description.configure(state=ctk.NORMAL)
         else:
+            print("NO LOSS")
             self._button_generate_GFI.configure(state=ctk.NORMAL)
             self._entry_gain.configure(state=ctk.NORMAL)
             self._entry_loss_coverage.configure(state=ctk.NORMAL)
@@ -338,14 +340,15 @@ class GFIFrame(ProgramFrame):
 
     def __gain_logic_callback(self) -> None:
         try:
+            print("bla0")
             self._total_gain = locale.atof(str(self._data[Excel.GAIN]))
             print("bla1")
             self._entry_gain_strvar.trace_remove(WRITE, self._entry_gain_strvar_id)
             print("bla2")
             entry_delete_insert_readonly(self._entry_gain, str(self._total_gain))
             print("bla3")
-        except:
-            print("error")
+        except Exception as e:
+            print(e)
 
     def __validate_numeric(self, *args, **kwargs) -> None:
         entry: ctk.CTkEntry = kwargs[ENTRY]
