@@ -340,13 +340,11 @@ class GFIFrame(ProgramFrame):
 
     def __gain_logic_callback(self) -> None:
         try:
-            print("bla0")
+            print(self._data[Excel.GAIN], type(self._data[Excel.GAIN]))
+            print(str(self._data[Excel.GAIN]))
             self._total_gain = locale.atof(str(self._data[Excel.GAIN]))
-            print("bla1")
             self._entry_gain_strvar.trace_remove(WRITE, self._entry_gain_strvar_id)
-            print("bla2")
             entry_delete_insert_readonly(self._entry_gain, str(self._total_gain))
-            print("bla3")
         except Exception as e:
             print(e)
 
