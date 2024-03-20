@@ -86,7 +86,7 @@ class PDFGenerator:
             pdf.ln()
             pdf.ln()
             pdf.ln()
-            if JDOO in company_check_name.tolower():
+            if JDOO in company_check_name:
                 print("JDOO)")
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_1_JDOO}")
                 pdf.set_font(NOTO_SANS, BOLD, 12)
