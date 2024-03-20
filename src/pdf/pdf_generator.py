@@ -86,7 +86,7 @@ class PDFGenerator:
             pdf.ln()
             pdf.ln()
             pdf.ln()
-            if JDOO in company_check_name:
+            if JDOO in company_check_name.tolower():
                 print("JDOO)")
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_1_JDOO}")
                 pdf.set_font(NOTO_SANS, BOLD, 12)
@@ -121,18 +121,22 @@ class PDFGenerator:
                 pdf.ln()
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_11_JDOO}")
                 pdf.set_font(NOTO_SANS, BOLD, 12)
-                pdf.write(h=0, txt=f"0,00")  # CHANGE IN THE FUTURE
+                pdf.write(h=0, txt=f"{data[Excel.PAYOUT]}")
                 pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_12_JDOO}")
                 pdf.ln()
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_13_JDOO}")
                 pdf.set_font(NOTO_SANS, BOLD, 12)
-                pdf.write(h=0, txt=f"{data[Excel.GAIN_KEPT]}")
+                pdf.write(h=0, txt=f"{data[Excel.TOTAL_GAIN]}")
                 pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_14_JDOO}")
                 pdf.ln()
                 pdf.ln()
-                pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_15_JDOO}")  # CHANGE/CHECK IN THE FUTURE
+                pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_15_JDOO}")
+                pdf.set_font(NOTO_SANS, BOLD, 12)
+                pdf.write(h=0, txt=f"{data[Excel.KEPT_FOR_LOSS_COVERAGE]}")
+                pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
+                pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_14_JDOO}")
             else:
                 print("DOO")
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_1_DOO}")

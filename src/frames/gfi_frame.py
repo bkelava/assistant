@@ -345,14 +345,12 @@ class GFIFrame(ProgramFrame):
         entry.unbind(ARROW_RIGHT)
 
     def __gain_logic_callback(self) -> None:
-        try:
-            print(self._data[Excel.GAIN], type(self._data[Excel.GAIN]))
-            print(str(self._data[Excel.GAIN]))
+        if JDOO.lower() in self._data[Excel.COMPANY_NAME].replace(" ", "").lower():
+            self._total_gain = locale.atof(str(self._data[Excel.GAIN_KEPT]))
+        else:
             self._total_gain = locale.atof(str(self._data[Excel.GAIN]))
-            self._entry_gain_strvar.trace_remove(WRITE, self._entry_gain_strvar_id)
-            entry_delete_insert_readonly(self._entry_gain, str(self._total_gain))
-        except Exception as e:
-            print(e)
+        self._entry_gain_strvar.trace_remove(WRITE, self._entry_gain_strvar_id)
+        entry_delete_insert_readonly(self._entry_gain, str(self._total_gain))
 
     def __validate_numeric(self, *args, **kwargs) -> None:
         entry: ctk.CTkEntry = kwargs[ENTRY]

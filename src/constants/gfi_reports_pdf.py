@@ -161,9 +161,10 @@ REPORT_3_PART_11_JDOO: str = "  2.2. Isplata članu (članovima) društva "
 REPORT_3_PART_12_JDOO: str = " €."
 REPORT_3_PART_13_JDOO: str = "  2.3. Zadržani dobitak u svoti od "
 REPORT_3_PART_14_JDOO: str = " €. "
-REPORT_3_PART_15_JDOO: str = (
-    "Društvo (j.d.o.o.) nema nepokrivenih gubitaka te će se isplata dobitka provesti sukladno likvidnosti društva."
-)
+REPORT_3_PART_15_JDOO: str = "  2.4. Za pokriće gubitka iz prethodne godine u iznosu od "
+# REPORT_3_PART_15_JDOO: str = (
+#     "Društvo (j.d.o.o.) nema nepokrivenih gubitaka te će se isplata dobitka provesti sukladno likvidnosti društva."
+# )
 
 REPORT_3_PART_1_DOO: str = "1. Utvrđuje se ostvareni dobitak za "
 REPORT_3_PART_2_DOO: str = " u svoti od "
