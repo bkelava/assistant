@@ -389,6 +389,8 @@ class GFIFrame(ProgramFrame):
         entry_delete_insert_readonly(self._entry_gain, str(round(float(toggled_value), 2)))
         if self._entry_gain.get() == "0.0":
             entry_delete_insert_readonly(self._entry_gain, Entry.SALARY_DEFAULT)
-        self._data[Excel.TOTAL_GAIN] = locale.currency(self._entry_gain.get(), grouping=True)[:-3]
-        self._data[Excel.PAYOUT] = locale.currency(self._entry_payout_to_members.get(), grouping=True)[:-3]
-        self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(self._entry_loss_coverage.get(), grouping=True)[:-3]
+        self._data[Excel.TOTAL_GAIN] = locale.currency(abs(self._entry_gain.get()), grouping=True)[:-3]
+        self._data[Excel.PAYOUT] = locale.currency(abs(self._entry_payout_to_members.get()), grouping=True)[:-3]
+        self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(abs(self._entry_loss_coverage.get()), grouping=True)[
+            :-3
+        ]
