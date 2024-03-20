@@ -275,6 +275,7 @@ class GFIFrame(ProgramFrame):
 
     def _generate_reports(self) -> None:
         self._button_generate_GFI.configure(state=ctk.DISABLED)
+        self._data[Excel.LOSS_COVERAGE] = self._entry_loss_description.get()
 
         PDFGenerator.generate_GFI_report_1(self._data)
         self.__check_checkbox(self._checkbox_report_1)
