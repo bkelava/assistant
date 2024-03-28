@@ -58,6 +58,7 @@ class PDFGenerator:
 
         company_check_name: str = str(data[Excel.COMPANY_NAME]).replace(" ", "").lower()
         if data[Excel.LOSS_COVERAGE] != "":
+            print("GUBITAK")
             pdf.cell(w=0, h=0, txt=f"{GFI.REPORT_3_PART_7}", align=ALIGN_CENTER)
             pdf.ln()
             pdf.ln()
@@ -79,12 +80,14 @@ class PDFGenerator:
             pdf.set_font(NOTO_SANS, BOLD, 12)
             pdf.write(h=0, txt=f"{data[Excel.LOSS_COVERAGE]}{DOT}")
         else:
+            print("DOBITAK")
             pdf.cell(w=0, h=0, txt=f"{GFI.REPORT_3_PART_6}", align=ALIGN_CENTER)
             pdf.ln()
             pdf.ln()
             pdf.ln()
             pdf.ln()
             if JDOO in company_check_name:
+                print("JDOO)")
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_1_JDOO}")
                 pdf.set_font(NOTO_SANS, BOLD, 12)
                 pdf.write(h=0, txt=f"{data[Excel.REPORT_YEAR]}{DOT}")
@@ -118,19 +121,24 @@ class PDFGenerator:
                 pdf.ln()
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_11_JDOO}")
                 pdf.set_font(NOTO_SANS, BOLD, 12)
-                pdf.write(h=0, txt=f"0,00")  # CHANGE IN THE FUTURE
+                pdf.write(h=0, txt=f"{data[Excel.PAYOUT]}")
                 pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_12_JDOO}")
                 pdf.ln()
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_13_JDOO}")
                 pdf.set_font(NOTO_SANS, BOLD, 12)
-                pdf.write(h=0, txt=f"{data[Excel.GAIN_KEPT]}")
+                pdf.write(h=0, txt=f"{data[Excel.TOTAL_GAIN]}")
                 pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_14_JDOO}")
                 pdf.ln()
                 pdf.ln()
-                pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_15_JDOO}")  # CHANGE/CHECK IN THE FUTURE
+                pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_15_JDOO}")
+                pdf.set_font(NOTO_SANS, BOLD, 12)
+                pdf.write(h=0, txt=f"{data[Excel.KEPT_FOR_LOSS_COVERAGE]}")
+                pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
+                pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_14_JDOO}")
             else:
+                print("DOO")
                 pdf.write(h=0, txt=f"{GFI.REPORT_3_PART_1_DOO}")
                 pdf.set_font(NOTO_SANS, BOLD, 12)
                 pdf.write(h=0, txt=f"{data[Excel.REPORT_YEAR]}{DOT}")
@@ -284,7 +292,7 @@ class PDFGenerator:
         pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
         pdf.write(h=0, txt=f"{GFI.REPORT_2_PART_22} {GFI.REPORT_2_PART_23}")
         pdf.set_font(NOTO_SANS, BOLD, 12)
-        pdf.write(h=0, txt=f"{str(int(float(data[Excel.REPORT_YEAR]))-1)}")
+        pdf.write(h=0, txt=f"{str(int(float(data[Excel.REPORT_YEAR]))-1)}{DOT}")
         pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
         pdf.write(h=0, txt=f"{GFI.REPORT_2_PART_24}")
         pdf.set_font(NOTO_SANS, BOLD, 12)
@@ -408,10 +416,15 @@ class PDFGenerator:
         pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
         pdf.write(h=0, txt=f"{GFI.REPORT_2_PART_76}")
         pdf.set_font(NOTO_SANS, BOLD, 12)
-        if int(float(data[Excel.EXPENSES_DIFF_PERCT].replace(COMMA, DOT))) > 0:
-            pdf.write(h=0, txt=f"+{data[Excel.EXPENSES_DIFF_PERCT]}%")
-        else:
-            pdf.write(h=0, txt=f"{data[Excel.EXPENSES_DIFF_PERCT]}%")
+        try:
+            if int(float(data[Excel.EXPENSES_DIFF_PERCT].replace(COMMA, DOT))) > 0:
+                pdf.write(h=0, txt=f"+{data[Excel.EXPENSES_DIFF_PERCT]}%")
+            else:
+                pdf.write(h=0, txt=f"{data[Excel.EXPENSES_DIFF_PERCT]}%")
+        except KeyError as err:
+            print(err)
+            pdf.write(h=0, txt=f"0%")
+            pdf.write(h=0, txt=f"0%")
         pdf.set_font(NOTO_SANS, EMPTY_STRING, 12)
         pdf.write(h=0, txt=f"{GFI.REPORT_2_PART_77}")
         pdf.set_font(NOTO_SANS, BOLD, 12)
