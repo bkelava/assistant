@@ -257,19 +257,22 @@ class GFIFrame(ProgramFrame):
         self._data[Excel.EXPENSES_DIFF] = locale.currency(
             round(float(sheet.cell(60, 9).value) - float(sheet.cell(60, 8).value), 2), grouping=True
         )[:-3]
-        self._data[Excel.EXPENSES_DIFF_PERCT] = locale.currency(
-            round(
-                (
+        try:
+            self._data[Excel.EXPENSES_DIFF_PERCT] = locale.currency(
+                round(
                     (
-                        (float(sheet.cell(60, 9).value) - float(sheet.cell(60, 8).value))
-                        / (float(sheet.cell(60, 9).value))
-                    )
-                    * 100
+                        (
+                            (float(sheet.cell(60, 9).value) - float(sheet.cell(60, 8).value))
+                            / (float(sheet.cell(60, 9).value))
+                        )
+                        * 100
+                    ),
+                    2,
                 ),
-                2,
-            ),
-            grouping=True,
-        )[:-3]
+                grouping=True,
+            )[:-3]
+        except ZeroDivisionError as err:
+            print(err)
 
         sheet = workbook.sheet_by_name(Excel.SHEET_BALANCE)
         self._data[Excel.BALANCE] = locale.currency(round(float(sheet.cell(133, 9).value), 2), grouping=True)[:-3]
