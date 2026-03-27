@@ -257,20 +257,33 @@ class GFIFrame(ProgramFrame):
         self._data[Excel.EXPENSES_DIFF] = locale.currency(
             round(float(sheet.cell(60, 9).value) - float(sheet.cell(60, 8).value), 2), grouping=True
         )[:-3]
-        self._data[Excel.EXPENSES_DIFF_PERCT] = locale.currency(
-            round(
-                (float(sheet.cell(60, 9).value) - float(sheet.cell(60, 8).value))
-                / (float(sheet.cell(60, 9).value) * 100),
-                2,
-            ),
-            grouping=True,
-        )[:-3]
+        try:
+            self._data[Excel.EXPENSES_DIFF_PERCT] = locale.currency(
+                round(
+                    (
+                        (
+                            (float(sheet.cell(60, 9).value) - float(sheet.cell(60, 8).value))
+                            / (float(sheet.cell(60, 9).value))
+                        )
+                        * 100
+                    ),
+                    2,
+                ),
+                grouping=True,
+            )[:-3]
+        except ZeroDivisionError as err:
+            print(err)
 
         sheet = workbook.sheet_by_name(Excel.SHEET_BALANCE)
         self._data[Excel.BALANCE] = locale.currency(round(float(sheet.cell(133, 9).value), 2), grouping=True)[:-3]
 
+        self._data[Excel.TOTAL_GAIN] = locale.currency(float(Entry.SALARY_DEFAULT), grouping=True)[:-3]
+        self._data[Excel.PAYOUT] = locale.currency(float(Entry.SALARY_DEFAULT), grouping=True)[:-3]
+        self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(float(Entry.SALARY_DEFAULT), grouping=True)[:-3]
+
     def _generate_reports(self) -> None:
         self._button_generate_GFI.configure(state=ctk.DISABLED)
+        self._data[Excel.LOSS_COVERAGE] = self._entry_loss_description.get()
 
         PDFGenerator.generate_GFI_report_1(self._data)
         self.__check_checkbox(self._checkbox_report_1)
@@ -302,15 +315,17 @@ class GFIFrame(ProgramFrame):
             self._load_excel_data()
             self.__validate_gain_or_loss(workbook)
         except TypeError as err:
-            print(err)
+            print("Error is: ", err)
         self._button_load_GFI.configure(state=ctk.DISABLED)
 
     def __validate_gain_or_loss(self, workbook: xl.Book) -> None:
         sheet: xl.sheet.Sheet = workbook.sheet_by_name(Excel.SHEET_RDG)
         loss: int = sheet.cell(67, 9).value
         if int(loss) > 0:
+            print("LOSS")
             self._entry_loss_description.configure(state=ctk.NORMAL)
         else:
+            print("NO LOSS")
             self._button_generate_GFI.configure(state=ctk.NORMAL)
             self._entry_gain.configure(state=ctk.NORMAL)
             self._entry_loss_coverage.configure(state=ctk.NORMAL)
@@ -333,9 +348,12 @@ class GFIFrame(ProgramFrame):
         entry.unbind(ARROW_RIGHT)
 
     def __gain_logic_callback(self) -> None:
-        self._total_gain = round(float(str(self._data[Excel.GAIN].replace(COMMA, DOT))), 2)
+        if JDOO.lower() in self._data[Excel.COMPANY_NAME].replace(" ", "").lower():
+            self._total_gain = locale.atof(str(self._data[Excel.GAIN_KEPT]))
+        else:
+            self._total_gain = locale.atof(str(self._data[Excel.GAIN]))
         self._entry_gain_strvar.trace_remove(WRITE, self._entry_gain_strvar_id)
-        entry_delete_insert_readonly(self._entry_gain, str(round(float(self._total_gain), 2)))
+        entry_delete_insert_readonly(self._entry_gain, str(self._total_gain))
 
     def __validate_numeric(self, *args, **kwargs) -> None:
         entry: ctk.CTkEntry = kwargs[ENTRY]
@@ -374,7 +392,10 @@ class GFIFrame(ProgramFrame):
         toggled_value = self._total_gain - self._payout_to_members - self._loss_coverage
         print(self._total_gain, self._payout_to_members, self._loss_coverage, toggled_value)
         entry_delete_insert_readonly(self._entry_gain, str(round(float(toggled_value), 2)))
-
-        self._data[Excel.TOTAL_GAIN] = self._entry_gain.get()
-        self._data[Excel.PAYOUT] = self._entry_payout_to_members.get()
-        self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = self._entry_loss_coverage.get()
+        if self._entry_gain.get() == "0.0":
+            entry_delete_insert_readonly(self._entry_gain, Entry.SALARY_DEFAULT)
+        self._data[Excel.TOTAL_GAIN] = locale.currency(float(self._entry_gain.get()), grouping=True)[:-3]
+        self._data[Excel.PAYOUT] = locale.currency(float(self._entry_payout_to_members.get()), grouping=True)[:-3]
+        self._data[Excel.KEPT_FOR_LOSS_COVERAGE] = locale.currency(
+            float(self._entry_loss_coverage.get()), grouping=True
+        )[:-3]
