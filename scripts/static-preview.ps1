@@ -96,6 +96,86 @@ function Write-HttpResponse {
   }
 }
 
+function Find-HeaderEnd {
+  param([byte[]]$Bytes)
+
+  for ($index = 0; $index -le $Bytes.Length - 4; $index++) {
+    if ($Bytes[$index] -eq 13 -and $Bytes[$index + 1] -eq 10 -and $Bytes[$index + 2] -eq 13 -and $Bytes[$index + 3] -eq 10) {
+      return $index
+    }
+  }
+
+  return -1
+}
+
+function Read-HttpRequest {
+  param([System.Net.Sockets.NetworkStream]$Stream)
+
+  $buffer = [byte[]]::new(8192)
+  $bytes = [System.Collections.Generic.List[byte]]::new()
+  $headerEnd = -1
+
+  while ($headerEnd -lt 0) {
+    $read = $Stream.Read($buffer, 0, $buffer.Length)
+    if ($read -le 0) {
+      return $null
+    }
+
+    for ($index = 0; $index -lt $read; $index++) {
+      $bytes.Add($buffer[$index])
+    }
+    $headerEnd = Find-HeaderEnd $bytes.ToArray()
+  }
+
+  $allBytes = $bytes.ToArray()
+  $headerText = [System.Text.Encoding]::ASCII.GetString($allBytes, 0, $headerEnd)
+  $lines = $headerText -split "`r`n"
+  $requestParts = $lines[0].Split(" ")
+  $headers = @{}
+
+  for ($index = 1; $index -lt $lines.Length; $index++) {
+    if ($lines[$index] -match "^([^:]+):\s*(.*)$") {
+      $headers[$matches[1].ToLowerInvariant()] = $matches[2]
+    }
+  }
+
+  $contentLength = 0
+  if ($headers.ContainsKey("content-length")) {
+    $contentLength = [int]$headers["content-length"]
+  }
+
+  $bodyStart = $headerEnd + 4
+  $bodyBytes = [System.Collections.Generic.List[byte]]::new()
+  for ($index = $bodyStart; $index -lt $allBytes.Length; $index++) {
+    $bodyBytes.Add($allBytes[$index])
+  }
+
+  while ($bodyBytes.Count -lt $contentLength) {
+    $read = $Stream.Read($buffer, 0, [Math]::Min($buffer.Length, $contentLength - $bodyBytes.Count))
+    if ($read -le 0) {
+      break
+    }
+
+    for ($index = 0; $index -lt $read; $index++) {
+      $bodyBytes.Add($buffer[$index])
+    }
+  }
+
+  $bodyArray = $bodyBytes.ToArray()
+  if ($bodyArray.Length -gt $contentLength) {
+    $trimmed = [byte[]]::new($contentLength)
+    [Array]::Copy($bodyArray, 0, $trimmed, 0, $contentLength)
+    $bodyArray = $trimmed
+  }
+
+  return [PSCustomObject]@{
+    Method = $requestParts[0]
+    Target = $requestParts[1]
+    Headers = $headers
+    BodyText = [System.Text.Encoding]::UTF8.GetString($bodyArray)
+  }
+}
+
 $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse("127.0.0.1"), $Port)
 $listener.Start()
 
@@ -115,33 +195,43 @@ try {
     $client = $listener.AcceptTcpClient()
     try {
       $stream = $client.GetStream()
-      $reader = [System.IO.StreamReader]::new($stream, [System.Text.Encoding]::ASCII, $false, 1024, $true)
-      $requestLine = $reader.ReadLine()
-
-      if ([string]::IsNullOrWhiteSpace($requestLine)) {
+      $request = Read-HttpRequest $stream
+      if ($null -eq $request) {
         continue
       }
 
-      while ($true) {
-        $line = $reader.ReadLine()
-        if ($null -eq $line -or $line.Length -eq 0) {
-          break
+      $method = $request.Method
+      $target = $request.Target
+
+      if (-not [string]::IsNullOrWhiteSpace($Data) -and (($target -split "\?", 2)[0] -eq "/app/static-data.json")) {
+        if ($method -eq "PUT" -or $method -eq "POST") {
+          try {
+            $null = $request.BodyText | ConvertFrom-Json
+            $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+            [System.IO.File]::WriteAllText($Data, $request.BodyText, $utf8NoBom)
+            $body = [System.Text.Encoding]::UTF8.GetBytes('{"ok":true}')
+            Write-HttpResponse $stream 200 "OK" $body "application/json; charset=utf-8"
+          } catch {
+            $body = [System.Text.Encoding]::UTF8.GetBytes('{"error":"Invalid JSON."}')
+            Write-HttpResponse $stream 400 "Bad Request" $body "application/json; charset=utf-8"
+          }
+          continue
         }
-      }
 
-      $parts = $requestLine.Split(" ")
-      $method = $parts[0]
-      $target = $parts[1]
+        if ($method -eq "GET" -or $method -eq "HEAD") {
+          $body = if ($method -eq "HEAD") { [byte[]]::new(0) } else { [System.IO.File]::ReadAllBytes($Data) }
+          Write-HttpResponse $stream 200 "OK" $body "application/json; charset=utf-8"
+          continue
+        }
 
-      if ($method -ne "GET" -and $method -ne "HEAD") {
         $body = [System.Text.Encoding]::UTF8.GetBytes("Method not allowed")
         Write-HttpResponse $stream 405 "Method Not Allowed" $body "text/plain; charset=utf-8"
         continue
       }
 
-      if (-not [string]::IsNullOrWhiteSpace($Data) -and (($target -split "\?", 2)[0] -eq "/app/static-data.json")) {
-        $body = if ($method -eq "HEAD") { [byte[]]::new(0) } else { [System.IO.File]::ReadAllBytes($Data) }
-        Write-HttpResponse $stream 200 "OK" $body "application/json; charset=utf-8"
+      if ($method -ne "GET" -and $method -ne "HEAD") {
+        $body = [System.Text.Encoding]::UTF8.GetBytes("Method not allowed")
+        Write-HttpResponse $stream 405 "Method Not Allowed" $body "text/plain; charset=utf-8"
         continue
       }
 

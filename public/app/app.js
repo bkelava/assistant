@@ -193,7 +193,7 @@ function bindActions() {
   $("#importButton").addEventListener("click", () => $("#importFile").click());
   $("#importFile").addEventListener("change", importJsonData);
   $("#exportButton").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify({ employers: state.employers, accounting: state.accounting, employees: state.employees }, null, 2)], {
+    const blob = new Blob([JSON.stringify(snapshotData(), null, 2)], {
       type: "application/json"
     });
     const url = URL.createObjectURL(blob);
@@ -213,8 +213,9 @@ async function importJsonData(event) {
   try {
     applyImportedData(JSON.parse(await file.text()));
     writeSessionData();
+    const savedToFile = await saveStaticDataFile();
     render();
-    toast("JSON podaci su uvezeni u ovu sesiju.");
+    toast(savedToFile ? "JSON podaci su uvezeni i spremljeni u datoteku." : "JSON podaci su uvezeni u ovu sesiju.");
   } catch {
     toast("Uvoz nije uspio. Provjerite JSON datoteku.");
   } finally {
@@ -468,10 +469,10 @@ async function saveEmployer(event) {
   const form = event.currentTarget;
   const employer = formToObject(form);
   employer.id = employer.id || createId("employer", employer.company_name);
-  await persist("employers", employer);
+  const savedToFile = await persist("employers", employer);
   form.reset();
   render();
-  toast("Poslodavac je spremljen.");
+  toast(savedToFile ? "Poslodavac je spremljen u JSON datoteku." : "Poslodavac je spremljen u ovu sesiju.");
 }
 
 async function saveAccounting(event) {
@@ -479,10 +480,10 @@ async function saveAccounting(event) {
   const form = event.currentTarget;
   const office = formToObject(form);
   office.id = office.id || createId("accounting", office.company_name);
-  await persist("accounting", office);
+  const savedToFile = await persist("accounting", office);
   form.reset();
   render();
-  toast("Knjigovodstveni ured je spremljen.");
+  toast(savedToFile ? "Knjigovodstveni ured je spremljen u JSON datoteku." : "Knjigovodstveni ured je spremljen u ovu sesiju.");
 }
 
 async function saveEmployee(event) {
@@ -491,10 +492,10 @@ async function saveEmployee(event) {
   const employee = formToObject(form);
   employee.employer_names = Array.from(form.elements.employer_names.selectedOptions).map((option) => option.value);
   employee.id = employee.id || createId("employee", `${employee.name}-${employee.lastname}-${employee.personal_id}`);
-  await persist("employees", employee);
+  const savedToFile = await persist("employees", employee);
   form.reset();
   render();
-  toast("Radnik je spremljen.");
+  toast(savedToFile ? "Radnik je spremljen u JSON datoteku." : "Radnik je spremljen u ovu sesiju.");
 }
 
 async function persist(resource, record) {
@@ -505,6 +506,7 @@ async function persist(resource, record) {
   if (existingIndex >= 0) collection.splice(existingIndex, 1, record);
   else collection.push(record);
   writeSessionData();
+  return saveStaticDataFile();
 }
 
 async function removeRecord(resource, id) {
@@ -512,8 +514,9 @@ async function removeRecord(resource, id) {
   if (!state[resource]) return;
   state[resource] = state[resource].filter((item) => item.id !== id);
   writeSessionData();
+  const savedToFile = await saveStaticDataFile();
   render();
-  toast("Zapis je izbrisan.");
+  toast(savedToFile ? "Zapis je izbrisan iz JSON datoteke." : "Zapis je izbrisan iz ove sesije.");
 }
 
 function render() {
@@ -1404,11 +1407,34 @@ function applyImportedData(parsed) {
 }
 
 function writeSessionData() {
-  sessionStorage.setItem(sessionDataKey, JSON.stringify({
+  sessionStorage.setItem(sessionDataKey, JSON.stringify(snapshotData()));
+}
+
+function snapshotData() {
+  return {
     employers: state.employers,
     accounting: state.accounting,
     employees: state.employees
-  }));
+  };
+}
+
+async function saveStaticDataFile() {
+  const url = getStaticDataUrl();
+  if (!url) return false;
+
+  try {
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body: JSON.stringify(snapshotData(), null, 2)
+    });
+    if (response.ok) return true;
+    console.warn(`Static JSON save returned ${response.status}.`);
+  } catch (error) {
+    console.warn("Static JSON save failed.", error);
+  }
+
+  return false;
 }
 
 function setDefaultDates() {

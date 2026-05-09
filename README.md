@@ -55,6 +55,8 @@ data\static-data.json
 
 Edit that file when you want to change the always-loaded local data. You can also drag a different `.json` file onto `start-windows.cmd` for a one-off run. The command window must stay open while you use the app. Close it, or press `Ctrl+C`, to stop the local server.
 
+When the app is started with `start-windows.cmd`, changes made through `Spremi`, `Izbriši`, or `Uvoz JSON` are saved back to the same JSON file immediately. This write-back behavior requires the local launcher; a plain static server such as `python3 -m http.server` can load JSON, but cannot save edits back to disk.
+
 Static preview with a JSON file imported on first load:
 
 ```bash

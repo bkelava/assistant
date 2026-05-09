@@ -1,5 +1,5 @@
 import { createReadStream, existsSync } from "node:fs";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,11 +29,35 @@ const server = createServer(async (request, response) => {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
 
   if (dataPath && url.pathname === "/app/static-data.json") {
-    response.writeHead(200, {
-      "cache-control": "no-store",
-      "content-type": "application/json; charset=utf-8"
-    });
-    createReadStream(dataPath).pipe(response);
+    if (request.method === "PUT" || request.method === "POST") {
+      const body = await readRequestBody(request);
+      try {
+        JSON.parse(body);
+        await writeFile(dataPath, body, "utf8");
+        response.writeHead(200, {
+          "cache-control": "no-store",
+          "content-type": "application/json; charset=utf-8"
+        });
+        response.end(JSON.stringify({ ok: true }));
+      } catch (error) {
+        response.writeHead(400, { "content-type": "application/json; charset=utf-8" });
+        response.end(JSON.stringify({ error: error.message || "Invalid JSON." }));
+      }
+      return;
+    }
+
+    if (request.method === "GET" || request.method === "HEAD") {
+      response.writeHead(200, {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8"
+      });
+      if (request.method === "HEAD") response.end();
+      else createReadStream(dataPath).pipe(response);
+      return;
+    }
+
+    response.writeHead(405, { "content-type": "text/plain; charset=utf-8" });
+    response.end("Method not allowed");
     return;
   }
 
@@ -92,6 +116,12 @@ function parseArgs(args) {
     else if (arg.startsWith("--root=")) parsed.root = arg.slice("--root=".length);
   }
   return parsed;
+}
+
+async function readRequestBody(request) {
+  const chunks = [];
+  for await (const chunk of request) chunks.push(chunk);
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 function contentType(filePath) {
