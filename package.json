@@ -1,0 +1,17 @@
+{
+  "name": "contract-office-cloudflare",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Pages rewrite of the original CustomTkinter contract office application.",
+  "scripts": {
+    "dev": "wrangler pages dev public --d1 CONTRACT_DB=contract-office-db",
+    "deploy": "wrangler pages deploy public",
+    "db:create": "wrangler d1 create contract-office-db",
+    "db:migrate": "wrangler d1 migrations apply contract-office-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply contract-office-db --remote"
+  },
+  "devDependencies": {
+    "wrangler": "^4.14.0"
+  }
+}
