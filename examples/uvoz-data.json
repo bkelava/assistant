@@ -1,0 +1,37 @@
+{
+  "employers": [
+    {
+      "id": "emp_amz_gradnja",
+      "company_name": "AMZ Gradnja d.o.o.",
+      "street": "Kolodvrska 37",
+      "city": "Stari Perkovci - Vrpolje",
+      "postal": "35214",
+      "vat": "72018608521",
+      "director": "Josip Josipovic"
+    }
+  ],
+  "accounting": [
+    {
+      "id": "accounting_kelava",
+      "company_name": "Knjigovodstveni obrt Kelava",
+      "street": "Primjer 1",
+      "city": "Zagreb",
+      "postal": "10000",
+      "vat": "12345678901",
+      "director": "Milan Kelava",
+      "email": "info@example.com"
+    }
+  ],
+  "employees": [
+    {
+      "id": "worker_amel_dedic",
+      "name": "Amel",
+      "lastname": "Dedic",
+      "street": "Alije Hadzica 3",
+      "city": "Kalesija - BiH",
+      "postal": "75265",
+      "personal_id": "B1265547",
+      "employer_names": ["AMZ Gradnja d.o.o."]
+    }
+  ]
+}

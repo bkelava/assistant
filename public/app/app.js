@@ -12,6 +12,7 @@ const state = {
 };
 
 const sessionDataKey = "contract-office-session-data-v2";
+const defaultStaticDataUrl = "static-data.json";
 
 const numbers1To30 = Array.from({ length: 31 }, (_, index) => String(index + 1));
 const numbers1To12 = Array.from({ length: 12 }, (_, index) => String(index + 1));
@@ -210,41 +211,7 @@ async function importJsonData(event) {
   if (!file) return;
 
   try {
-    const parsed = JSON.parse(await file.text());
-    const employers = Array.isArray(parsed.employers) ? parsed.employers : [];
-    const accounting = Array.isArray(parsed.accounting) ? parsed.accounting : [];
-    const employees = Array.isArray(parsed.employees) ? parsed.employees : [];
-
-    state.employers = employers.map((employer, index) => ({
-      id: employer.id || createId("employer", employer.company_name || `poslodavac-${index + 1}`),
-      company_name: employer.company_name || "",
-      street: employer.street || "",
-      city: employer.city || "",
-      postal: employer.postal || "",
-      vat: employer.vat || "",
-      director: employer.director || ""
-    }));
-    state.accounting = accounting.map((office, index) => ({
-      id: office.id || createId("accounting", office.company_name || `knjigovodstvo-${index + 1}`),
-      company_name: office.company_name || "",
-      street: office.street || "",
-      city: office.city || "",
-      postal: office.postal || "",
-      vat: office.vat || "",
-      director: office.director || "",
-      email: office.email || ""
-    }));
-    state.employees = employees.map((employee, index) => ({
-      id: employee.id || createId("employee", `${employee.name || "radnik"}-${employee.lastname || index + 1}`),
-      name: employee.name || "",
-      lastname: employee.lastname || "",
-      street: employee.street || "",
-      city: employee.city || "",
-      postal: employee.postal || "",
-      personal_id: employee.personal_id || "",
-      employer_names: Array.isArray(employee.employer_names) ? employee.employer_names : []
-    }));
-
+    applyImportedData(JSON.parse(await file.text()));
     writeSessionData();
     render();
     toast("JSON podaci su uvezeni u ovu sesiju.");
@@ -482,7 +449,13 @@ function updatePairedCheckboxes(pair) {
   });
 }
 
-async function loadData() {
+async function loadData(forceStaticImport = false) {
+  const staticDataUrl = getStaticDataUrl();
+  if (staticDataUrl && (forceStaticImport || hasExplicitStaticDataUrl() || !hasSessionData())) {
+    const loaded = await loadStaticData(staticDataUrl);
+    if (loaded) return;
+  }
+
   const cached = readSessionData();
   state.employers = cached.employers;
   state.accounting = cached.accounting;
@@ -1352,6 +1325,82 @@ function readSessionData() {
   } catch {
     return structuredClone(emptySessionData);
   }
+}
+
+function hasSessionData() {
+  const raw = sessionStorage.getItem(sessionDataKey);
+  if (!raw) return false;
+  try {
+    const data = JSON.parse(raw);
+    return ["employers", "accounting", "employees"].some((key) => Array.isArray(data[key]) && data[key].length);
+  } catch {
+    return false;
+  }
+}
+
+function getStaticDataUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("uvoz") || params.get("data") || defaultStaticDataUrl;
+}
+
+function hasExplicitStaticDataUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.has("uvoz") || params.has("data");
+}
+
+async function loadStaticData(url) {
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) {
+      if (url === defaultStaticDataUrl && response.status === 404) return false;
+      throw new Error(`Static JSON returned ${response.status}.`);
+    }
+    applyImportedData(await response.json());
+    writeSessionData();
+    return true;
+  } catch (error) {
+    if (url !== defaultStaticDataUrl) {
+      toast("Statički JSON uvoz nije uspio. Provjerite putanju ili datoteku.");
+      console.error(error);
+    }
+    return false;
+  }
+}
+
+function applyImportedData(parsed) {
+  const employers = Array.isArray(parsed.employers) ? parsed.employers : [];
+  const accounting = Array.isArray(parsed.accounting) ? parsed.accounting : [];
+  const employees = Array.isArray(parsed.employees) ? parsed.employees : [];
+
+  state.employers = employers.map((employer, index) => ({
+    id: employer.id || createId("employer", employer.company_name || `poslodavac-${index + 1}`),
+    company_name: employer.company_name || "",
+    street: employer.street || "",
+    city: employer.city || "",
+    postal: employer.postal || "",
+    vat: employer.vat || "",
+    director: employer.director || ""
+  }));
+  state.accounting = accounting.map((office, index) => ({
+    id: office.id || createId("accounting", office.company_name || `knjigovodstvo-${index + 1}`),
+    company_name: office.company_name || "",
+    street: office.street || "",
+    city: office.city || "",
+    postal: office.postal || "",
+    vat: office.vat || "",
+    director: office.director || "",
+    email: office.email || ""
+  }));
+  state.employees = employees.map((employee, index) => ({
+    id: employee.id || createId("employee", `${employee.name || "radnik"}-${employee.lastname || index + 1}`),
+    name: employee.name || "",
+    lastname: employee.lastname || "",
+    street: employee.street || "",
+    city: employee.city || "",
+    postal: employee.postal || "",
+    personal_id: employee.personal_id || "",
+    employer_names: Array.isArray(employee.employer_names) ? employee.employer_names : []
+  }));
 }
 
 function writeSessionData() {

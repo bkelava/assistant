@@ -5,6 +5,9 @@
   "type": "module",
   "description": "Cloudflare Pages site for Kokelava with a document-generation application under /app.",
   "scripts": {
+    "build": "node scripts/build-static.mjs",
+    "start": "node scripts/static-preview.mjs",
+    "preview": "node scripts/static-preview.mjs --root dist",
     "dev": "wrangler pages dev public --d1 CONTRACT_DB=contract-office-db",
     "deploy": "wrangler pages deploy public",
     "db:create": "wrangler d1 create contract-office-db",

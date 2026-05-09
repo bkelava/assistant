@@ -1,0 +1,72 @@
+{
+  "employers": [
+    {
+      "id": "emp_amz_gradnja",
+      "company_name": "AMZ Gradnja d.o.o.",
+      "street": "Kolodvrska 37",
+      "city": "Stari Perkovci - Vrpolje",
+      "postal": "35214",
+      "vat": "72018608521",
+      "director": "Josip Josipović"
+    },
+    {
+      "id": "emp_ad_solutions",
+      "company_name": "A. D. Solutions j.d.o.o.",
+      "street": "Topola 18",
+      "city": "Bošnjaci",
+      "postal": "32275",
+      "vat": "93588155132",
+      "director": "Ilija Dretvić"
+    }
+  ],
+  "accounting": [
+    {
+      "id": "accounting_sporedna_djelatnost_milan_kelava",
+      "company_name": "SPOREDNA DJELATNOST MILAN KELAVA",
+      "street": "HANIBALA LUCIĆA 12",
+      "postal": "32270",
+      "city": "ŽUPANJA",
+      "vat": "07655704584",
+      "director": "MILAN KELAVA",
+      "email": "knjigovodstvo.kelava.zupanja@gmail.com"
+    }
+  ],
+  "employees": [
+    {
+      "id": "worker_amel_dedic",
+      "name": "Amel",
+      "lastname": "Dedić",
+      "street": "Alije Hadžića 3",
+      "city": "Kalesija - BiH",
+      "postal": "75265",
+      "personal_id": "B1265547",
+      "employer_names": [
+        "AMZ Gradnja d.o.o."
+      ]
+    },
+    {
+      "id": "worker_mirza_bjelic",
+      "name": "Mirza",
+      "lastname": "Bjelić",
+      "street": "Barice BB",
+      "city": "Živinice - BiH",
+      "postal": "75270",
+      "personal_id": "B3333475",
+      "employer_names": [
+        "AMZ Gradnja d.o.o."
+      ]
+    },
+    {
+      "id": "worker_mirsad_penjic",
+      "name": "Mirsad",
+      "lastname": "Penjić",
+      "street": "",
+      "city": "Kakanj",
+      "postal": "72240",
+      "personal_id": "B2260813",
+      "employer_names": [
+        "A. D. Solutions j.d.o.o."
+      ]
+    }
+  ]
+}
