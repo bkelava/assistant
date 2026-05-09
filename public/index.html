@@ -3,406 +3,235 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Knjigovodstveni asistent</title>
-    <link rel="stylesheet" href="/styles.css">
+    <title>Knjigovodstveni obrt Kelava</title>
+    <meta name="description" content="Računovodstvene i knjigovodstvene usluge Knjigovodstvenog obrta Kelava u Županji.">
+    <meta name="keywords" content="računovodstvo, knjigovodstvo, Kelava, Županja, knjigovodstveni obrt, porezno savjetovanje">
+    <link rel="icon" href="/assets/img/title_icon.png">
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <div class="app-shell">
-      <aside class="sidebar" aria-label="Glavni izbornik">
-        <div class="brand">
-          <span class="brand-mark"><img src="/logo.png" alt=""></span>
-          <div>
-            <strong>Knjigovodstveni asistent</strong>
-            <small id="storageLabel">Web aplikacija</small>
+    <header class="site-header" id="top">
+      <div class="container header-inner">
+        <p>Sporedna djelatnost Milan Kelava</p>
+        <a href="mailto:kokelava@gmail.com">kokelava@gmail.com</a>
+        <a href="tel:+38598718486">+385 98 718 486</a>
+        <a class="app-link" href="/app/">Aplikacija za dokumente</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <h1>Računovodstvene i knjigovodstvene usluge</h1>
+            <p>Stabilna administrativna i računovodstvena podrška za poduzetnike, obrte, udruge i samostalne djelatnosti.</p>
+            <div class="hero-actions">
+              <a class="primary-link" href="#kontakt">Kontaktirajte nas</a>
+              <a class="secondary-link" href="/app/">Dokumenti</a>
+            </div>
+          </div>
+          <div class="hero-image">
+            <img src="assets/img/hero-img.png" alt="Ilustracija računovodstvenih i poslovnih dokumenata">
           </div>
         </div>
-        <nav class="nav-list">
-          <button class="nav-item active" data-view="dashboard">Pregled</button>
-          <button class="nav-item" data-view="employers">Poslodavci</button>
-          <button class="nav-item" data-view="employees">Radnici</button>
-          <button class="nav-item" data-view="documents">Dokumenti</button>
-          <button class="nav-item" data-view="gfi">GFI</button>
-        </nav>
-      </aside>
+      </section>
 
-      <main class="workspace">
-        <header class="topbar">
-          <div>
-            <h1 id="viewTitle">Pregled</h1>
-            <p id="viewSubtitle">Uredi podatke i generiraj dokumente u pregledniku.</p>
-          </div>
-          <div class="topbar-actions">
-            <button class="ghost-button" id="refreshButton" type="button">Osvježi</button>
-            <button class="primary-button" id="exportButton" type="button">Izvoz podataka</button>
-          </div>
-        </header>
+      <section class="section" id="o-nama">
+        <div class="container narrow">
+          <h2>O nama</h2>
+          <p><strong>Knjigovodstveni obrt Kelava</strong> osnovan je 2006. godine te pruža cjelovite usluge knjigovodstva, računovodstva i administrativne podrške poduzetnicima, obrtima, društvima s ograničenom odgovornosti, neprofitnim organizacijama (udrugama) te samostalnim djelatnostima.</p>
+          <p>Posjedujemo dugogodišnje iskustvo u knjigovodstvenim poslovima malih i srednjih poslovnih subjekata. Knjigovodstvene usluge obavljamo u programu <strong>Synesis</strong>, uz primjenu dodatnih suvremenih alata i tehnologija koji osiguravaju visoku razinu točnosti, pouzdanosti i kvalitete usluge.</p>
+        </div>
+      </section>
 
-        <section class="view active" id="dashboardView">
-          <div class="stats-grid">
-            <article class="stat">
-              <span>Poslodavci</span>
-              <strong id="employerCount">0</strong>
+      <section class="section split-section">
+        <div class="container split-grid">
+          <div class="split-copy">
+            <h2>Planirajte svoju budućnost uz pouzdanog partnera!</h2>
+            <div class="callout">
+              <h3>Iza svakog uspješnog poslovanja stoji kvalitetno knjigovodstvo!</h3>
+              <p><strong>Knjigovodstveni obrt Kelava</strong> pruža stručnu podršku pri osnivanju i poslovanju trgovačkih društava (d.o.o., j.d.o.o.), obrta, udruga i drugih neprofitnih organizacija, obiteljskih poljoprivrednih gospodarstava te ostalih samostalnih djelatnosti, kao i usluge vođenja jednostavnog i dvojnog knjigovodstva.</p>
+              <p>Nudimo cjelovitu pomoć pri osnivanju tvrtke za domaće i strane državljane, uključujući pripremu potrebne pravne dokumentacije za javnog bilježnika, provjeru dostupnosti naziva tvrtke, pripremu i uplatu temeljnog kapitala, odabir poslovne banke te otvaranje računa. Za strane državljane dodatno osiguravamo rješenja za registraciju sjedišta i poslovne adrese tvrtke.</p>
+            </div>
+          </div>
+          <div class="split-image" aria-label="Poslovna ilustracija"></div>
+        </div>
+      </section>
+
+      <section class="section services" id="usluge">
+        <div class="container">
+          <h2>NAŠE USLUGE</h2>
+          <div class="service-grid">
+            <article class="service-card">
+              <div class="service-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V9m4 12V9m6 12V9m4 12V9M2 9l10-6 10 6H2Zm3 0h14"/></svg>
+              </div>
+              <h3>KNJIGOVODSTVO ZA PODUZEĆA</h3>
+              <p><strong>Financijsko knjigovodstvo</strong> - temeljnice, izvodi, bilance, račun dobiti i gubitka, statistički izvještaji</p>
+              <p><strong>Inventar</strong> - obračun amortizacije, knjiženje inventure, popis dugotrajne imovine, inventura dugotrajne imovine i sitan inventar</p>
+              <p><strong>PDV</strong> - knjiga ulaznih i izlaznih računa, tuzemni PPO, i sve vrste PDV obrazaca</p>
+              <p><strong>Robno knjigovodstvo</strong> - primke, otpremnice, narudžbe, povrat robe, zalihe, inventure, skladišta</p>
+              <p><strong>Plaća</strong> - obračunske liste, obračun bolovanja, obračun naknada, knjiženje plaća, djelatnici, doprinosi, JOPPD obrasci, izvješća za mirovinsko</p>
+              <p><strong>Predaja izvještaja kod nadležnih institucija</strong> - e-porezna, e-fina, e-mirovinsko, e-zdravstveno</p>
+              <p><strong>E-račun</strong> - e-fina servis</p>
+              <p><strong>Izrada završnih računa, bilanca i poreznih prijava</strong> - godišnja bilanca, godišnji račun dobiti i gubitka (RDIG), godišnji statistički izvještaj (GFI-pod)</p>
+              <p><strong>Administrativne i ostale usluge</strong> - sve ostale usluge u dogovoru sa klijentom</p>
             </article>
-            <article class="stat">
-              <span>Radnici</span>
-              <strong id="employeeCount">0</strong>
+
+            <article class="service-card">
+              <div class="service-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 21V8l8-4v17M12 10h8v11M7 11h2m-2 4h2m6-1h2m-2 4h2"/></svg>
+              </div>
+              <h3>KNJIGOVODSTVO ZA OBRTNIKE</h3>
+              <p><strong>Knjiga primitaka i izdataka</strong></p>
+              <p><strong>Knjiga prometa</strong></p>
+              <p><strong>Inventar</strong> - obračun amortizacije, knjiženje inventure, popis dugotrajne imovine, inventura dugotrajne imovine i sitan inventar</p>
+              <p><strong>Plaća</strong> - obračunske liste, obračun bolovanja, obračun naknada, knjiženje plaća, djelatnici, doprinosi, JOPPD obrasci, izvješća za mirovinsko</p>
+              <p><strong>Predaja izvještaja kod nadležnih institucija</strong> - e-porezna, e-fina, e-mirovinsko, e-zdravstveno</p>
+              <p><strong>E-račun</strong> - e-fina servis</p>
+              <p><strong>Administrativne i ostale usluge</strong> - sve ostale usluge u dogovoru sa klijentom</p>
+              <p><strong>PDV (ukoliko je klijent u sustavu PDV-a)</strong> - knjiga ulaznih i izlaznih računa, tuzemni PPO, i sve vrste PDV obrazaca</p>
             </article>
-            <article class="stat">
-              <span>Dokumenti</span>
-              <strong>5</strong>
+
+            <article class="service-card">
+              <div class="service-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-8 0m8 0a4 4 0 0 1-8 0m8 0c2.8.4 5 2.4 5 5v2H3v-2c0-2.6 2.2-4.6 5-5m10-2a3 3 0 1 0-2.2-5M6 9a3 3 0 1 1 2.2-5"/></svg>
+              </div>
+              <h3>KNJIGOVODSTVO ZA UDRUGE I NEPROFITNE DJELATNOSTI</h3>
+              <p><strong>Jednostavno i dvojno knjigovodstvo</strong></p>
+              <p><strong>Blagajničko poslovanje</strong> - dnevnik blagajne, uplatnice, isplatnice, blagajnički izvještaji</p>
+              <p><strong>Knjiga ulaznih i izlaznih računa, knjiga izvoda</strong></p>
+              <p><strong>Plaća i drugi dohodak</strong> - obračunske liste, obračun bolovanja, obračun naknada, knjiženje plaća, djelatnici, doprinosi, JOPPD obrasci, izvješća za mirovinsko</p>
+              <p><strong>Predaja polugodišnjih i godišnjih izvještaja kod nadležnih institucija</strong></p>
+              <p><strong>Korištenje internetskih servisa</strong> - e-porezna, e-fina, e-mirovinsko, e-zdravstveno, e-račun</p>
+              <p><strong>Administrativne i ostale usluge</strong> - sve ostale usluge u dogovoru sa klijentom</p>
+            </article>
+
+            <article class="service-card">
+              <div class="service-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 7h16v11H4V7Zm3-3h10v3H7V4Zm5 11a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm-8-5h3m10 5h3"/></svg>
+              </div>
+              <h3>KNJIGOVODSTVO ZA SLOBODNA ZANIMANJA</h3>
+              <p><strong>Knjiga primitaka i izdataka</strong></p>
+              <p><strong>Knjiga ulaznih i izlaznih računa</strong></p>
+              <p><strong>Knjiga prometa</strong></p>
+              <p><strong>Plaća</strong> - obračunske liste, obračun bolovanja, obračun naknada, knjiženje plaća, djelatnici, doprinosi, JOPPD obrasci, izvješća za mirovinsko</p>
+              <p><strong>Predaja izvještaja kod nadležnih institucija</strong> - e-porezna, e-fina, e-mirovinsko, e-zdravstveno</p>
+              <p><strong>E-račun</strong> - e-fina servis</p>
+              <p><strong>Administrativne i ostale usluge</strong> - sve ostale usluge u dogovoru sa klijentom</p>
             </article>
           </div>
-          <div class="panel">
-            <h2>Radni tok</h2>
-            <div class="workflow">
-              <span>1. Unesi poslodavca</span>
-              <span>2. Unesi radnika</span>
-              <span>3. Generiraj dokument</span>
-              <span>4. Spremi kao PDF</span>
+        </div>
+      </section>
+
+      <section class="section pricing" id="cjenik">
+        <div class="container">
+          <h2>CJENIK USLUGA</h2>
+          <div class="pricing-copy">
+            <p><strong>Cijena računovodstvenih usluga</strong> formira se prema specifičnostima poslovanja, uključujući djelatnost, broj zaposlenih, status u sustavu PDV-a, devizno poslovanje, naplatu putem kreditnih kartica te opseg dokumentacije koja se mjesečno obrađuje (ulazni i izlazni računi, bankovni izvadci, putni nalozi i terenski obračuni).</p>
+            <p><strong>Cijena administrativnih (tajničkih) usluga</strong> ovisi o obujmu poslova, poput izrade računa, obračuna putnih naloga, izvršavanja naloga za plaćanje putem internetskog bankarstva, vođenja blagajne te vremena utrošenog na komunikaciju s poslovnim partnerima radi pribavljanja ili ispravka dokumentacije.</p>
+            <p>Godišnji statistički izvještaj za FINU te završni obračun za Poreznu upravu, zajedno sa svom pripadajućom dokumentacijom, nisu uključeni u mjesečnu cijenu usluga i naplaćuju se zasebno, u visini prosječne mjesečne cijene usluga ostvarene u poslovnoj godini.</p>
+            <p>Informiranje o novim i izmijenjenim propisima iz područja poreza i računovodstva putem e-maila, porezna i druga stručna savjetovanja, interni kvartalni izvještaji o ostvarenoj dobiti ili gubitku, kao i svakodnevne konzultacije, dostupni su svim klijentima bez dodatne naknade.</p>
+          </div>
+
+          <div class="price-grid">
+            <article class="price-card">
+              <h3>Prijava PDV-a</h3>
+              <p class="price"><span>EUR</span>25,00 <small>po prijavi</small></p>
+              <ul>
+                <li>Idealno rješenje za autobusni prijevoz i ostale oblike prijevoza putnika iz trećih zemalja.</li>
+                <li>Izrada uplatnica (platni promet)</li>
+              </ul>
+            </article>
+            <article class="price-card featured">
+              <h3>Start Paket za paušalce</h3>
+              <p class="price"><span>EUR</span>45,00 <small>mjesečno</small></p>
+              <ul>
+                <li>Knjiga prometa</li>
+                <li>Račun (B2C) i eRačun (B2B i B2G), do 10 računa mjesečno</li>
+                <li>Izrada uplatnica (platni promet)</li>
+                <li>Godišnja predaja PO-SD obrasca</li>
+              </ul>
+            </article>
+            <article class="price-card">
+              <h3>Mali paket</h3>
+              <p class="price"><span>EUR</span>100,00 <small>mjesečno</small></p>
+              <ul>
+                <li>Obrt ili društvo s 1 zaposlenim</li>
+                <li>URA do 20 komada mjesečno, Izvodi do 20 komada mjesečno</li>
+                <li>Račun (B2C) i eRačun (B2B i B2G), do 20 računa mjesečno</li>
+                <li>Podnošenje godišnje prijave ili GFI</li>
+              </ul>
+            </article>
+            <article class="price-card">
+              <h3>Srednji paket</h3>
+              <p class="price"><span>EUR</span>175,00 <small>mjesečno</small></p>
+              <ul>
+                <li>Obračun plaća do 5 zaposlenih</li>
+                <li>Račun (B2C) i eRačun (B2B i B2G), do 50 računa mjesečno</li>
+                <li>URA, IRA, Izvoda do 100 kom</li>
+                <li>Podnošenje godišnje prijave ili GFI</li>
+              </ul>
+            </article>
+            <article class="price-card featured">
+              <h3>Veliki paket</h3>
+              <p class="price"><span>EUR</span>300,00 <small>mjesečno</small></p>
+              <ul>
+                <li>Obračun plaća do 20 zaposlenih</li>
+                <li>Račun (B2C) i eRačun (B2B i B2G), do 75 računa mjesečno</li>
+                <li>URA do 100 komada mjesečno, Izvodi</li>
+                <li>Mjesečni/tromjesečni obaveznik PDV-a</li>
+                <li>Podnošenje godišnje prijave ili GFI</li>
+              </ul>
+            </article>
+            <article class="price-card">
+              <h3>Profesionalni paket</h3>
+              <p class="price"><span>EUR</span>NA UPIT <small>mjesečno</small></p>
+              <ul>
+                <li>Prilagođene knjigovodstvene i administrativne usluge</li>
+                <li>Opseg usluga prema potrebama poslovanja</li>
+                <li>Individualni dogovor i savjetovanje</li>
+              </ul>
+            </article>
+          </div>
+          <p class="price-note"><strong>Cjenik pojedinačnih usluga je dostupan na upit.</strong></p>
+        </div>
+      </section>
+
+      <section class="section contact" id="kontakt">
+        <div class="container">
+          <h2>Kontakt</h2>
+          <p class="contact-lead">Javite nam se s povjerenjem!</p>
+          <div class="contact-grid">
+            <div class="contact-info">
+              <article>
+                <h3>Posjetite nas</h3>
+                <p><strong>Hanibala Lucića 12<br>Županja, 32270<br>Hrvatska</strong></p>
+              </article>
+              <article>
+                <h3>Pišite nam</h3>
+                <p><strong><a href="mailto:knjigovodstvo.kelava.zupanja@gmail.com">knjigovodstvo.kelava.zupanja@gmail.com</a><br><a href="mailto:kokelava@gmail.com">kokelava@gmail.com</a></strong></p>
+              </article>
+              <article>
+                <h3>Nazovite nas</h3>
+                <p><strong>Telefon: <a href="tel:+38532831093">+385 32 831 093</a><br>Mobitel: <a href="tel:+38598718486">+385 98 718 486</a></strong></p>
+              </article>
+            </div>
+            <div class="map-wrap">
+              <iframe title="Karta - Knjigovodstveni obrt Kelava" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2817.2076541173524!2d18.702835315757383!3d45.08158206691257!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x9b3ae7c98ac55116!2sKnjigovodstveni%20obrt%20Kelava!5e0!3m2!1shr!2shr!4v1642333338478!5m2!1shr!2shr" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
+    </main>
 
-        <section class="view" id="employersView">
-          <div class="split-layout">
-            <form class="panel form-panel" id="employerForm">
-              <input type="hidden" name="id">
-              <h2>Poslodavac</h2>
-              <label>Naziv tvrtke<input name="company_name" required autocomplete="organization"></label>
-              <label>Ulica<input name="street" autocomplete="street-address"></label>
-              <div class="form-grid">
-                <label>Poštanski broj<input name="postal" inputmode="numeric"></label>
-                <label>Grad<input name="city"></label>
-              </div>
-              <label>OIB<input name="vat" inputmode="numeric"></label>
-              <label>Odgovorna osoba<input name="director"></label>
-              <div class="button-row">
-                <button class="primary-button" type="submit">Spremi</button>
-                <button class="ghost-button" type="button" data-reset-form="employerForm">Očisti</button>
-              </div>
-            </form>
-            <div class="panel">
-              <div class="panel-title-row">
-                <h2>Popis poslodavaca</h2>
-                <input class="search" id="employerSearch" placeholder="Pretraga">
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead><tr><th>Naziv</th><th>Grad</th><th>OIB</th><th></th></tr></thead>
-                  <tbody id="employerRows"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </section>
+    <footer class="site-footer">
+      <div class="container">
+        <p>&copy; <strong>Sporedna djelatnost Milan Kelava, za računovodstvene i knjigovodstvene usluge</strong>. Sva prava pridržana 2026.</p>
+      </div>
+    </footer>
 
-        <section class="view" id="employeesView">
-          <div class="split-layout">
-            <form class="panel form-panel" id="employeeForm">
-              <input type="hidden" name="id">
-              <h2>Radnik</h2>
-              <div class="form-grid">
-                <label>Ime<input name="name" required autocomplete="given-name"></label>
-                <label>Prezime<input name="lastname" required autocomplete="family-name"></label>
-              </div>
-              <label>Ulica<input name="street" autocomplete="street-address"></label>
-              <div class="form-grid">
-                <label>Poštanski broj<input name="postal" inputmode="numeric"></label>
-                <label>Grad<input name="city"></label>
-              </div>
-              <label>OIB / putovnica<input name="personal_id" required></label>
-              <label>Poslodavci<select name="employer_names" multiple size="4" id="employeeEmployers"></select></label>
-              <div class="button-row">
-                <button class="primary-button" type="submit">Spremi</button>
-                <button class="ghost-button" type="button" data-reset-form="employeeForm">Očisti</button>
-              </div>
-            </form>
-            <div class="panel">
-              <div class="panel-title-row">
-                <h2>Popis radnika</h2>
-                <input class="search" id="employeeSearch" placeholder="Pretraga">
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead><tr><th>Ime</th><th>Identifikator</th><th>Poslodavci</th><th></th></tr></thead>
-                  <tbody id="employeeRows"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="view" id="documentsView">
-          <form class="panel document-panel" id="documentForm">
-            <h2>Ugovor o radu</h2>
-            <div class="contract-editor">
-              <p class="contract-line document-type-row">
-                <span>Tip dokumenta</span>
-                <select name="type" id="contractType">
-                  <option value="full_time">UGOVOR O RADU NA NEODREĐENO VRIJEME</option>
-                  <option value="part_time">UGOVOR O RADU NA ODREĐENO VRIJEME</option>
-                  <option value="annex_a1">ANEKS UGOVORA O RADU ZA A1</option>
-                  <option value="erv">EVIDENCIJA RADNOG VREMENA</option>
-                </select>
-              </p>
-            </div>
-
-            <div class="contract-editor contract-party-section">
-              <p class="contract-line">
-                <span>Između</span>
-                <select name="employer_id" id="documentEmployer" required></select>
-                <input name="employer_info_display" id="documentEmployerInfo" readonly>
-                <span>kojeg zastupa</span>
-                <input name="director_display" id="documentDirector" readonly>
-                <span>(dalje: Poslodavac) i</span>
-              </p>
-              <p class="contract-line">
-                <select name="employee_id" id="documentEmployee" required></select>
-                <input name="employee_personal_id_display" id="documentEmployeePersonalId" readonly>
-                <span>(dalje: Radnik) dana</span>
-                <input name="contract_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy." required>
-                <span>sklopljen je</span>
-              </p>
-            </div>
-
-            <div class="contract-editor annex-party-section hidden">
-              <p class="contract-line">
-                <select name="a1_employer_id" id="a1Employer" required></select>
-                <input name="a1_employer_info_display" id="a1EmployerInfo" readonly>
-                <span>, zastupano po direktoru</span>
-                <input name="a1_director_display" id="a1Director" readonly>
-                <span>(u daljnjem tekstu: Poslodavac)</span>
-              </p>
-              <p class="contract-line">
-                <span>i</span>
-                <select name="a1_employee_id" id="a1Employee" required></select>
-                <input name="a1_employee_personal_id_display" id="a1EmployeePersonalId" readonly>
-                <span>(u daljnjem tekstu: radnik), zaključili su sljedeći:</span>
-              </p>
-            </div>
-
-            <div class="field-group contract-doc-section only-ptc">
-              <h3>Kraj ugovora</h3>
-              <p class="contract-line">
-                <span>2. Ovim Ugovorom Radnik zasniva radni odnos na određeno vrijeme do</span>
-                <label class="inline-check"><input class="paired-checkbox" data-pair="endJob" data-target="end_job_date" name="end_job_use_date" type="checkbox" checked> Datum</label>
-                <input name="end_job_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
-                <label class="inline-check"><input class="paired-checkbox" data-pair="endJob" data-target="end_job_description" name="end_job_use_description" type="checkbox"> Opis</label>
-                <input name="end_job_description" value="OPIS KRAJA UGOVORA" disabled>
-                <span>za obavljanje poslova</span>
-              </p>
-            </div>
-
-            <div class="field-group contract-doc-section">
-              <h3>Opće odredbe</h3>
-              <p class="contract-line">
-                <span class="full-time-intro">2. Ovim Ugovorom Radnik zasniva radni odnos na neodređeno vrijeme za obavljanje poslova</span>
-                <input name="job_description" value="POSAO - OPIS POSLA" required>
-              </p>
-              <p class="contract-line">
-                <span>3. Ugovorne stranke ugovaraju probni rad Radnika u trajanju od</span>
-                <select name="trail_numbers" id="trailNumbers"></select>
-                <select name="trail_option" id="trailOption">
-                    <option>dan/a</option>
-                    <option>mjesec/a/i</option>
-                </select>
-              </p>
-              <p class="contract-line">
-                <span>4. Mjesto rada Radnika je u</span>
-                <input name="working_place" value="NASELJE/GRAD/OPĆINA U KOJEM SE RADI" required>
-                <span>, a u slučaju potrebe Poslodavca i u nekom drugom mjestu na području Republike Hrvatske.</span>
-              </p>
-              <p class="contract-line">5. Pored poslova navedenih u točki 2. ovog Ugovora, Radnik će obavljati i druge poslove prema nalogu Poslodavca, a koji su u skladu naravi i vrsti posla za koje je zasnovan radni odnos.</p>
-              <p class="contract-line">
-                <span>6. Radnik počinje s radom</span>
-                <label class="inline-check"><input class="paired-checkbox" data-pair="startJob" data-target="start_date" name="start_use_date" type="checkbox" checked> Datum</label>
-                <input name="start_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
-                <label class="inline-check"><input class="paired-checkbox" data-pair="startJob" data-target="start_date_description" name="start_use_description" type="checkbox"> Opis</label>
-                <input name="start_date_description" value="OPIS POČETKA RADA" disabled>
-              </p>
-            </div>
-
-            <div class="field-group contract-doc-section">
-              <h3>Plaće i naknade</h3>
-              <div class="document-grid">
-                <label>Osnovna bruto plaća<input name="salary" class="money-input" value="0.00" inputmode="decimal"></label>
-                <label>Stimulativni dio plaće<input name="salary_bonus" class="money-input" value="0.00" inputmode="decimal"></label>
-                <label>Otežani uvjeti rada<input name="salary_increment_1" class="percent-input" data-minimum="20" value="20%"></label>
-                <label>Blagdani/neradni dani/Uskrs<input name="salary_increment_2" class="percent-input" data-minimum="30" value="30%"></label>
-                <label>Rad nedjeljom<input name="salary_increment_3" class="percent-input" data-minimum="50" value="50%"></label>
-                <label>Noćni rad<input name="salary_increment_4" class="percent-input" data-minimum="20" value="20%"></label>
-                <label>Prekovremeni rad<input name="salary_increment_5" class="percent-input" data-minimum="20" value="20%"></label>
-                <label>Druga smjena<input name="salary_increment_6" class="percent-input" data-minimum="20" value="20%"></label>
-              </div>
-            </div>
-
-            <div class="field-group contract-doc-section">
-              <h3>Radno vrijeme i godišnji odmor</h3>
-              <div class="document-grid">
-                <label>Vrsta radnog vremena
-                  <select name="work_type" id="workType">
-                    <option>puno</option>
-                    <option>ne puno</option>
-                  </select>
-                </label>
-                <label>Sati tjedno<input name="weekly_working_hours" id="weeklyWorkingHours" type="number" step="0.5" value="40.0"></label>
-                <label>Radno vrijeme
-                  <select name="working_shift" id="workingShift">
-                    <option>jednokratno</option>
-                    <option>dvokratno</option>
-                    <option>klizno</option>
-                    <option>prema opisu</option>
-                  </select>
-                </label>
-                <label class="shift-time-field">Pocetak
-                  <input name="working_time_start" class="time-hr-input" type="text" value="08:00" readonly>
-                </label>
-                <label class="shift-time-field">Kraj
-                  <input name="working_time_end" class="time-hr-input" type="text" value="16:00" readonly>
-                </label>
-                <label class="shift-description-field hidden">Opis radnog vremena<input name="working_shift_description" value="OPIS RADNOG VREMENA"></label>
-                <label>Tjedni odmor
-                  <select name="weekly_time_off">
-                    <option>subota</option>
-                    <option>nedjelja</option>
-                    <option selected>subota i nedjelja</option>
-                    <option>nedjelja i ponedjeljak</option>
-                    <option>petak i subota</option>
-                  </select>
-                </label>
-                <label>Godišnji odmor
-                  <select name="vacation" id="vacationSelect"></select>
-                </label>
-                <label>Opis godišnjeg odmora<input name="vacation_description" value="(-)" required></label>
-              </div>
-            </div>
-
-            <div class="field-group contract-doc-section">
-              <h3>Otkaz i završne odredbe</h3>
-              <div class="document-grid">
-                <label class="only-ptc">Ugovor se može otkazati
-                  <select name="contract_termination" id="contractTermination">
-                    <option>mogu</option>
-                    <option>ne mogu</option>
-                  </select>
-                </label>
-                <label>Otkazni rok poslodavac<input name="contract_termination_employer" id="terminationEmployer" type="number" min="0" step="1" value="15"></label>
-                <label>Otkazni rok radnik<input name="contract_termination_employee" id="terminationEmployee" type="number" min="0" step="1" value="15"></label>
-                <label>Ostala prava i obveze<input name="rights_and_obligations" value="Ostala prava i obveze utvrđuju se prema Zakonu o radu" required></label>
-                <label>Nadležni sud
-                  <select name="court" id="courtSelect"></select>
-                </label>
-              </div>
-              <div class="document-grid">
-                <label><span><input class="paired-checkbox" data-pair="contractStart" data-target="contract_starting_with" name="contract_start_use_date" type="checkbox" checked> Datum</span><input name="contract_starting_with" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-                <label><span><input class="paired-checkbox" data-pair="contractStart" data-target="contract_start_with_description" name="contract_start_use_description" type="checkbox"> Opis</span><input name="contract_start_with_description" value="OPIS UGOVORA STUPANJA NA SNAGU" disabled></label>
-              </div>
-            </div>
-
-            <div class="field-group annex-doc-section hidden">
-              <h3>Aneks A1</h3>
-              <p class="contract-line">ANEKS UGOVORA O RADU</p>
-              <p class="contract-line">Članak I.</p>
-              <p class="contract-line">1. Ugovorne strane suglasno utvrđuju da ovim Aneksom ugovaraju prava i obveze za vrijeme trajanja rada u inozemstvu.</p>
-              <p class="contract-line">
-                <span>1. Ugovorne strane suglasno utvrđuju da su dana</span>
-                <input name="a1_contract_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
-                <span>sklopile Ugovor o radu na</span>
-                <select name="a1_contract_type" id="a1ContractType">
-                  <option>određeno vrijeme</option>
-                  <option>ne određeno vrijeme</option>
-                </select>
-              </p>
-              <p class="contract-line">
-                <span>2. Predviđeno trajanje radnika u inozemstvu biti će do</span>
-                <input name="a1_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
-                <span>, odnosno do završetka projekta/radova.</span>
-              </p>
-              <p class="contract-line">
-                <span>1. Mjesto rada radnika biti će u pravilu u</span>
-                <input name="a1_working_place" value="NASELJE/GRAD/OPĆINA U KOJEM SE RADI">
-                <span>, ali je suglasan da poslove obavlja i na drugim mjestima na teritoriju Europske unije.</span>
-              </p>
-              <p class="contract-line">
-                <span>2. Radnik će obavljati poslove</span>
-                <input name="a1_job_description" value="POSAO - OPIS POSLA">
-                <span>, ali je dužan obavljati i sve ostale poslove prema organizaciji rada i uputama korisnika.</span>
-              </p>
-              <p class="contract-line">
-                <span>Ugovara se nadležnost Općinskog suda u</span>
-                <select name="a1_court" id="a1CourtSelect"></select>
-              </p>
-              <p class="contract-line">
-                <span>U</span>
-                <input name="a1_signature_place" value="Mjesto">
-                <span>, dana</span>
-                <input name="a1_signature_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
-                <span>godine.</span>
-              </p>
-            </div>
-
-            <div class="field-group erv-doc-section hidden">
-              <h3>ERV</h3>
-              <p class="contract-line center-like">EVIDENCIJA O RADNOM VREMENU</p>
-              <p class="contract-line">
-                <span>POSLODAVAC</span>
-                <select name="erv_employer_id" id="ervEmployer"></select>
-              </p>
-              <p class="contract-line">
-                <span>RADNIK</span>
-                <select name="erv_employee_id" id="ervEmployee"></select>
-              </p>
-              <p class="contract-line">
-                <span>GODINA</span>
-                <select name="erv_year" id="ervYearSelect"></select>
-              </p>
-              <p class="contract-line">
-                <span>MJESEC</span>
-                <select name="erv_month" id="ervMonthSelect"></select>
-              </p>
-              <label>Hrvatski neradni dani u odabranom mjesecu
-                <textarea name="erv_non_working_days" id="ervNonWorkingDays" rows="4" readonly></textarea>
-              </label>
-              <div class="erv-explanations" id="ervFieldExplanations"></div>
-            </div>
-
-            <div class="button-row">
-              <button class="primary-button" type="submit">Otvori dokument</button>
-              <button class="ghost-button" type="button" id="previewButton">Pregled</button>
-              <button class="ghost-button" type="button" id="resetContractButton">Vrati polja na izvorno</button>
-            </div>
-          </form>
-          <div class="panel preview-panel">
-            <h2>Pregled</h2>
-            <div id="documentPreview" class="contract-preview"></div>
-          </div>
-        </section>
-
-        <section class="view" id="gfiView">
-          <form class="panel document-panel" id="gfiForm">
-            <h2>GFI odluka / izvještaj</h2>
-            <div class="document-grid">
-              <label>Tvrtka<input name="company_name" required></label>
-              <label>Adresa<input name="address"></label>
-              <label>Grad<input name="city"></label>
-              <label>OIB<input name="oib"></label>
-              <label>Direktor<input name="director"></label>
-              <label>Godina<input name="report_year" type="number" min="2000" max="2100"></label>
-              <label>Datum izvještaja<input name="report_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-              <label>Dobit prije poreza<input name="gain_before_tax"></label>
-              <label>Porez na dobit<input name="gain_tax"></label>
-              <label>Dobit nakon poreza<input name="gain_after_tax"></label>
-              <label>Pokriće gubitka<input name="loss_coverage"></label>
-            </div>
-            <div class="button-row">
-              <button class="primary-button" type="submit">Otvori GFI dokument</button>
-            </div>
-          </form>
-        </section>
-      </main>
-    </div>
-
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="/app.js" type="module"></script>
+    <a class="back-to-top" href="#top" aria-label="Povratak na vrh">↑</a>
+    <script src="app.js"></script>
   </body>
 </html>

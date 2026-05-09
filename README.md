@@ -1,32 +1,22 @@
-# Dokumenti za Cloudflare
+# Kokelava Website + Dokumenti
 
-This repository contains the Cloudflare-compatible web application for preparing Croatian employment documents.
+Cloudflare Pages project with two local routes:
 
-The deployable app lives in:
+- `/` - responsive public website for Knjigovodstveni obrt Kelava
+- `/app/` - document-generation application for employers, employees, contracts, A1 annexes, ERV, and GFI
 
-- `public/` - browser UI, forms, local fallback storage, document/print views
+## Project Layout
+
+- `public/index.html` - public accounting-company website
+- `public/assets/img/` - website images copied from the live site
+- `public/app/` - document application
 - `functions/api/` - Cloudflare Pages Function API
 - `migrations/` - Cloudflare D1 schema and seed data
-- `wrangler.toml` - Cloudflare configuration
+- `wrangler.toml` - Cloudflare Pages and D1 configuration
 
-## Features
+## Local Preview
 
-- Manage employers.
-- Manage employees.
-- Link employees to employers.
-- Generate printable document views for:
-  - ugovor o radu na neodredeno vrijeme
-  - ugovor o radu na odredeno vrijeme
-  - aneks ugovora o radu za A1
-  - evidencija radnog vremena
-  - GFI odluka/izvjestaj
-- Save/print generated documents as PDF from the browser print dialog.
-- Use Cloudflare D1 when deployed.
-- Fall back to browser `localStorage` when opened as a plain static site.
-
-## Try Locally
-
-The static UI can run without installing dependencies:
+Static preview:
 
 ```bash
 python3 -m http.server 8788 --directory public
@@ -36,11 +26,12 @@ Open:
 
 ```text
 http://localhost:8788/
+http://localhost:8788/app/
 ```
 
-In this mode the app uses browser storage because the Cloudflare API is not running.
+In plain static preview mode, the document app uses browser `localStorage` if the Cloudflare API is not available.
 
-## Run With Cloudflare Pages Functions
+## Cloudflare Pages
 
 Install dependencies:
 
@@ -54,19 +45,13 @@ Create the D1 database:
 npm run db:create
 ```
 
-Copy the generated database id into `wrangler.toml`, replacing:
-
-```text
-replace-after-running-wrangler-d1-create
-```
-
-Apply migrations locally:
+Copy the generated database id into `wrangler.toml`, then apply migrations:
 
 ```bash
 npm run db:migrate
 ```
 
-Start the Cloudflare local dev server:
+Start Cloudflare local development:
 
 ```bash
 npm run dev
@@ -74,20 +59,9 @@ npm run dev
 
 ## Deploy
 
-Apply the D1 migration to the remote database:
-
 ```bash
 npm run db:migrate:remote
-```
-
-Deploy the Pages app:
-
-```bash
 npm run deploy
 ```
 
-After deployment, connect your custom domain in Cloudflare Pages.
-
-## Notes
-
-Documents are generated as printable browser pages and can be saved as PDF through the browser print dialog. This keeps the app dependency-light and compatible with Cloudflare's free Pages/Workers/D1 stack.
+Generated documents can be opened for print/PDF or downloaded as standalone print-ready HTML files with the app logo embedded.

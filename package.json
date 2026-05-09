@@ -1,9 +1,9 @@
 {
-  "name": "contract-office-cloudflare",
+  "name": "kokelava-cloudflare",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Cloudflare Pages rewrite of the original CustomTkinter contract office application.",
+  "description": "Cloudflare Pages site for Kokelava with a document-generation application under /app.",
   "scripts": {
     "dev": "wrangler pages dev public --d1 CONTRACT_DB=contract-office-db",
     "deploy": "wrangler pages deploy public",
