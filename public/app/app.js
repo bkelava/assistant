@@ -80,6 +80,76 @@ const labels = {
   }
 };
 
+const employmentDocumentDefinitions = {
+  confirmation_indefinite: {
+    title: "POTVRDA O SKLOPLJENOM UGOVORU O RADU NA NEODREĐENO VRIJEME",
+    category: "confirmation"
+  },
+  mutual_termination: {
+    title: "SPORAZUM O PRESTANKU UGOVORA O RADU",
+    category: "mutual"
+  },
+  probation_unsatisfactory: {
+    title: "OTKAZ ZBOG NEZADOVOLJAVANJA RADNIKA NA PROBNOM RADU",
+    category: "probation"
+  },
+  work_obligation_warning: {
+    title: "UPOZORENJE NA OBVEZE IZ RADNOG ODNOSA",
+    category: "warning"
+  },
+  misconduct_notice: {
+    title: "REDOVITI OTKAZ UGOVORA O RADU ZBOG SKRIVLJENOG PONAŠANJA",
+    category: "misconduct"
+  },
+  personal_notice: {
+    title: "REDOVITI OSOBNO UVJETOVANI OTKAZ UGOVORA O RADU",
+    category: "personal"
+  },
+  business_economic_notice: {
+    title: "REDOVITI POSLOVNO UVJETOVANI OTKAZ ZBOG GOSPODARSKIH RAZLOGA",
+    category: "business",
+    businessReason: "gospodarskih razloga"
+  },
+  business_organizational_notice: {
+    title: "REDOVITI POSLOVNO UVJETOVANI OTKAZ ZBOG ORGANIZACIJSKIH RAZLOGA",
+    category: "business",
+    businessReason: "organizacijskih razloga"
+  },
+  business_technological_notice: {
+    title: "REDOVITI POSLOVNO UVJETOVANI OTKAZ ZBOG TEHNOLOŠKIH RAZLOGA",
+    category: "business",
+    businessReason: "tehnoloških razloga"
+  },
+  changed_contract_offer: {
+    title: "OTKAZ S PONUDOM IZMIJENJENOG UGOVORA",
+    category: "changed"
+  },
+  employee_regular_notice: {
+    title: "REDOVITI OTKAZ ZAPOSLENIKA",
+    category: "employee_regular"
+  },
+  employer_extraordinary_notice: {
+    title: "IZVANREDNI OTKAZ UGOVORA O RADU OD STRANE POSLODAVCA",
+    category: "employer_extraordinary"
+  },
+  employee_extraordinary_notice: {
+    title: "IZVANREDNI OTKAZ ZAPOSLENIKA",
+    category: "employee_extraordinary"
+  },
+  fixed_term_expiry_notice: {
+    title: "OBAVIJEST O PRESTANKU UGOVORA O RADU NA ODREĐENO VRIJEME",
+    category: "fixed_expiry"
+  },
+  retirement_65_15_notice: {
+    title: "OBAVIJEST O PRESTANKU UGOVORA O RADU RADI 65 GODINA ŽIVOTA I 15 GODINA MIROVINSKOG STAŽA",
+    category: "retirement"
+  },
+  housing_statement: {
+    title: "IZJAVA O STANOVANJU",
+    category: "housing"
+  }
+};
+
 const views = {
   dashboard: ["Pregled", "Uredi podatke i generiraj dokumente u pregledniku."],
   employers: ["Poslodavci", "Dodaj, uredi i izbriši poslodavce."],
@@ -400,20 +470,23 @@ function updateContractUi() {
   const isAnnex = type === "annex_a1";
   const isErv = type === "erv";
   const isAccountingServices = type === "accounting_services";
+  const isEmploymentDocument = Boolean(employmentDocumentDefinitions[type]);
   const titles = {
     full_time: "Ugovor o radu na neodređeno vrijeme",
     part_time: "Ugovor o radu na određeno vrijeme",
     annex_a1: "Aneks ugovora o radu za A1",
     erv: "Evidencija radnog vremena",
-    accounting_services: "Ugovor o knjigovodstveno-računovodstvenim uslugama"
+    accounting_services: "Ugovor o knjigovodstveno-računovodstvenim uslugama",
+    ...Object.fromEntries(Object.entries(employmentDocumentDefinitions).map(([key, value]) => [key, titleCaseDocument(value.title)]))
   };
   $("#documentForm h2").textContent = titles[type] || "Dokumenti";
-  $$(".contract-party-section").forEach((element) => element.classList.toggle("hidden", !isContract));
+  $$(".contract-party-section").forEach((element) => element.classList.toggle("hidden", !(isContract || isEmploymentDocument)));
   $$(".annex-party-section").forEach((element) => element.classList.toggle("hidden", !isAnnex));
   $$(".contract-doc-section").forEach((element) => element.classList.toggle("hidden", !isContract));
   $$(".annex-doc-section").forEach((element) => element.classList.toggle("hidden", !isAnnex));
   $$(".erv-doc-section").forEach((element) => element.classList.toggle("hidden", !isErv));
   $$(".accounting-services-section").forEach((element) => element.classList.toggle("hidden", !isAccountingServices));
+  $$(".employment-doc-section").forEach((element) => element.classList.toggle("hidden", !isEmploymentDocument));
   $$(".only-ptc").forEach((element) => element.classList.toggle("hidden", !isPartTime));
   $$(".full-time-intro").forEach((element) => element.classList.toggle("hidden", isPartTime));
   updateContractTermination();
@@ -722,6 +795,7 @@ function buildDocument() {
   const form = $("#documentForm");
   const data = formToObject(form);
   if (data.type === "accounting_services") return buildAccountingServicesDocument(data);
+  if (employmentDocumentDefinitions[data.type]) return buildEmploymentDocument(data);
   const employerId = data.type === "annex_a1" ? data.a1_employer_id : data.type === "erv" ? data.erv_employer_id : data.employer_id;
   const employeeId = data.type === "annex_a1" ? data.a1_employee_id : data.type === "erv" ? data.erv_employee_id : data.employee_id;
   const employer = state.employers.find((item) => item.id === employerId) || state.employers[0] || {};
@@ -981,6 +1055,299 @@ function buildAccountingServicesDocument(data) {
   };
 }
 
+function buildEmploymentDocument(data) {
+  const definition = employmentDocumentDefinitions[data.type];
+  const employer = state.employers.find((item) => item.id === data.employer_id) || state.employers[0] || {};
+  const employee = state.employees.find((item) => item.id === data.employee_id) || state.employees[0] || {};
+  const context = employmentDocumentContext(data, employer, employee);
+  const builders = {
+    confirmation: buildEmploymentConfirmation,
+    mutual: buildMutualTermination,
+    probation: buildProbationTermination,
+    warning: buildWorkObligationWarning,
+    misconduct: buildMisconductNotice,
+    personal: buildPersonalNotice,
+    business: buildBusinessNotice,
+    changed: buildChangedContractOffer,
+    employee_regular: buildEmployeeRegularNotice,
+    employer_extraordinary: buildEmployerExtraordinaryNotice,
+    employee_extraordinary: buildEmployeeExtraordinaryNotice,
+    fixed_expiry: buildFixedTermExpiryNotice,
+    retirement: buildRetirementNotice,
+    housing: buildHousingStatement
+  };
+  const html = builders[definition.category](context, definition);
+  return { title: definition.title, html, body: htmlToText(html) };
+}
+
+function employmentDocumentContext(data, employer, employee) {
+  const employeeName = `${employee.name || ""} ${employee.lastname || ""}`.trim();
+  const employeeAddress = formatAddress(employee);
+  const employerInfo = `${formatAddress(employer)}${employer.vat ? `, OIB: ${employer.vat}` : ""}`;
+  return {
+    data,
+    employer,
+    employee,
+    employeeName,
+    employeeAddress,
+    employeeInfo: `${employeeName}${employeeAddress ? `, ${employeeAddress}` : ""}${employee.personal_id ? `, OIB/Putovnica: ${employee.personal_id}` : ""}`,
+    employerInfo,
+    director: employer.director || "",
+    place: data.employment_doc_place || employer.city || "",
+    documentDate: formatDate(data.employment_doc_date || data.contract_date),
+    contractDate: formatDate(data.employment_contract_date || data.contract_date),
+    contractType: data.employment_contract_type || "neodređeno vrijeme",
+    jobTitle: data.employment_job_title || data.job_description || "",
+    workPlace: data.employment_work_place || data.working_place || "",
+    startDate: formatDate(data.employment_start_date || data.start_date),
+    endDate: formatDate(data.employment_end_date || data.end_job_date),
+    noticePeriod: data.employment_notice_period || `${data.contract_termination_employer || "15"} dana`,
+    vacationYear: data.employment_vacation_year || new Date().getFullYear(),
+    vacationTotal: data.employment_vacation_total || "0",
+    vacationUsed: data.employment_vacation_used || "0",
+    vacationRemaining: data.employment_vacation_remaining || "0",
+    vacationFrom: formatDate(data.employment_vacation_from),
+    vacationTo: formatDate(data.employment_vacation_to),
+    paymentAmount: data.employment_payment_amount || "0,00 EUR",
+    probationPeriod: data.employment_probation_period || "1 mjesec",
+    probationNotice: data.employment_probation_notice || "7 dana",
+    employeeAge: data.employment_employee_age || "65",
+    pensionYears: data.employment_pension_years || "15",
+    reason: data.employment_reason || "",
+    violation: data.employment_violation || "",
+    changedContractSummary: data.employment_changed_contract_summary || "",
+    housingAddress: data.housing_address || "",
+    housingDescription: data.housing_description || "soba, kuhinja, kupaonica i sanitarni čvor"
+  };
+}
+
+function buildEmploymentConfirmation(context) {
+  return makeEmploymentDocument(context, [
+    employerActIntro(context, "izdaje sljedeću"),
+    centerTitle("POTVRDU"),
+    center(b(`o sklopljenom Ugovoru o radu na neodređeno vrijeme sa zaposlenikom ${context.employeeName}`)),
+    p(`1. Dana ${b(context.contractDate)} sa zaposlenikom ${b(context.employeeInfo)} sklopljen je Ugovor o radu na neodređeno vrijeme za obavljanje poslova ${b(context.jobTitle)}.`),
+    p(`2. Zaposlenik počinje s radom kod Poslodavca dana ${b(context.startDate)}.`),
+    p("3. Zaposlenik će ugovorene poslove obavljati osobno, prema uputama Poslodavca."),
+    p(`4. Zaposlenik će poslove obavljati u ${b(context.workPlace)}, a u slučaju potrebe, po nalogu Poslodavca, privremeno i u drugim mjestima.`),
+    p(`5. Ugovoren je probni rad u trajanju od ${b(context.probationPeriod)} i otkazni rok tijekom probnog rada od ${b(context.probationNotice)}.`),
+    p(`6. Mjesečna osnovna bruto plaća iznosi ${b(context.data.salary || "0,00 EUR")}. Plaća se isplaćuje najkasnije do 15-og u mjesecu za prethodni mjesec.`),
+    p(`7. Zaposlenik ima pravo na godišnji odmor u trajanju od ${b(context.data.vacation || `${context.vacationTotal} dana`)}.`),
+    p(`8. Za slučaj spora ugovara se nadležnost stvarno nadležnog suda u ${b(`${context.data.court || "Zagrebu"}.`)}`),
+    employerOnlySignature(context)
+  ]);
+}
+
+function buildMutualTermination(context) {
+  return makeEmploymentDocument(context, [
+    p(`${employerParty(context)} i ${employeeParty(context)} zaključili su u ${b(context.place)}, dana ${b(context.documentDate)} sljedeći`),
+    centerTitle("SPORAZUM O PRESTANKU UGOVORA O RADU"),
+    center("Članak 1."),
+    p(`Strane ovog Sporazuma utvrđuju da su dana ${b(context.contractDate)} sklopile Ugovor o radu na ${b(context.contractType)} radi obavljanja poslova ${b(context.jobTitle)}.`),
+    p(`Ugovorne strane suglasno utvrđuju da Ugovor o radu prestaje dana ${b(context.endDate)}.`),
+    center("Članak 2."),
+    vacationParagraph(context),
+    center("Članak 3."),
+    p("Radnik je dužan do dana prestanka radnog odnosa predati sredstva rada, dokumentaciju i drugu imovinu Poslodavca koju je koristio u radu."),
+    center("Članak 4."),
+    p("Ovaj Sporazum sastavljen je u dva istovjetna primjerka od kojih svaka strana zadržava po jedan primjerak."),
+    p(`U ${b(context.place)}, ${b(context.documentDate)} godine.`),
+    signatureHtml(context)
+  ]);
+}
+
+function buildProbationTermination(context) {
+  return makeEmployerDecision(context, "ODLUKU", "O OTKAZU UGOVORA O RADU ZBOG NEZADOVOLJAVANJA RADNIKA NA PROBNOM RADU", [
+    p(`Radniku ${b(context.employeeInfo)} otkazuje se Ugovor o radu sklopljen dana ${b(context.contractDate)} za poslove ${b(context.jobTitle)}, jer tijekom probnog rada nije zadovoljio očekivanja radnog mjesta.`),
+    p(`Radni odnos prestaje istekom otkaznog roka u trajanju od ${b(context.probationNotice)}, koji počinje teći danom dostave ove Odluke.`),
+    center("Obrazloženje"),
+    p(safeMultiline(context.reason || `Tijekom probnog rada u trajanju od ${context.probationPeriod} utvrđeno je da radnik ne ostvaruje očekivane rezultate i ne zadovoljava zahtjeve radnog mjesta.`))
+  ]);
+}
+
+function buildWorkObligationWarning(context) {
+  return makeEmployerDecision(context, "UPOZORENJE", "NA OBVEZE IZ RADNOG ODNOSA", [
+    p(`Radnik ${b(context.employeeInfo)}, zaposlen na temelju Ugovora o radu sklopljenog dana ${b(context.contractDate)} za poslove ${b(context.jobTitle)}, upozorava se da je povrijedio obveze iz radnog odnosa.`),
+    p(safeMultiline(context.violation)),
+    p("U slučaju nastavka povrede radnih obveza radniku prijeti mogućnost otkaza Ugovora o radu zbog skrivljenog ponašanja."),
+    center("Obrazloženje"),
+    p(safeMultiline(context.reason || "Na temelju raspoložive dokumentacije i saznanja Poslodavca utvrđeno je postojanje opisane povrede obveza iz radnog odnosa."))
+  ]);
+}
+
+function buildMisconductNotice(context) {
+  return makeEmployerDecision(context, "ODLUKU", "O REDOVITOM OTKAZU UGOVORA O RADU ZBOG SKRIVLJENOG PONAŠANJA", [
+    p(`Radniku ${b(context.employeeInfo)} otkazuje se Ugovor o radu na ${b(context.contractType)} sklopljen dana ${b(context.contractDate)} radi obavljanja poslova ${b(context.jobTitle)}, zbog skrivljenog ponašanja.`),
+    p(`Radni odnos prestaje istekom otkaznog roka u trajanju od ${b(context.noticePeriod)}, koji počinje teći danom dostave ove Odluke.`),
+    vacationParagraph(context),
+    center("Obrazloženje"),
+    p(safeMultiline(context.violation)),
+    p(safeMultiline(context.reason || "Radnik je prethodno upozoren na obveze iz radnog odnosa i mogućnost otkaza u slučaju nastavka povrede tih obveza."))
+  ]);
+}
+
+function buildPersonalNotice(context) {
+  return makeEmployerDecision(context, "ODLUKU", "O REDOVITOM OSOBNO UVJETOVANOM OTKAZU UGOVORA O RADU", [
+    p(`Radniku ${b(context.employeeInfo)} otkazuje se Ugovor o radu na ${b(context.contractType)} sklopljen dana ${b(context.contractDate)} za poslove ${b(context.jobTitle)}, zbog osobno uvjetovanih razloga.`),
+    p(`Radni odnos prestaje istekom otkaznog roka u trajanju od ${b(context.noticePeriod)}, koji počinje teći danom dostave ove Odluke.`),
+    vacationParagraph(context),
+    center("Obrazloženje"),
+    p(safeMultiline(context.reason || "Zbog trajnih osobina ili sposobnosti radnika isti nije u mogućnosti uredno izvršavati svoje obveze iz radnog odnosa."))
+  ]);
+}
+
+function buildBusinessNotice(context, definition) {
+  return makeEmployerDecision(context, "ODLUKU", `O REDOVITOM POSLOVNO UVJETOVANOM OTKAZU UGOVORA O RADU ZBOG ${definition.businessReason.toUpperCase()}`, [
+    p(`Radniku ${b(context.employeeInfo)} otkazuje se Ugovor o radu na ${b(context.contractType)} sklopljen dana ${b(context.contractDate)} radi obavljanja poslova ${b(context.jobTitle)}, zbog ${b(definition.businessReason)}.`),
+    p(`Radni odnos prestaje istekom otkaznog roka u trajanju od ${b(context.noticePeriod)}, koji počinje teći danom dostave ove Odluke.`),
+    vacationParagraph(context),
+    p(`Radnik ima pravo na otpremninu odnosno drugu pripadajuću isplatu u iznosu od ${b(context.paymentAmount)}, ako su za to ispunjene zakonske pretpostavke.`),
+    center("Obrazloženje"),
+    p(safeMultiline(context.reason || `Zbog ${definition.businessReason} prestala je potreba za obavljanjem poslova radnika pod uvjetima iz sklopljenog ugovora o radu.`))
+  ]);
+}
+
+function buildChangedContractOffer(context) {
+  return makeEmployerDecision(context, "ODLUKU", "O OTKAZU S PONUDOM IZMIJENJENOG UGOVORA O RADU", [
+    p(`Radniku ${b(context.employeeInfo)} otkazuje se Ugovor o radu sklopljen dana ${b(context.contractDate)} za poslove ${b(context.jobTitle)}, uz istodobnu ponudu sklapanja izmijenjenog ugovora o radu.`),
+    p(`Ako radnik prihvati ponudu, radni odnos nastavlja se pod uvjetima iz izmijenjenog ugovora. Ako radnik ponudu ne prihvati, radni odnos prestaje istekom otkaznog roka od ${b(context.noticePeriod)}.`),
+    p(safeMultiline(context.changedContractSummary)),
+    center("Obrazloženje"),
+    p(safeMultiline(context.reason || "Zbog promijenjenih potreba organizacije rada potrebno je izmijeniti ugovorene uvjete rada."))
+  ]);
+}
+
+function buildEmployeeRegularNotice(context) {
+  return makeEmploymentDocument(context, [
+    p(`${employeeParty(context)} daje Poslodavcu ${b(context.employer.company_name || "")} sljedeći`),
+    centerTitle("REDOVITI OTKAZ UGOVORA O RADU"),
+    p(`Radnik redovito otkazuje Ugovor o radu sklopljen dana ${b(context.contractDate)} za obavljanje poslova ${b(context.jobTitle)}.`),
+    p(`Otkazni rok iznosi ${b(context.noticePeriod)} i počinje teći danom dostave ovog otkaza Poslodavcu.`),
+    p(`Radni odnos prestaje dana ${b(context.endDate)}.`),
+    p(safeMultiline(context.reason || "Radnik otkazuje ugovor o radu iz osobnih razloga.")),
+    employeeOnlySignature(context)
+  ]);
+}
+
+function buildEmployerExtraordinaryNotice(context) {
+  return makeEmployerDecision(context, "ODLUKU", "O IZVANREDNOM OTKAZU UGOVORA O RADU", [
+    p(`Radniku ${b(context.employeeInfo)} izvanredno se otkazuje Ugovor o radu sklopljen dana ${b(context.contractDate)} za poslove ${b(context.jobTitle)}.`),
+    p(`Radni odnos prestaje danom dostave ove Odluke, odnosno dana ${b(context.endDate)}.`),
+    center("Obrazloženje"),
+    p(safeMultiline(context.violation)),
+    p(safeMultiline(context.reason || "Zbog osobito teške povrede obveze iz radnog odnosa nastavak radnog odnosa nije moguć."))
+  ]);
+}
+
+function buildEmployeeExtraordinaryNotice(context) {
+  return makeEmploymentDocument(context, [
+    p(`${employeeParty(context)} daje Poslodavcu ${b(context.employer.company_name || "")} sljedeći`),
+    centerTitle("IZVANREDNI OTKAZ UGOVORA O RADU"),
+    p(`Radnik izvanredno otkazuje Ugovor o radu sklopljen dana ${b(context.contractDate)} za obavljanje poslova ${b(context.jobTitle)}.`),
+    p(`Radni odnos prestaje danom dostave ovog otkaza, odnosno dana ${b(context.endDate)}.`),
+    center("Obrazloženje"),
+    p(safeMultiline(context.reason || "Zbog osobito važne činjenice nastavak radnog odnosa nije moguć.")),
+    employeeOnlySignature(context)
+  ]);
+}
+
+function buildFixedTermExpiryNotice(context) {
+  return makeEmploymentDocument(context, [
+    employerActIntro(context, "daje sljedeću"),
+    centerTitle("OBAVIJEST O PRESTANKU UGOVORA O RADU NA ODREĐENO VRIJEME"),
+    p(`Obavještava se radnik ${b(context.employeeInfo)} da Ugovor o radu na određeno vrijeme sklopljen dana ${b(context.contractDate)} za obavljanje poslova ${b(context.jobTitle)} prestaje istekom vremena na koje je sklopljen, dana ${b(context.endDate)}.`),
+    vacationParagraph(context),
+    p("Radnik je dužan do dana prestanka radnog odnosa vratiti sredstva rada i uredno izvršiti primopredaju poslova."),
+    employerOnlySignature(context)
+  ]);
+}
+
+function buildRetirementNotice(context) {
+  return makeEmploymentDocument(context, [
+    employerActIntro(context, "daje sljedeću"),
+    centerTitle("OBAVIJEST O PRESTANKU UGOVORA O RADU RADI 65 GODINA ŽIVOTA I 15 GODINA MIROVINSKOG STAŽA"),
+    p(`Obavještava se radnik ${b(context.employeeInfo)} da mu Ugovor o radu sklopljen dana ${b(context.contractDate)} prestaje dana ${b(context.endDate)} jer radnik ima navršenih ${b(context.employeeAge)} godina života i ${b(context.pensionYears)} godina mirovinskog staža.`),
+    vacationParagraph(context),
+    p("Radnik je dužan do dana prestanka radnog odnosa izvršiti primopredaju poslova i sredstava rada."),
+    employerOnlySignature(context)
+  ]);
+}
+
+function buildHousingStatement(context) {
+  return makeEmploymentDocument(context, [
+    centerTitle("IZJAVA O STANOVANJU"),
+    p(`Izjavljujem u ime poduzeća ${b(context.employer.company_name || "")}, ${b(context.employerInfo)}, da će budući radnik ${b(context.employeeName)} iz ${b(context.employeeAddress || "-")}, OIB/putovnica ${b(context.employee.personal_id || "-")}, imati odgovarajući smještaj na adresi ${b(context.housingAddress)}.`),
+    p(`Smještaj će se sastojati od: ${b(context.housingDescription)}.`),
+    p(`U ${b(context.place)}, ${b(context.documentDate)} godine.`),
+    employerOnlySignature(context)
+  ]);
+}
+
+function makeEmployerDecision(context, actLabel, title, parts) {
+  return makeEmploymentDocument(context, [
+    employerActIntro(context, "donosi sljedeću"),
+    centerTitle(actLabel),
+    center(b(title)),
+    ...parts,
+    employerOnlySignature(context),
+    deliveryList()
+  ]);
+}
+
+function makeEmploymentDocument(context, parts) {
+  return parts.flat().join("");
+}
+
+function employerActIntro(context, verb) {
+  return p(`Na temelju mjerodavnih odredbi Zakona o radu, ${employerParty(context)} ${verb}`);
+}
+
+function employerParty(context) {
+  return `${b(`${context.employer.company_name || ""}, ${context.employerInfo}`)}, zastupano po ${b(context.director)}, (u nastavku: Poslodavac)`;
+}
+
+function employeeParty(context) {
+  return `${b(context.employeeInfo)}, (u nastavku: Radnik)`;
+}
+
+function vacationParagraph(context) {
+  const usage = context.vacationFrom && context.vacationTo
+    ? `koji će koristiti u razdoblju od ${b(context.vacationFrom)} do ${b(context.vacationTo)}`
+    : "koji će koristiti u dogovoru s Poslodavcem ili za koji će se obračunati pripadajuća naknada ako ga ne iskoristi";
+  return p(`Radnik ima pravo na ${b(context.vacationTotal)} dana godišnjeg odmora za ${b(context.vacationYear)} godinu, od čega je iskoristio ${b(context.vacationUsed)} dana, te mu preostaje ${b(context.vacationRemaining)} dana ${usage}.`);
+}
+
+function employerOnlySignature(context) {
+  return `
+    <div class="signature-block single-signature">
+      <div class="signature-card">
+        <div class="signature-role">Za poslodavca</div>
+        <div class="signature-line"></div>
+        <div class="signature-name">${escapeHtml(context.director)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function employeeOnlySignature(context) {
+  return `
+    <div class="signature-block single-signature">
+      <div class="signature-card">
+        <div class="signature-role">Radnik</div>
+        <div class="signature-line"></div>
+        <div class="signature-name">${escapeHtml(context.employeeName)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function deliveryList() {
+  return `
+    ${p("Dostaviti:")}
+    ${ol(["Radniku - 2 primjerka", "Kadrovskoj službi", "Službi nadležnoj za obračun plaća i naknada plaće"])}
+  `;
+}
+
 function buildAnnexA1(context) {
   return {
     title: "Aneks ugovora o radu za A1",
@@ -1130,6 +1497,10 @@ function b(value) {
   return `<strong>${escapeHtml(value)}</strong>`;
 }
 
+function safeMultiline(value) {
+  return escapeHtml(value).replace(/\r?\n/g, "<br>");
+}
+
 function linesToListItems(value) {
   return String(value || "")
     .split(/\r?\n/)
@@ -1166,6 +1537,12 @@ function numberWordHr(value) {
     5: "pet",
     6: "šest"
   }[Number(value)] || String(value);
+}
+
+function titleCaseDocument(value) {
+  return String(value || "")
+    .toLocaleLowerCase("hr-HR")
+    .replace(/(^|\s)(\p{L})/gu, (_, space, letter) => `${space}${letter.toLocaleUpperCase("hr-HR")}`);
 }
 
 function joinDateOrDescription(dateValue, description) {
@@ -1254,6 +1631,7 @@ function buildPrintableHtml(documentData, logoSrc) {
           .title { font-weight: 700; }
           strong { font-weight: 700; }
           .signature-block { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; margin-top: 28px; align-items: end; break-inside: avoid; page-break-inside: avoid; }
+          .single-signature { grid-template-columns: minmax(0, 1fr); max-width: 76mm; margin-left: auto; }
           .signature-card { text-align: center; }
           .signature-role { color: #667085; font-size: 11px; margin-bottom: 28px; text-transform: uppercase; }
           .signature-line { border-top: 1.5px solid #111827; margin-bottom: 8px; }
@@ -1373,6 +1751,13 @@ function setDefaultDates() {
   $("#documentForm").elements.a1_signature_date.value = today;
   $("#documentForm").elements.services_contract_date.value = today;
   $("#documentForm").elements.services_end_date.value = today;
+  $("#documentForm").elements.employment_doc_date.value = today;
+  $("#documentForm").elements.employment_contract_date.value = today;
+  $("#documentForm").elements.employment_start_date.value = today;
+  $("#documentForm").elements.employment_end_date.value = today;
+  $("#documentForm").elements.employment_vacation_from.value = today;
+  $("#documentForm").elements.employment_vacation_to.value = today;
+  $("#documentForm").elements.employment_vacation_year.value = new Date().getFullYear();
   $("#gfiForm").elements.report_date.value = today;
   $("#gfiForm").elements.report_year.value = new Date().getFullYear() - 1;
   $$(".date-hr-input").forEach(syncDatePickerFromDisplay);

@@ -527,6 +527,12 @@ label input[type="checkbox"] {
   align-items: end;
 }
 
+.single-signature {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 320px;
+  margin-left: auto;
+}
+
 .signature-card {
   text-align: center;
 }
