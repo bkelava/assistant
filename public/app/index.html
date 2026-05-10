@@ -60,7 +60,7 @@
             </article>
             <article class="stat">
               <span>Dokumenti</span>
-              <strong>6</strong>
+              <strong>21</strong>
             </article>
           </div>
           <div class="panel">
@@ -189,6 +189,22 @@
                   <option value="annex_a1">ANEKS UGOVORA O RADU ZA A1</option>
                   <option value="erv">EVIDENCIJA RADNOG VREMENA</option>
                   <option value="accounting_services">UGOVOR O KNJIGOVODSTVENO-RAČUNOVODSTVENIM USLUGAMA</option>
+                  <option value="confirmation_indefinite">POTVRDA O SKLOPLJENOM UGOVORU O RADU NA NEODREĐENO VRIJEME</option>
+                  <option value="mutual_termination">SPORAZUM O PRESTANKU UGOVORA O RADU</option>
+                  <option value="probation_unsatisfactory">OTKAZ ZBOG NEZADOVOLJAVANJA RADNIKA NA PROBNOM RADU</option>
+                  <option value="work_obligation_warning">UPOZORENJE NA OBVEZE IZ RADNOG ODNOSA</option>
+                  <option value="misconduct_notice">REDOVITI OTKAZ UGOVORA O RADU ZBOG SKRIVLJENOG PONAŠANJA</option>
+                  <option value="personal_notice">REDOVITI OSOBNO UVJETOVANI OTKAZ UGOVORA O RADU</option>
+                  <option value="business_economic_notice">REDOVITI POSLOVNO UVJETOVANI OTKAZ ZBOG GOSPODARSKIH RAZLOGA</option>
+                  <option value="business_organizational_notice">REDOVITI POSLOVNO UVJETOVANI OTKAZ ZBOG ORGANIZACIJSKIH RAZLOGA</option>
+                  <option value="business_technological_notice">REDOVITI POSLOVNO UVJETOVANI OTKAZ ZBOG TEHNOLOŠKIH RAZLOGA</option>
+                  <option value="changed_contract_offer">OTKAZ S PONUDOM IZMIJENJENOG UGOVORA</option>
+                  <option value="employee_regular_notice">REDOVITI OTKAZ ZAPOSLENIKA</option>
+                  <option value="employer_extraordinary_notice">IZVANREDNI OTKAZ UGOVORA O RADU OD STRANE POSLODAVCA</option>
+                  <option value="employee_extraordinary_notice">IZVANREDNI OTKAZ ZAPOSLENIKA</option>
+                  <option value="fixed_term_expiry_notice">OBAVIJEST O PRESTANKU UGOVORA O RADU NA ODREĐENO VRIJEME</option>
+                  <option value="retirement_65_15_notice">OBAVIJEST O PRESTANKU UGOVORA O RADU RADI 65 GODINA ŽIVOTA I 15 GODINA MIROVINSKOG STAŽA</option>
+                  <option value="housing_statement">IZJAVA O STANOVANJU</option>
                 </select>
               </p>
             </div>
@@ -496,6 +512,52 @@ zastupanje u poreznim nadzorima
 izrada posebnih analiza i izvještaja
 usluge vezane uz osnivanje, statusne promjene ili likvidaciju društva
 dodatna savjetovanja izvan redovnog opsega rada</textarea>
+              </label>
+            </div>
+
+            <div class="field-group employment-doc-section hidden">
+              <h3>Dodatni podaci za radno-pravni dokument</h3>
+              <div class="document-grid">
+                <label>Mjesto dokumenta<input name="employment_doc_place" value="Zagreb"></label>
+                <label>Datum dokumenta<input name="employment_doc_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label>Datum ugovora o radu<input name="employment_contract_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label>Vrsta ugovora
+                  <select name="employment_contract_type">
+                    <option>neodređeno vrijeme</option>
+                    <option>određeno vrijeme</option>
+                  </select>
+                </label>
+                <label>Naziv poslova<input name="employment_job_title" value="POSAO - OPIS POSLA"></label>
+                <label>Mjesto rada<input name="employment_work_place" value="NASELJE/GRAD/OPĆINA U KOJEM SE RADI"></label>
+                <label>Početak rada<input name="employment_start_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label>Prestanak radnog odnosa<input name="employment_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label>Otkazni rok<input name="employment_notice_period" value="15 dana"></label>
+                <label>Godina godišnjeg odmora<input name="employment_vacation_year" type="number" min="2000" max="2100"></label>
+                <label>Pripada godišnjeg odmora<input name="employment_vacation_total" type="number" min="0" step="1" value="0"></label>
+                <label>Iskorišteno godišnjeg odmora<input name="employment_vacation_used" type="number" min="0" step="1" value="0"></label>
+                <label>Preostalo godišnjeg odmora<input name="employment_vacation_remaining" type="number" min="0" step="1" value="0"></label>
+                <label>GO od<input name="employment_vacation_from" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label>GO do<input name="employment_vacation_to" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label>Otpremnina / naknada<input name="employment_payment_amount" value="0,00 EUR"></label>
+                <label>Probni rad<input name="employment_probation_period" value="1 mjesec"></label>
+                <label>Otkazni rok na probnom radu<input name="employment_probation_notice" value="7 dana"></label>
+                <label>Navršene godine života<input name="employment_employee_age" type="number" min="0" max="100" value="65"></label>
+                <label>Godine mirovinskog staža<input name="employment_pension_years" type="number" min="0" max="80" value="15"></label>
+              </div>
+              <label>Razlog / opis okolnosti
+                <textarea name="employment_reason" rows="4">Unesite konkretne činjenice i okolnosti na kojima se temelji dokument.</textarea>
+              </label>
+              <label>Opis povrede / upozorenja
+                <textarea name="employment_violation" rows="4">Radnik je povrijedio obveze iz radnog odnosa na način koji je potrebno detaljno opisati.</textarea>
+              </label>
+              <label>Sažetak izmijenjenog ugovora
+                <textarea name="employment_changed_contract_summary" rows="4">Uz ovu odluku radniku se nudi sklapanje izmijenjenog ugovora o radu pod uvjetima navedenima u priloženom prijedlogu.</textarea>
+              </label>
+              <label>Adresa smještaja
+                <input name="housing_address" value="ADRESA SMJEŠTAJA">
+              </label>
+              <label>Opis smještaja
+                <input name="housing_description" value="soba, kuhinja, kupaonica i sanitarni čvor">
               </label>
             </div>
 
