@@ -8,23 +8,70 @@ const state = {
   employers: [],
   accounting: [],
   employees: [],
+  drafts: [],
   currentView: "dashboard"
 };
 
 const sessionDataKey = "contract-office-session-data-v2";
+const draftsKey = "contract-office-drafts-v1";
 const defaultStaticDataUrl = "static-data.json";
 
 const numbers1To30 = Array.from({ length: 31 }, (_, index) => String(index + 1));
 const numbers1To12 = Array.from({ length: 12 }, (_, index) => String(index + 1));
-const vacationOptions = [
-  "-", "1 dan", "2 dana", "3 dana", "4 dana", "5 dana", "6 dana", "8 dana", "9 dana",
-  "10 dana", "11 dana", "12 dana", "13 dana", "1 tjedan", "2 tjedna", "3 tjedna",
-  "4 tjedna", "5 tjedana", "6 tjedana"
-];
+const vacationOptions = Array.from({ length: 50 }, (_, index) => String(index + 1));
 const courtOptions = [
   "Bjelovaru", "Dubrovniku", "Karlovcu", "Osijeku", "Puli", "Rijeci", "Sisku",
   "Slavonskom Brodu", "Splitu", "Šibeniku", "Varaždinu", "Velikoj Gorici",
   "Vukovaru", "Zadru", "Zagrebu"
+];
+
+const documentTypeLabels = {
+  full_time: "Ugovor o radu na neodređeno vrijeme",
+  part_time: "Ugovor o radu na određeno vrijeme",
+  annex_standard: "Aneks ugovora o radu",
+  annex_a1: "Aneks ugovora o radu za A1",
+  erv: "Evidencija radnog vremena",
+  accounting_services: "Ugovor o knjigovodstveno-računovodstvenim uslugama",
+  business_cooperation: "Ugovor o poslovnoj suradnji",
+  vehicle_power_of_attorney: "Punomoć za vozilo",
+  work_order: "Radni nalog",
+  virtual_address_lease: "Ugovor o najmu virtualne adrese",
+  confirmation_indefinite: "Potvrda o sklopljenom ugovoru o radu na neodređeno",
+  mutual_termination: "Sporazum o prestanku ugovora o radu",
+  probation_unsatisfactory: "Otkaz zbog nezadovoljavanja na probnom radu",
+  work_obligation_warning: "Upozorenje na obveze iz radnog odnosa",
+  misconduct_notice: "Otkaz zbog skrivljenog ponašanja",
+  personal_notice: "Osobno uvjetovani otkaz",
+  business_economic_notice: "Poslovno uvjetovani otkaz – gospodarski razlozi",
+  business_organizational_notice: "Poslovno uvjetovani otkaz – organizacijski razlozi",
+  business_technological_notice: "Poslovno uvjetovani otkaz – tehnološki razlozi",
+  changed_contract_offer: "Otkaz s ponudom izmijenjenog ugovora",
+  employee_regular_notice: "Redoviti otkaz zaposlenika",
+  employer_extraordinary_notice: "Izvanredni otkaz poslodavca",
+  employee_extraordinary_notice: "Izvanredni otkaz zaposlenika",
+  fixed_term_expiry_notice: "Obavijest o isteku ugovora na određeno",
+  retirement_65_15_notice: "Obavijest o prestanku – 65 god. / 15 god. staža",
+  housing_statement: "Izjava o stanovanju"
+};
+
+const documentCategories = [
+  { title: "Ugovori o radu", types: ["full_time", "part_time"] },
+  { title: "Aneksi", types: ["annex_standard", "annex_a1"] },
+  { title: "Evidencija radnog vremena", types: ["erv"] },
+  { title: "Ugovori o uslugama i suradnji", types: ["accounting_services", "business_cooperation", "virtual_address_lease"] },
+  { title: "Punomoći i nalozi", types: ["vehicle_power_of_attorney", "work_order"] },
+  { title: "Potvrde i izjave", types: ["confirmation_indefinite", "housing_statement"] },
+  {
+    title: "Sporazumi i otkazi",
+    types: [
+      "mutual_termination", "probation_unsatisfactory", "work_obligation_warning",
+      "misconduct_notice", "personal_notice",
+      "business_economic_notice", "business_organizational_notice", "business_technological_notice",
+      "changed_contract_offer", "employee_regular_notice",
+      "employer_extraordinary_notice", "employee_extraordinary_notice",
+      "fixed_term_expiry_notice", "retirement_65_15_notice"
+    ]
+  }
 ];
 const monthNamesHr = [
   "siječanj", "veljača", "ožujak", "travanj", "svibanj", "lipanj",
@@ -151,12 +198,319 @@ const employmentDocumentDefinitions = {
   }
 };
 
+const employmentVacationFields = ["vacationYear", "vacationTotal", "vacationUsed", "vacationRemaining", "vacationFrom", "vacationTo"];
+const employmentDocumentFieldSets = {
+  confirmation_indefinite: [
+    "docPlace", "docDate", "contractDate", "jobTitle", "workPlace", "startDate",
+    "probationPeriod", "probationNotice", "paymentAmount", "vacationTotal"
+  ],
+  mutual_termination: [
+    "docPlace", "docDate", "contractDate", "contractType", "jobTitle", "endDate",
+    ...employmentVacationFields
+  ],
+  probation_unsatisfactory: [
+    "docPlace", "docDate", "contractDate", "jobTitle", "probationPeriod",
+    "probationNotice", "reason"
+  ],
+  work_obligation_warning: [
+    "docPlace", "docDate", "contractDate", "contractType", "jobTitle", "violation", "reason"
+  ],
+  misconduct_notice: [
+    "docPlace", "docDate", "contractDate", "contractType", "jobTitle", "noticePeriod",
+    ...employmentVacationFields, "violation", "reason"
+  ],
+  personal_notice: [
+    "docPlace", "docDate", "contractDate", "contractType", "jobTitle", "noticePeriod",
+    ...employmentVacationFields, "reason"
+  ],
+  business_economic_notice: [
+    "docPlace", "docDate", "contractDate", "contractType", "jobTitle", "noticePeriod",
+    ...employmentVacationFields, "paymentAmount", "reason"
+  ],
+  business_organizational_notice: [
+    "docPlace", "docDate", "contractDate", "contractType", "jobTitle", "noticePeriod",
+    ...employmentVacationFields, "paymentAmount", "reason"
+  ],
+  business_technological_notice: [
+    "docPlace", "docDate", "contractDate", "contractType", "jobTitle", "noticePeriod",
+    ...employmentVacationFields, "paymentAmount", "reason"
+  ],
+  changed_contract_offer: [
+    "docPlace", "docDate", "contractDate", "jobTitle", "noticePeriod",
+    "changedContractSummary", "reason"
+  ],
+  employee_regular_notice: [
+    "docPlace", "docDate", "contractDate", "jobTitle", "endDate", "noticePeriod", "reason"
+  ],
+  employer_extraordinary_notice: [
+    "docPlace", "docDate", "contractDate", "jobTitle", "endDate", "violation", "reason"
+  ],
+  employee_extraordinary_notice: [
+    "docPlace", "docDate", "contractDate", "jobTitle", "endDate", "reason"
+  ],
+  fixed_term_expiry_notice: [
+    "docPlace", "docDate", "contractDate", "jobTitle", "endDate", ...employmentVacationFields
+  ],
+  retirement_65_15_notice: [
+    "docPlace", "docDate", "contractDate", "endDate", "employeeAge", "pensionYears",
+    ...employmentVacationFields
+  ],
+  housing_statement: [
+    "docPlace", "docDate", "housingAddress", "housingDescription"
+  ]
+};
+
+const templateDocumentFieldSets = {
+  business_cooperation: [
+    "partyA", "partyB", "businessDate", "businessPlace", "businessWork",
+    "businessPrice", "businessIban", "businessEnd"
+  ],
+  vehicle_power_of_attorney: [
+    "partyA", "paIdCard", "partyB", "pbIdCard",
+    "businessDate", "businessPlace", "vehicleInfo", "vehicleVin", "vehiclePlate", "vehicleValidUntil"
+  ],
+  work_order: [
+    "partyA", "partyB", "businessDate", "workOrderNumber", "workOrderRequest",
+    "workOrderCostPlace", "workOrderCostOwner", "workOrderDescription"
+  ],
+  virtual_address_lease: [
+    "partyA", "partyB", "businessDate", "businessPlace",
+    "leaseAddress", "leaseCadastral", "leaseStart", "leaseEnd", "leaseFee",
+    "leaseIban", "leaseEmail"
+  ]
+};
+
+const partySourceOptions = {
+  pa: {
+    business_cooperation:        ["employer", "adhoc_company", "adhoc_person"],
+    vehicle_power_of_attorney:   ["employer", "employee", "adhoc_company", "adhoc_person"],
+    work_order:                  ["employer", "adhoc_company", "adhoc_person"],
+    virtual_address_lease:       ["employer", "adhoc_company", "adhoc_person"]
+  },
+  pb: {
+    business_cooperation:        ["employer", "accounting", "employee", "adhoc_company", "adhoc_person"],
+    vehicle_power_of_attorney:   ["employee", "adhoc_person"],
+    work_order:                  ["employer", "employee", "adhoc_company", "adhoc_person"],
+    virtual_address_lease:       ["employer", "employee", "adhoc_company", "adhoc_person"]
+  }
+};
+
+const sourceLabels = {
+  employer:     "Poslodavac (iz baze)",
+  employee:     "Radnik (iz baze)",
+  accounting:   "Knjigovodstvo (iz baze)",
+  adhoc_company: "Pravna osoba (ručni unos)",
+  adhoc_person:  "Fizička osoba (ručni unos)"
+};
+
+const blankControlLabels = {
+  employer_id: "Poslodavac - odabir",
+  employer_info_display: "Poslodavac - adresa i OIB",
+  director_display: "Poslodavac - zastupnik / odgovorna osoba",
+  employee_id: "Radnik - odabir",
+  employee_personal_id_display: "Radnik - OIB / putovnica",
+  contract_date: "Datum sklapanja ugovora",
+  end_job_use_date: "Kraj ugovora - koristi datum",
+  end_job_date: "Kraj ugovora - datum",
+  end_job_use_description: "Kraj ugovora - koristi opis",
+  end_job_description: "Kraj ugovora - opis",
+  job_description: "Poslovi radnika",
+  trail_numbers: "Probni rad - broj",
+  trail_option: "Probni rad - jedinica",
+  working_place: "Mjesto rada",
+  start_use_date: "Početak rada - koristi datum",
+  start_date: "Početak rada - datum",
+  start_use_description: "Početak rada - koristi opis",
+  start_date_description: "Početak rada - opis",
+  salary: "Osnovna bruto plaća",
+  salary_bonus: "Stimulativni dio plaće",
+  salary_increment_1: "Otežani uvjeti rada",
+  salary_increment_2: "Blagdani / neradni dani / Uskrs",
+  salary_increment_3: "Rad nedjeljom",
+  salary_increment_4: "Noćni rad",
+  salary_increment_5: "Prekovremeni rad",
+  salary_increment_6: "Druga smjena",
+  work_type: "Vrsta radnog vremena",
+  weekly_working_hours: "Sati tjedno",
+  working_shift: "Radno vrijeme - raspored",
+  working_time_start: "Radno vrijeme - početak",
+  working_time_end: "Radno vrijeme - kraj",
+  working_shift_description: "Radno vrijeme - opis",
+  weekly_time_off: "Tjedni odmor",
+  vacation: "Godišnji odmor - broj dana",
+  vacation_description: "Opis godišnjeg odmora",
+  contract_termination: "Ugovor na određeno - može li se otkazati",
+  contract_termination_employer: "Otkazni rok poslodavac",
+  contract_termination_employee: "Otkazni rok radnik",
+  rights_and_obligations: "Ostala prava i obveze",
+  court: "Nadležni sud",
+  contract_start_use_date: "Stupanje ugovora na snagu - koristi datum",
+  contract_starting_with: "Stupanje ugovora na snagu - datum",
+  contract_start_use_description: "Stupanje ugovora na snagu - koristi opis",
+  contract_start_with_description: "Stupanje ugovora na snagu - opis",
+  a1_employer_id: "Poslodavac - odabir",
+  a1_employer_info_display: "Poslodavac - adresa i OIB",
+  a1_director_display: "Poslodavac - zastupnik / odgovorna osoba",
+  a1_employee_id: "Radnik - odabir",
+  a1_employee_personal_id_display: "Radnik - OIB / putovnica",
+  a1_contract_date: "A1 aneks - datum osnovnog ugovora",
+  a1_contract_type: "A1 aneks - vrsta osnovnog ugovora",
+  a1_end_date: "A1 aneks - predviđeno trajanje rada u inozemstvu do",
+  a1_working_place: "A1 aneks - mjesto rada u inozemstvu",
+  a1_job_description: "A1 aneks - poslovi radnika",
+  a1_court: "A1 aneks - nadležni sud",
+  a1_signature_place: "A1 aneks - mjesto potpisa",
+  a1_signature_date: "A1 aneks - datum potpisa",
+  annex_contract_date: "Aneks - datum osnovnog ugovora",
+  annex_base_contract_type: "Aneks - vrsta osnovnog ugovora",
+  annex_effective_date: "Aneks - datum stupanja na snagu",
+  annex_signature_place: "Aneks - mjesto potpisa",
+  annex_signature_date: "Aneks - datum potpisa",
+  annex_court: "Aneks - nadležni sud",
+  annex_change_duration: "Aneks - mijenja se trajanje ugovora",
+  annex_new_contract_type: "Aneks - novo trajanje ugovora",
+  annex_new_end_date: "Aneks - novi datum isteka",
+  annex_change_job: "Aneks - mijenjaju se poslovi radnika",
+  annex_job_description: "Aneks - novi opis poslova",
+  annex_change_probation: "Aneks - mijenja se probni rad",
+  annex_probation_period: "Aneks - novo trajanje probnog rada",
+  annex_change_work_place: "Aneks - mijenja se mjesto rada",
+  annex_working_place: "Aneks - novo mjesto rada",
+  annex_change_start_date: "Aneks - mijenja se početak rada",
+  annex_start_date: "Aneks - novi početak rada",
+  annex_change_salary: "Aneks - mijenja se plaća",
+  annex_salary: "Aneks - nova osnovna bruto plaća",
+  annex_salary_bonus: "Aneks - novi stimulativni dio plaće",
+  annex_salary_increment_1: "Aneks - otežani uvjeti rada",
+  annex_salary_increment_2: "Aneks - blagdani / neradni dani / Uskrs",
+  annex_salary_increment_3: "Aneks - rad nedjeljom",
+  annex_salary_increment_4: "Aneks - noćni rad",
+  annex_salary_increment_5: "Aneks - prekovremeni rad",
+  annex_salary_increment_6: "Aneks - druga smjena",
+  annex_work_type: "Aneks - vrsta radnog vremena",
+  annex_change_work_time: "Aneks - mijenja se radno vrijeme",
+  annex_weekly_hours: "Aneks - novi sati tjedno",
+  annex_working_shift_description: "Aneks - novi raspored radnog vremena",
+  annex_change_weekly_rest: "Aneks - mijenja se tjedni odmor",
+  annex_weekly_time_off: "Aneks - novi tjedni odmor",
+  annex_change_vacation: "Aneks - mijenja se godišnji odmor",
+  annex_vacation: "Aneks - novi broj dana godišnjeg odmora",
+  annex_vacation_description: "Aneks - novi opis godišnjeg odmora",
+  annex_change_notice: "Aneks - mijenjaju se otkazni rokovi",
+  annex_notice_employer: "Aneks - novi otkazni rok poslodavac",
+  annex_notice_employee: "Aneks - novi otkazni rok radnik",
+  annex_change_rights: "Aneks - mijenjaju se ostala prava i obveze",
+  annex_rights_and_obligations: "Aneks - nova ostala prava i obveze",
+  annex_other_changes: "Aneks - druge izmjene i dopune",
+  erv_employer_id: "ERV - poslodavac",
+  erv_employee_id: "ERV - radnik",
+  erv_year: "ERV - godina",
+  erv_month: "ERV - mjesec",
+  erv_non_working_days: "ERV - hrvatski neradni dani u mjesecu",
+  services_client_id: "Ugovor o uslugama - klijent",
+  services_accounting_id: "Ugovor o uslugama - knjigovodstveni ured",
+  services_contract_date: "Ugovor o uslugama - datum sklapanja",
+  services_contract_place: "Ugovor o uslugama - mjesto sklapanja",
+  services_client_email: "Ugovor o uslugama - e-mail klijenta",
+  services_accounting_email: "Ugovor o uslugama - e-mail knjigovodstva",
+  services_document_delivery_day: "Ugovor o uslugama - dostava dokumentacije do dana u mjesecu",
+  services_monthly_fee: "Ugovor o uslugama - mjesečna naknada",
+  services_vat_status: "Ugovor o uslugama - PDV status naknade",
+  services_annual_fee: "Ugovor o uslugama - završni račun / godišnja izvješća",
+  services_annual_vat_status: "Ugovor o uslugama - PDV status završnog računa",
+  services_payment_due_days: "Ugovor o uslugama - rok plaćanja",
+  services_duration_type: "Ugovor o uslugama - trajanje ugovora",
+  services_end_date: "Ugovor o uslugama - krajnji datum ugovora",
+  services_notice_period_days: "Ugovor o uslugama - otkazni rok",
+  services_court: "Ugovor o uslugama - nadležni sud",
+  services_copies: "Ugovor o uslugama - broj primjeraka",
+  services_scope: "Ugovor o uslugama - opseg usluga",
+  services_excluded: "Ugovor o uslugama - izvanredne usluge koje nisu uključene u cijenu",
+  employment_doc_place: "Mjesto dokumenta",
+  employment_doc_date: "Datum dokumenta",
+  employment_contract_date: "Datum ugovora o radu",
+  employment_contract_type: "Vrsta ugovora",
+  employment_job_title: "Naziv poslova",
+  employment_work_place: "Mjesto rada",
+  employment_start_date: "Početak rada",
+  employment_end_date: "Prestanak radnog odnosa / kraj ugovora",
+  employment_notice_period: "Otkazni rok",
+  employment_vacation_year: "Godina godišnjeg odmora",
+  employment_vacation_total: "Pripada godišnjeg odmora - broj dana",
+  employment_vacation_used: "Iskorišteno godišnjeg odmora - broj dana",
+  employment_vacation_remaining: "Preostalo godišnjeg odmora - broj dana",
+  employment_vacation_from: "Godišnji odmor od",
+  employment_vacation_to: "Godišnji odmor do",
+  employment_payment_amount: "Iznos plaće / naknade / otpremnine",
+  employment_probation_period: "Probni rad",
+  employment_probation_notice: "Otkazni rok na probnom radu",
+  employment_employee_age: "Navršene godine života",
+  employment_pension_years: "Godine mirovinskog staža",
+  employment_reason: "Razlog / opis okolnosti",
+  employment_violation: "Opis povrede / upozorenja",
+  employment_changed_contract_summary: "Sažetak izmijenjenog ugovora",
+  housing_address: "Adresa smještaja",
+  housing_description: "Opis smještaja",
+  pa_source: "Stranka A - vrsta",
+  pa_entity_id: "Stranka A - odabir iz baze",
+  pa_name: "Stranka A - ime / naziv tvrtke",
+  pa_oib: "Stranka A - OIB",
+  pa_street: "Stranka A - ulica",
+  pa_city: "Stranka A - grad",
+  pa_postal: "Stranka A - poštanski broj",
+  pa_director: "Stranka A - zastupnik / direktor",
+  pa_id_card: "Stranka A - osobna iskaznica",
+  pb_source: "Stranka B - vrsta",
+  pb_entity_id: "Stranka B - odabir iz baze",
+  pb_name: "Stranka B - ime / naziv tvrtke",
+  pb_oib: "Stranka B - OIB",
+  pb_street: "Stranka B - ulica",
+  pb_city: "Stranka B - grad",
+  pb_postal: "Stranka B - poštanski broj",
+  pb_director: "Stranka B - zastupnik / direktor",
+  pb_id_card: "Stranka B - osobna iskaznica",
+  template_document_date: "Datum dokumenta",
+  template_document_place: "Mjesto dokumenta",
+  business_work_description: "Opis posla / radova",
+  business_price: "Cijena / naknada",
+  business_iban: "IBAN izvršitelja",
+  business_end_date: "Trajanje do",
+  vehicle_description: "Vozilo",
+  vehicle_vin: "Broj šasije",
+  vehicle_plate: "Registracija",
+  vehicle_valid_until: "Punomoć vrijedi do",
+  work_order_number: "Radni nalog broj",
+  work_order_request_number: "Narudžbenica broj",
+  work_order_cost_place: "Mjesto troška",
+  work_order_cost_owner: "Nositelj troška",
+  work_order_description: "Opis rada",
+  lease_address: "Virtualna adresa",
+  lease_cadastral: "ZK / k.č. opis",
+  lease_start_date: "Početak najma",
+  lease_end_date: "Kraj najma",
+  lease_fee: "Mjesečna zakupnina",
+  lease_iban: "IBAN zakupodavca",
+  lease_tenant_email: "E-mail zakupnika",
+  company_name: "Tvrtka",
+  address: "Adresa",
+  city: "Grad",
+  oib: "OIB",
+  director: "Direktor",
+  report_year: "Godina",
+  report_date: "Datum izvještaja",
+  gain_before_tax: "Dobit prije poreza",
+  gain_tax: "Porez na dobit",
+  gain_after_tax: "Dobit nakon poreza",
+  loss_coverage: "Pokriće gubitka"
+};
+
 const views = {
   dashboard: ["Pregled", "Uredi podatke i generiraj dokumente u pregledniku."],
   employers: ["Poslodavci", "Dodaj, uredi i izbriši poslodavce."],
   accounting: ["Knjigovodstvo", "Dodaj knjigovodstvene urede za ugovore o uslugama."],
   employees: ["Radnici", "Dodaj radnike i povezi ih s poslodavcima."],
-  documents: ["Generiranje dokumenata", "Generiraj ugovore, anekse i evidenciju radnog vremena."],
+  documents: ["Generiranje dokumenata", "Odaberi vrstu dokumenta, ispuni obrazac i preuzmi."],
+  nacrti: ["Nacrti", "Upravljaj spremljenim nacrtima dokumenata."],
   gfi: ["GFI", "Pripremi osnovnu odluku i izvještaj za GFI."]
 };
 
@@ -179,7 +533,13 @@ async function init() {
 
 function bindNavigation() {
   $$(".nav-item").forEach((button) => {
-    button.addEventListener("click", () => showView(button.dataset.view));
+    button.addEventListener("click", () => {
+      if (button.dataset.view === "documents" && state.currentView === "documents") {
+        showDocumentPicker();
+      } else {
+        showView(button.dataset.view);
+      }
+    });
   });
 }
 
@@ -198,13 +558,23 @@ function bindForms() {
   $("#downloadDocumentButton").addEventListener("click", async () => {
     await downloadPrintableHtml(buildDocument());
   });
+  $("#downloadBlankDocumentButton").addEventListener("click", async () => {
+    await downloadPrintableHtml(buildBlankDocumentFromForm($("#documentForm"), $("#documentForm h2").textContent, $("#contractType").value));
+  });
   $("#downloadGfiButton").addEventListener("click", async () => {
     await downloadPrintableHtml(buildGfiDocument());
+  });
+  $("#downloadBlankGfiButton").addEventListener("click", async () => {
+    await downloadPrintableHtml(buildBlankDocumentFromForm($("#gfiForm"), "GFI ODLUKA / IZVJEŠTAJ", "gfi"));
   });
   $("#previewButton").addEventListener("click", () => {
     $("#documentPreview").innerHTML = buildDocument().html;
   });
   $("#resetContractButton").addEventListener("click", resetContractForm);
+  $("#saveDraftButton").addEventListener("click", saveDraft);
+  $("#backToPickerButton").addEventListener("click", () => {
+    showView("documents");
+  });
   $("#contractType").addEventListener("change", updateContractUi);
   $("#documentEmployer").addEventListener("change", () => {
     populateDocumentEmployeeSelect("documentEmployee", $("#documentEmployer").value);
@@ -225,11 +595,19 @@ function bindForms() {
   $("#workType").addEventListener("change", updateWorkType);
   $("#workingShift").addEventListener("change", updateWorkingShift);
   $("#contractTermination").addEventListener("change", updateContractTermination);
+  $("#annexNewContractType").addEventListener("change", updateStandardAnnexUi);
   $("#ervYearSelect").addEventListener("change", updateErvNonWorkingDays);
   $("#ervMonthSelect").addEventListener("change", updateErvNonWorkingDays);
   $("#servicesClient").addEventListener("change", updateDocumentDisplayFields);
   $("#servicesAccounting").addEventListener("change", updateDocumentDisplayFields);
   $("#servicesDurationType").addEventListener("change", updateServicesDurationUi);
+  ["#paSource", "#pbSource"].forEach((id) => {
+    $(id)?.addEventListener("change", () => {
+      renderPartyEntitySelects();
+      updatePartyPickerVisibility();
+      updateDocumentDisplayFields();
+    });
+  });
   $$(".paired-checkbox").forEach((checkbox) => {
     checkbox.addEventListener("change", () => updatePairedCheckboxes(checkbox.dataset.pair));
   });
@@ -260,12 +638,16 @@ function bindActions() {
     render();
     toast("Podaci sesije su osvježeni.");
   });
+  $("#nacrtiSearch")?.addEventListener("input", renderDrafts);
   $("#importButton").addEventListener("click", () => $("#importFile").click());
   $("#importFile").addEventListener("change", importJsonData);
   $("#exportButton").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(snapshotData(), null, 2)], {
-      type: "application/json"
-    });
+    const blob = new Blob([JSON.stringify({
+      employers: state.employers,
+      accounting: state.accounting,
+      employees: state.employees,
+      drafts: state.drafts
+    }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -281,11 +663,55 @@ async function importJsonData(event) {
   if (!file) return;
 
   try {
-    applyImportedData(JSON.parse(await file.text()));
+    const parsed = JSON.parse(await file.text());
+    const employers = Array.isArray(parsed.employers) ? parsed.employers : [];
+    const accounting = Array.isArray(parsed.accounting) ? parsed.accounting : [];
+    const employees = Array.isArray(parsed.employees) ? parsed.employees : [];
+
+    state.employers = employers.map((employer, index) => ({
+      id: employer.id || createId("employer", employer.company_name || `poslodavac-${index + 1}`),
+      company_name: employer.company_name || "",
+      street: employer.street || "",
+      city: employer.city || "",
+      postal: employer.postal || "",
+      vat: employer.vat || "",
+      director: employer.director || ""
+    }));
+    state.accounting = accounting.map((office, index) => ({
+      id: office.id || createId("accounting", office.company_name || `knjigovodstvo-${index + 1}`),
+      company_name: office.company_name || "",
+      street: office.street || "",
+      city: office.city || "",
+      postal: office.postal || "",
+      vat: office.vat || "",
+      director: office.director || "",
+      email: office.email || ""
+    }));
+    state.employees = employees.map((employee, index) => ({
+      id: employee.id || createId("employee", `${employee.name || "radnik"}-${employee.lastname || index + 1}`),
+      name: employee.name || "",
+      lastname: employee.lastname || "",
+      street: employee.street || "",
+      city: employee.city || "",
+      postal: employee.postal || "",
+      personal_id: employee.personal_id || "",
+      employer_names: Array.isArray(employee.employer_names) ? employee.employer_names : []
+    }));
+
+    const importedDrafts = Array.isArray(parsed.drafts) ? parsed.drafts : [];
+    const validDrafts = importedDrafts.filter((d) => d && d.id && d.formData && d.type);
+    if (validDrafts.length) {
+      const existingIds = new Set(state.drafts.map((d) => d.id));
+      validDrafts.forEach((d) => { if (!existingIds.has(d.id)) state.drafts.push(d); });
+      writeDrafts();
+    }
+
     writeSessionData();
     const savedToFile = await saveStaticDataFile();
     render();
-    toast(savedToFile ? "JSON podaci su uvezeni i spremljeni u datoteku." : "JSON podaci su uvezeni u ovu sesiju.");
+    const draftMsg = validDrafts.length ? `, ${validDrafts.length} nacrta` : "";
+    const baseMsg = `Uvezeno: ${state.employers.length} poslodavaca, ${state.employees.length} radnika${draftMsg}.`;
+    toast(savedToFile ? `${baseMsg} Spremljeno u JSON datoteku.` : baseMsg);
   } catch {
     toast("Uvoz nije uspio. Provjerite JSON datoteku.");
   } finally {
@@ -368,11 +794,21 @@ function hydrateContractControls() {
   $("#trailNumbers").innerHTML = numbers1To30.map((value) => `<option>${value}</option>`).join("");
   $("#trailNumbers").value = "1";
   $("#vacationSelect").innerHTML = vacationOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("");
-  $("#vacationSelect").value = "4 tjedna";
+  $("#vacationSelect").value = "20";
   $("#courtSelect").innerHTML = courtOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("");
   $("#courtSelect").value = "Zagrebu";
   $("#a1CourtSelect").innerHTML = courtOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("");
   $("#a1CourtSelect").value = "Zagrebu";
+  $("#annexCourtSelect").innerHTML = courtOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("");
+  $("#annexCourtSelect").value = "Zagrebu";
+  $("#annexVacationSelect").innerHTML = vacationOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("");
+  $("#annexVacationSelect").value = "20";
+  $("#employmentVacationTotalSelect").innerHTML = vacationOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("");
+  $("#employmentVacationTotalSelect").value = "20";
+  $("#employmentVacationUsedSelect").innerHTML = ["0", ...vacationOptions].map((value) => `<option>${escapeHtml(value)}</option>`).join("");
+  $("#employmentVacationUsedSelect").value = "0";
+  $("#employmentVacationRemainingSelect").innerHTML = ["0", ...vacationOptions].map((value) => `<option>${escapeHtml(value)}</option>`).join("");
+  $("#employmentVacationRemainingSelect").value = "20";
   $("#servicesCourtSelect").innerHTML = courtOptions.map((value) => `<option>${escapeHtml(value)}</option>`).join("");
   $("#servicesCourtSelect").value = "Zagrebu";
   $("#servicesDeliveryDaySelect").innerHTML = numberOptions(1, 31);
@@ -390,6 +826,7 @@ function hydrateContractControls() {
   updateWorkingShift();
   updateContractTermination();
   updateServicesDurationUi();
+  updateStandardAnnexUi();
   ["endJob", "startJob", "contractStart"].forEach(updatePairedCheckboxes);
 }
 
@@ -423,11 +860,14 @@ function renderErvFieldExplanations() {
 }
 
 function resetContractForm() {
+  const currentType = $("#contractType").value;
   const form = $("#documentForm");
   form.reset();
+  $("#contractType").value = currentType;
   hydrateContractControls();
   setDefaultDates();
   renderSelects();
+  renderCurrentTypeDrafts(currentType);
   $("#documentPreview").innerHTML = buildDocument().html;
 }
 
@@ -435,32 +875,101 @@ function updateContractUi() {
   const type = $("#contractType").value;
   const isPartTime = type === "part_time";
   const isContract = type === "full_time" || type === "part_time";
-  const isAnnex = type === "annex_a1";
+  const isAnnexA1 = type === "annex_a1";
+  const isStandardAnnex = type === "annex_standard";
+  const isAnnex = isAnnexA1 || isStandardAnnex;
   const isErv = type === "erv";
   const isAccountingServices = type === "accounting_services";
+  const isTemplateDocument = Boolean(templateDocumentFieldSets[type]);
   const isEmploymentDocument = Boolean(employmentDocumentDefinitions[type]);
   const titles = {
     full_time: "Ugovor o radu na neodređeno vrijeme",
     part_time: "Ugovor o radu na određeno vrijeme",
+    annex_standard: "Aneks ugovora o radu",
     annex_a1: "Aneks ugovora o radu za A1",
     erv: "Evidencija radnog vremena",
     accounting_services: "Ugovor o knjigovodstveno-računovodstvenim uslugama",
+    business_cooperation: "Ugovor o poslovnoj suradnji",
+    vehicle_power_of_attorney: "Punomoć za vozilo",
+    work_order: "Radni nalog",
+    virtual_address_lease: "Ugovor o najmu virtualne adrese",
     ...Object.fromEntries(Object.entries(employmentDocumentDefinitions).map(([key, value]) => [key, titleCaseDocument(value.title)]))
   };
   $("#documentForm h2").textContent = titles[type] || "Dokumenti";
   $$(".contract-party-section").forEach((element) => element.classList.toggle("hidden", !(isContract || isEmploymentDocument)));
   $$(".annex-party-section").forEach((element) => element.classList.toggle("hidden", !isAnnex));
   $$(".contract-doc-section").forEach((element) => element.classList.toggle("hidden", !isContract));
-  $$(".annex-doc-section").forEach((element) => element.classList.toggle("hidden", !isAnnex));
+  $$(".standard-annex-doc-section").forEach((element) => element.classList.toggle("hidden", !isStandardAnnex));
+  $$(".annex-doc-section").forEach((element) => element.classList.toggle("hidden", !isAnnexA1));
   $$(".erv-doc-section").forEach((element) => element.classList.toggle("hidden", !isErv));
   $$(".accounting-services-section").forEach((element) => element.classList.toggle("hidden", !isAccountingServices));
+  $$(".template-doc-section").forEach((element) => element.classList.toggle("hidden", !isTemplateDocument));
   $$(".employment-doc-section").forEach((element) => element.classList.toggle("hidden", !isEmploymentDocument));
+  updatePartySectionUi(isContract, isEmploymentDocument);
+  updateEmploymentDocumentFields(type);
   $$(".only-ptc").forEach((element) => element.classList.toggle("hidden", !isPartTime));
   $$(".full-time-intro").forEach((element) => element.classList.toggle("hidden", isPartTime));
   updateContractTermination();
+  updateStandardAnnexUi();
+  updateTemplateDocumentFields();
   updateDocumentDisplayFields();
   updateErvNonWorkingDays();
   $("#documentPreview").innerHTML = buildDocument().html;
+}
+
+function updatePartySectionUi(isContract, isEmploymentDocument) {
+  $$(".contract-party-contract-only").forEach((element) => {
+    toggleElementWithDatePicker(element, !isContract);
+  });
+  $$(".contract-party-employment-only").forEach((element) => {
+    element.classList.toggle("hidden", !isEmploymentDocument);
+  });
+
+  const contractDate = $("#documentForm").elements.contract_date;
+  if (contractDate) contractDate.disabled = !isContract;
+}
+
+function updateEmploymentDocumentFields(type) {
+  const selectedFields = new Set(employmentDocumentFieldSets[type] || []);
+  $$("[data-employment-field]").forEach((element) => {
+    const visible = selectedFields.has(element.dataset.employmentField);
+    element.classList.toggle("hidden", !visible);
+    element.querySelectorAll("input, select, textarea").forEach((control) => {
+      control.disabled = !visible;
+    });
+  });
+}
+
+function updateStandardAnnexUi() {
+  const isFixed = $("#annexNewContractType")?.value === "fixed";
+  $$(".standard-annex-fixed-end").forEach((element) => {
+    element.classList.toggle("hidden", !isFixed);
+    element.querySelectorAll("input, select, textarea").forEach((control) => {
+      control.disabled = !isFixed;
+    });
+  });
+}
+
+function updateTemplateDocumentFields() {
+  const type = $("#contractType")?.value;
+  const selectedFields = new Set(templateDocumentFieldSets[type] || []);
+  $$("[data-template-field]").forEach((element) => {
+    const visible = selectedFields.has(element.dataset.templateField);
+    element.classList.toggle("hidden", !visible);
+    element.querySelectorAll("input, select, textarea").forEach((control) => {
+      control.disabled = !visible;
+    });
+  });
+  updatePartyPickerVisibility();
+}
+
+function toggleElementWithDatePicker(element, hidden) {
+  element.classList.toggle("hidden", hidden);
+  const picker = element.nextElementSibling;
+  if (element.classList.contains("date-picker-display") && picker?.classList.contains("native-date-picker")) {
+    picker.classList.toggle("hidden", hidden);
+    picker.disabled = hidden;
+  }
 }
 
 function updateTrailNumbers() {
@@ -524,12 +1033,12 @@ function updatePairedCheckboxes(pair) {
 }
 
 async function loadData(forceStaticImport = false) {
+  state.drafts = readDrafts();
   const staticDataUrl = getStaticDataUrl();
   if (staticDataUrl && (forceStaticImport || hasExplicitStaticDataUrl() || !hasSessionData())) {
     const loaded = await loadStaticData(staticDataUrl);
     if (loaded) return;
   }
-
   const cached = readSessionData();
   state.employers = cached.employers;
   state.accounting = cached.accounting;
@@ -573,9 +1082,8 @@ async function saveEmployee(event) {
 
 async function persist(resource, record) {
   const collection = state[resource];
-  if (!collection) return;
+  if (!collection) return false;
   const existingIndex = collection.findIndex((item) => item.id === record.id);
-
   if (existingIndex >= 0) collection.splice(existingIndex, 1, record);
   else collection.push(record);
   writeSessionData();
@@ -600,6 +1108,7 @@ function render() {
   renderAccounting();
   renderEmployees();
   renderSelects();
+  renderDrafts();
   $("#documentPreview").innerHTML = buildDocument().html;
 }
 
@@ -682,6 +1191,7 @@ function renderSelects() {
   $("#ervEmployer").innerHTML = employerIdOptions;
   $("#servicesClient").innerHTML = employerIdOptions;
   $("#servicesAccounting").innerHTML = accountingIdOptions;
+  renderPartyEntitySelects();
   populateDocumentEmployeeSelect("documentEmployee", $("#documentEmployer").value);
   populateDocumentEmployeeSelect("a1Employee", $("#a1Employer").value);
   populateDocumentEmployeeSelect("ervEmployee", $("#ervEmployer").value);
@@ -765,15 +1275,86 @@ function showView(name) {
   $(`#${name}View`).classList.add("active");
   $("#viewTitle").textContent = views[name][0];
   $("#viewSubtitle").textContent = views[name][1];
+  if (name === "documents") showDocumentPicker();
+}
+
+function showDocumentPicker() {
+  $("#documentsPickerView")?.classList.remove("hidden");
+  $("#documentsFormView")?.classList.add("hidden");
+  renderDocumentPicker();
+}
+
+function showDocumentForm(type) {
+  $("#documentsPickerView")?.classList.add("hidden");
+  $("#documentsFormView")?.classList.remove("hidden");
+  $("#contractType").value = type;
+  updateContractUi();
+  updatePartySourceOptions(type);
+  renderSelects();
+  renderCurrentTypeDrafts(type);
+}
+
+function renderDocumentPicker() {
+  const container = $("#documentCategoryList");
+  if (!container) return;
+  const draftCountByType = {};
+  state.drafts.forEach((d) => { draftCountByType[d.type] = (draftCountByType[d.type] || 0) + 1; });
+  container.innerHTML = documentCategories.map((category) => `
+    <div class="doc-category">
+      <h3 class="doc-category-title">${escapeHtml(category.title)}</h3>
+      <div class="doc-type-grid">
+        ${category.types.map((type) => {
+          const count = draftCountByType[type] || 0;
+          const badge = count ? `<span class="doc-type-badge">${count} nacrt${count === 1 ? "" : "a"}</span>` : "";
+          return `<button class="doc-type-card" data-doc-type="${escapeHtml(type)}" type="button">
+            <span class="doc-type-name">${escapeHtml(documentTypeLabels[type] || type)}</span>${badge}
+          </button>`;
+        }).join("")}
+      </div>
+    </div>
+  `).join("");
+  $$("[data-doc-type]").forEach((btn) => {
+    btn.addEventListener("click", () => showDocumentForm(btn.dataset.docType));
+  });
+}
+
+function renderCurrentTypeDrafts(type) {
+  const container = $("#currentTypeDraftsList");
+  const panel = $("#currentTypeDraftsPanel");
+  if (!container || !panel) return;
+  const matching = state.drafts.filter((d) => d.type === type);
+  if (!matching.length) {
+    panel.classList.add("hidden");
+    return;
+  }
+  panel.classList.remove("hidden");
+  container.innerHTML = matching.map((draft) => `
+    <div class="draft-row">
+      <div class="draft-info">
+        <strong class="draft-name">${escapeHtml(draft.name)}</strong>
+        <small class="draft-meta">${escapeHtml(new Date(draft.savedAt).toLocaleDateString("hr-HR", { day: "2-digit", month: "2-digit", year: "numeric" }))}</small>
+      </div>
+      <div class="draft-actions">
+        <button class="ghost-button" data-load-draft="${escapeHtml(draft.id)}" type="button">Učitaj</button>
+        <button class="ghost-button" data-rename-draft="${escapeHtml(draft.id)}" type="button">Preimenuj</button>
+        <button class="danger-button" data-delete-draft="${escapeHtml(draft.id)}" type="button">Izbriši</button>
+      </div>
+    </div>
+  `).join("");
+  container.querySelectorAll("[data-load-draft]").forEach((btn) => btn.addEventListener("click", () => loadDraft(btn.dataset.loadDraft)));
+  container.querySelectorAll("[data-rename-draft]").forEach((btn) => btn.addEventListener("click", () => renameDraft(btn.dataset.renameDraft)));
+  container.querySelectorAll("[data-delete-draft]").forEach((btn) => btn.addEventListener("click", () => deleteDraft(btn.dataset.deleteDraft)));
 }
 
 function buildDocument() {
   const form = $("#documentForm");
   const data = formToObject(form);
   if (data.type === "accounting_services") return buildAccountingServicesDocument(data);
+  if (templateDocumentFieldSets[data.type]) return buildTemplateDocument(data);
   if (employmentDocumentDefinitions[data.type]) return buildEmploymentDocument(data);
-  const employerId = data.type === "annex_a1" ? data.a1_employer_id : data.type === "erv" ? data.erv_employer_id : data.employer_id;
-  const employeeId = data.type === "annex_a1" ? data.a1_employee_id : data.type === "erv" ? data.erv_employee_id : data.employee_id;
+  const isAnnex = data.type === "annex_a1" || data.type === "annex_standard";
+  const employerId = isAnnex ? data.a1_employer_id : data.type === "erv" ? data.erv_employer_id : data.employer_id;
+  const employeeId = isAnnex ? data.a1_employee_id : data.type === "erv" ? data.erv_employee_id : data.employee_id;
   const employer = state.employers.find((item) => item.id === employerId) || state.employers[0] || {};
   const employee = state.employees.find((item) => item.id === employeeId) || state.employees[0] || {};
   const employeeName = `${employee.name || ""} ${employee.lastname || ""}`.trim();
@@ -797,6 +1378,7 @@ function buildDocument() {
     director: employer.director || ""
   };
 
+  if (data.type === "annex_standard") return buildStandardAnnex(context);
   if (data.type === "annex_a1") return buildAnnexA1Exact(context);
   if (data.type === "erv") return buildErvDocument(context);
   return data.type === "part_time" ? buildPartTimeContractExact(context) : buildFullTimeContractExact(context);
@@ -844,6 +1426,134 @@ function buildPartTimeContractExact(context) {
     closingSections(context, l.salaryCopies),
     signatureHtml(context)
   ]);
+}
+
+function buildStandardAnnex(context) {
+  const d = formToObject($("#documentForm"));
+  const changes = standardAnnexChanges(d);
+  const baseType = d.annex_base_contract_type === "fixed" ? "određeno vrijeme" : "neodređeno vrijeme";
+  return makeContractDocument("ANEKS UGOVORA O RADU", [
+    p(`${b(context.employer.company_name || "")}, ${b(context.employerInfo)}, zastupano po ${b(context.director)} (u daljnjem tekstu: Poslodavac) i`),
+    p(`${b(context.employeeName)}, OIB/Putovnica: ${b(context.employeePersonalId)} (u daljnjem tekstu: Radnik), zaključili su sljedeći:`),
+    centerTitle("ANEKS UGOVORA O RADU"),
+    center("Članak I."),
+    p(`Ugovorne strane suglasno utvrđuju da su dana ${b(formatDate(d.annex_contract_date))} sklopile Ugovor o radu na ${b(baseType)}.`),
+    p("Ovim Aneksom ugovorne strane mijenjaju i dopunjuju pojedine odredbe osnovnog Ugovora o radu, kako je navedeno u nastavku."),
+    center("Članak II."),
+    changes.length
+      ? changes.map((change, index) => annexChangeParagraph(index + 1, change.reference, change.text)).join("")
+      : p("Ugovorne strane ovim Aneksom uređuju izmjene i dopune osnovnog Ugovora o radu prema međusobnom dogovoru."),
+    center("Članak III."),
+    p("Sve ostale odredbe osnovnog Ugovora o radu koje nisu izričito izmijenjene ovim Aneksom ostaju nepromijenjene i u cijelosti na snazi."),
+    p(`Ovaj Aneks stupa na snagu dana ${b(formatDate(d.annex_effective_date))}`),
+    center("Članak IV."),
+    p(`Za slučaj spora ugovara se nadležnost stvarno nadležnog suda u ${b(`${d.annex_court}.`)}`),
+    p("Ovaj Aneks sastavljen je u dva istovjetna primjerka, od kojih svaka ugovorna strana zadržava po jedan primjerak."),
+    p(`U ${b(d.annex_signature_place)}, dana ${b(formatDate(d.annex_signature_date))} godine.`),
+    signatureHtml(context)
+  ]);
+}
+
+function standardAnnexChanges(data) {
+  const changes = [];
+  if (data.annex_change_duration || data.annex_change_job) {
+    changes.push({
+      reference: "članka I. točke 2.",
+      text: annexEmploymentBasisText(data)
+    });
+  }
+  if (data.annex_change_probation) {
+    changes.push({
+      reference: "članka I. točke 3.",
+      text: `Ugovorne stranke ugovaraju probni rad Radnika u trajanju od ${b(data.annex_probation_period)}.`
+    });
+  }
+  if (data.annex_change_work_place) {
+    changes.push({
+      reference: "članka I. točke 4.",
+      text: `Mjesto rada Radnika je u ${b(data.annex_working_place)}, a u slučaju potrebe Poslodavca i u nekom drugom mjestu na području Republike Hrvatske.`
+    });
+  }
+  if (data.annex_change_start_date) {
+    changes.push({
+      reference: "članka I. točke 6.",
+      text: `Radnik počinje s radom ${b(formatDate(data.annex_start_date))}.`
+    });
+  }
+  if (data.annex_change_salary) {
+    changes.push({
+      reference: "članka II. točaka 1., 3. i 4.",
+      text: annexSalaryText(data)
+    });
+  }
+  if (data.annex_change_work_time) {
+    changes.push({
+      reference: "članka IV. točaka 1. i 2.",
+      text: `Radnik će raditi ${b(data.annex_work_type)} radno vrijeme od ${b(data.annex_weekly_hours)} sati tjedno. Radno vrijeme određuje se ${b(data.annex_working_shift_description)}.`
+    });
+  }
+  if (data.annex_change_weekly_rest) {
+    changes.push({
+      reference: "članka IV. točke 4.",
+      text: `Tjedni odmor Radnik će koristiti ${b(data.annex_weekly_time_off)}.`
+    });
+  }
+  if (data.annex_change_vacation) {
+    changes.push({
+      reference: "članka IV. točke 5.",
+      text: `Radnik ima pravo na godišnji odmor u trajanju od ${b(vacationDaysText(data.annex_vacation, data.annex_vacation_description))}.`
+    });
+  }
+  if (data.annex_change_notice) {
+    changes.push({
+      reference: "članka VI. točke 2.",
+      text: `U slučaju kad Poslodavac redovito otkazuje Ugovor o radu, otkazni rok iznosi ${b(`${data.annex_notice_employer} dana`)}, a u slučaju kad redovito otkazuje Radnik, otkazni rok iznosi ${b(`${data.annex_notice_employee} dana`)}.`
+    });
+  }
+  if (data.annex_change_rights) {
+    changes.push({
+      reference: "članka VII.",
+      text: `${b(data.annex_rights_and_obligations)}.`
+    });
+  }
+  linesToListItems(data.annex_other_changes).forEach((item) => {
+    changes.push({
+      reference: "dodatnih odredbi osnovnog Ugovora o radu",
+      text: safeMultiline(item)
+    });
+  });
+  return changes;
+}
+
+function annexChangeParagraph(index, reference, text) {
+  return [
+    p(`${index}. Odredba ${b(reference)} osnovnog Ugovora o radu mijenja se i sada glasi:`),
+    p(`"${text}"`)
+  ].join("");
+}
+
+function annexEmploymentBasisText(data) {
+  const jobText = data.annex_change_job
+    ? `za obavljanje poslova ${b(data.annex_job_description || "POSAO - OPIS POSLA")}`
+    : "za obavljanje poslova utvrđenih osnovnim Ugovorom o radu";
+  const contractType = data.annex_change_duration
+    ? data.annex_new_contract_type
+    : data.annex_base_contract_type;
+  if (contractType === "fixed") {
+    const endText = data.annex_change_duration
+      ? `do ${b(formatDate(data.annex_new_end_date))}`
+      : "do isteka vremena utvrđenog osnovnim Ugovorom o radu";
+    return `Ovim Ugovorom Radnik zasniva radni odnos na određeno vrijeme ${endText} ${jobText}.`;
+  }
+  return `Ovim Ugovorom Radnik zasniva radni odnos na neodređeno vrijeme ${jobText}.`;
+}
+
+function annexSalaryText(data) {
+  return [
+    `Za realizaciju preuzetih obveza iz točke I.2. Radniku pripada osnovna bruto plaća u iznosu od ${b(normalizeMoney(data.annex_salary))} eura.`,
+    `Uz osnovnu plaću Radniku pripada stimulativni dio plaće u iznosu od ${b(normalizeMoney(data.annex_salary_bonus))} eura bruto mjesečno.`,
+    `Radnik ima pravo na povećanu plaću za otežane uvjete rada ${b(data.annex_salary_increment_1)}, rad u dane blagdana i neradne dane utvrđene zakonom i za rad na dan Uskrsa ${b(data.annex_salary_increment_2)}, rad nedjeljom ${b(data.annex_salary_increment_3)}, noćni rad ${b(data.annex_salary_increment_4)}, prekovremeni rad ${b(data.annex_salary_increment_5)} te za rad u drugoj smjeni u slučaju stalnog smjenskog rada ${b(data.annex_salary_increment_6)}.`
+  ].join(" ");
 }
 
 function buildAnnexA1Exact(context) {
@@ -1031,6 +1741,374 @@ function buildAccountingServicesDocument(data) {
   };
 }
 
+function buildTemplateDocument(data) {
+  const builders = {
+    business_cooperation: buildBusinessCooperationDocument,
+    vehicle_power_of_attorney: buildVehiclePowerOfAttorneyDocument,
+    work_order: buildWorkOrderDocument,
+    virtual_address_lease: buildVirtualAddressLeaseDocument
+  };
+  return builders[data.type]?.(data) || buildBlankDocument(data.type);
+}
+
+function buildBlankDocument(type) {
+  const titles = {
+    full_time: "UGOVOR O RADU NA NEODREĐENO VRIJEME",
+    part_time: "UGOVOR O RADU NA ODREĐENO VRIJEME",
+    annex_standard: "ANEKS UGOVORA O RADU",
+    annex_a1: "ANEKS UGOVORA O RADU ZA A1",
+    erv: "EVIDENCIJA RADNOG VREMENA",
+    accounting_services: "UGOVOR O KNJIGOVODSTVENO-RAČUNOVODSTVENIM USLUGAMA",
+    business_cooperation: "UGOVOR O POSLOVNOJ SURADNJI",
+    vehicle_power_of_attorney: "PUNOMOĆ ZA VOZILO",
+    work_order: "RADNI NALOG",
+    virtual_address_lease: "UGOVOR O NAJMU VIRTUALNE ADRESE",
+    gfi: "GFI ODLUKA / IZVJEŠTAJ",
+    ...Object.fromEntries(Object.entries(employmentDocumentDefinitions).map(([key, value]) => [key, value.title]))
+  };
+  const title = titles[type] || "PRAZAN DOKUMENT";
+  const html = blankDocumentHtml(type, title);
+  return { title, html, body: htmlToText(html) };
+}
+
+function buildBlankDocumentFromForm(form, title, type) {
+  const fields = blankFieldsFromForm(form);
+  const html = `
+    ${center("PODACI ZA RUČNI UNOS")}
+    <div class="blank-form-grid">
+      ${fields.map((field) => field.box ? blankBox(field.label, field.height) : blankRow(field.label)).join("")}
+    </div>
+    ${blankSignatureForType(type)}
+  `;
+  return {
+    title: titleCaseDocument(title || "Prazan dokument").toUpperCase(),
+    html,
+    body: htmlToText(html)
+  };
+}
+
+function blankFieldsFromForm(form) {
+  const controls = Array.from(form.querySelectorAll("input, select, textarea"))
+    .filter((control) => shouldIncludeBlankControl(control));
+  const seen = new Set();
+  return controls.flatMap((control) => {
+    const label = blankLabelForControl(control);
+    if (!label || seen.has(control.name || label)) return [];
+    seen.add(control.name || label);
+    return [{
+      label,
+      box: control.tagName === "TEXTAREA" || isLongBlankField(control.name),
+      height: blankHeightForControl(control)
+    }];
+  });
+}
+
+function shouldIncludeBlankControl(control) {
+  if (!control.name || control.type === "hidden") return false;
+  if (control.classList.contains("native-date-picker")) return false;
+  if (control.name === "type") return false;
+  const section = control.closest(".field-group, .contract-editor, .document-panel");
+  if (section?.classList.contains("hidden")) return false;
+  if (control.closest("[data-employment-field].hidden, [data-template-field].hidden")) return false;
+  return true;
+}
+
+function blankLabelForControl(control) {
+  const explicit = blankControlLabels[control.name];
+  if (explicit) return explicit;
+  const label = control.closest("label");
+  if (label) {
+    const clone = label.cloneNode(true);
+    clone.querySelectorAll("input, select, textarea").forEach((item) => item.remove());
+    const text = clone.textContent.replace(/\s+/g, " ").trim();
+    if (text) return text;
+  }
+  const line = control.closest(".contract-line");
+  if (line) {
+    const parts = Array.from(line.querySelectorAll("span"))
+      .map((span) => span.textContent.replace(/\s+/g, " ").trim())
+      .filter(Boolean);
+    if (parts.length) return parts.join(" ");
+  }
+  return humanizeFieldName(control.name);
+}
+
+function isLongBlankField(name) {
+  return /description|scope|excluded|reason|violation|summary|address|info_display|director_display|personal_id_display|work_order_description/i.test(name || "");
+}
+
+function blankHeightForControl(control) {
+  if (control.tagName === "TEXTAREA") return Math.max(32, Number(control.rows || 4) * 9);
+  return isLongBlankField(control.name) ? 24 : 0;
+}
+
+function humanizeFieldName(name) {
+  return String(name || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function blankDocumentHtml(type, title) {
+  const fields = blankFieldsForType(type);
+  return `
+    ${center("PODACI ZA RUČNI UNOS")}
+    <div class="blank-form-grid">
+      ${fields.map((field) => field.box ? blankBox(field.label, field.height) : blankRow(field.label)).join("")}
+    </div>
+    ${blankSignatureForType(type)}
+  `;
+}
+
+function blankRow(label) {
+  return `<p class="blank-row"><span>${escapeHtml(label)}</span><i></i></p>`;
+}
+
+function blankBox(label, height = 34) {
+  return `<div class="blank-box" style="min-height:${height}mm"><strong>${escapeHtml(label)}</strong></div>`;
+}
+
+function blankSignatureForType(type) {
+  if (type === "vehicle_power_of_attorney") return singleSignature("");
+  if (["work_order", "business_cooperation", "virtual_address_lease", "accounting_services"].includes(type)) {
+    return twoPartySignature("Prva strana", "", "Druga strana", "");
+  }
+  if (type === "employee_regular_notice" || type === "employee_extraordinary_notice") return singleSignature("");
+  if (type === "housing_statement" || employmentDocumentDefinitions[type]) return singleSignature("");
+  return twoPartySignature("Poslodavac", "", "Radnik", "");
+}
+
+function blankFieldsForType(type) {
+  if (type === "full_time" || type === "part_time") return blankEmploymentContractFields(type);
+  if (type === "annex_standard") return [
+    ...blankAnnexParties(),
+    field("Datum osnovnog ugovora"), field("Vrsta osnovnog ugovora"), field("Datum stupanja aneksa na snagu"),
+    field("Mjesto potpisa"), field("Datum potpisa"), field("Nadležni sud"),
+    field("Mijenja se trajanje ugovora - novo trajanje"), field("Novi datum isteka ako je ugovor na određeno vrijeme"),
+    field("Mijenjaju se poslovi radnika - novi opis poslova", 28, true),
+    field("Mijenja se probni rad - novo trajanje"), field("Mijenja se mjesto rada"),
+    field("Mijenja se početak rada"), field("Mijenja se osnovna bruto plaća"), field("Stimulativni dio plaće"),
+    field("Dodaci na plaću: otežani uvjeti, blagdani, nedjelja, noćni rad, prekovremeni rad, druga smjena", 24, true),
+    field("Mijenja se radno vrijeme - vrsta, sati tjedno i raspored", 24, true),
+    field("Mijenja se tjedni odmor"), field("Mijenja se godišnji odmor - broj dana i opis"),
+    field("Mijenjaju se otkazni rokovi"), field("Mijenjaju se ostala prava i obveze", 28, true),
+    field("Druge izmjene i dopune", 40, true)
+  ];
+  if (type === "annex_a1") return [
+    ...blankAnnexParties(), field("Datum osnovnog ugovora"), field("Vrsta osnovnog ugovora"),
+    field("Predviđeno trajanje rada u inozemstvu do"), field("Mjesto rada u inozemstvu"),
+    field("Poslovi radnika u inozemstvu", 28, true), field("Nadležni sud"), field("Mjesto i datum potpisa")
+  ];
+  if (type === "erv") return [
+    field("Poslodavac - naziv, adresa, OIB", 24, true), field("Radnik - ime, prezime, OIB/putovnica", 24, true),
+    field("Godina"), field("Mjesec"), field("Hrvatski neradni dani u mjesecu", 24, true),
+    field("Evidencija po danima: datum, dolazak, odlazak, ukupno sati, redovni rad, bolovanje, godišnji odmor, prekovremeni rad i napomene", 90, true)
+  ];
+  if (type === "accounting_services") return [
+    field("Klijent - naziv, adresa, OIB, zastupnik", 24, true), field("Knjigovodstveni ured - naziv, adresa, OIB, zastupnik", 24, true),
+    field("Datum i mjesto sklapanja"), field("E-mail klijenta"), field("E-mail knjigovodstva"),
+    field("Dostava dokumentacije do dana u mjesecu"), field("Mjesečna naknada i PDV status"),
+    field("Završni račun / godišnja izvješća i PDV status"), field("Rok plaćanja"),
+    field("Trajanje ugovora i krajnji datum ako je određeno vrijeme"), field("Otkazni rok"), field("Nadležni sud"),
+    field("Broj primjeraka"), field("Opseg usluga", 48, true), field("Izvanredne usluge koje nisu uključene u cijenu", 34, true)
+  ];
+  if (type === "business_cooperation") return [
+    field("Izvršitelj - naziv, adresa, OIB, zastupnik", 28, true), field("Naručitelj - naziv, adresa, OIB, zastupnik", 28, true),
+    field("Datum i mjesto sklapanja"), field("Opis posla / radova", 34, true), field("Cijena / naknada"),
+    field("IBAN izvršitelja"), field("Trajanje ugovora do"), field("Dodatne napomene", 34, true)
+  ];
+  if (type === "vehicle_power_of_attorney") return [
+    field("Opunomoćitelj / vlasnik vozila - ime/naziv, adresa, OIB", 28, true),
+    field("Osobna iskaznica vlasnika - broj, izdavatelj i datum izdavanja", 18, true),
+    field("Opunomoćenik - ime/naziv, adresa, OIB", 28, true),
+    field("Osobna iskaznica opunomoćenika - broj, izdavatelj i datum izdavanja", 18, true),
+    field("Vozilo - marka, model, motor/snaga", 18, true), field("Broj šasije"), field("Registarska oznaka"),
+    field("Ovlasti za vozilo", 55, true), field("Punomoć vrijedi do"), field("Mjesto i datum")
+  ];
+  if (type === "work_order") return [
+    field("Ispostavio / izvršitelj - naziv, adresa, OIB", 24, true), field("Naručitelj - naziv, adresa, OIB", 24, true),
+    field("Narudžbenica broj"), field("Rad započeo - datum i vrijeme"), field("Rad završio - datum i vrijeme"),
+    field("Radni nalog broj"), field("Mjesto troška"), field("Nositelj troška"), field("Opis rada", 70, true)
+  ];
+  if (type === "virtual_address_lease") return [
+    field("Zakupodavac - naziv/ime, adresa, OIB, zastupnik", 28, true), field("Zakupnik - naziv, adresa, OIB, zastupnik", 28, true),
+    field("Datum i mjesto sklapanja"), field("Virtualna adresa"), field("ZK / k.č. opis nekretnine", 22, true),
+    field("Početak najma"), field("Kraj najma"), field("Mjesečna zakupnina"), field("IBAN zakupodavca"),
+    field("E-mail zakupnika"), field("Posebne napomene", 34, true)
+  ];
+  if (type === "gfi") return [
+    field("Tvrtka - naziv, adresa, grad, OIB", 28, true),
+    field("Direktor / odgovorna osoba"), field("Godina izvještaja"), field("Datum izvještaja"),
+    field("Dobit prije poreza"), field("Porez na dobit"), field("Dobit nakon poreza"),
+    field("Pokriće gubitka / raspored dobiti", 34, true)
+  ];
+  if (employmentDocumentDefinitions[type]) return blankEmploymentDocumentFields(type);
+  return [field("Podaci prve strane", 28, true), field("Podaci druge strane", 28, true), field("Datum dokumenta"), field("Sadržaj dokumenta", 80, true)];
+}
+
+function blankEmploymentContractFields(type) {
+  const fields = [
+    field("Poslodavac - naziv, adresa, OIB, zastupnik", 28, true),
+    field("Radnik - ime, prezime, adresa, OIB/putovnica", 28, true),
+    field("Datum sklapanja ugovora")
+  ];
+  if (type === "part_time") fields.push(field("Kraj ugovora - datum ili opis"));
+  return [
+    ...fields,
+    field("Poslovi radnika", 24, true), field("Probni rad"), field("Mjesto rada", 18, true), field("Početak rada"),
+    field("Osnovna bruto plaća"), field("Stimulativni dio plaće"),
+    field("Dodaci na plaću", 24, true), field("Vrsta radnog vremena"), field("Sati tjedno"),
+    field("Raspored radnog vremena", 22, true), field("Tjedni odmor"), field("Godišnji odmor - broj dana"), field("Opis godišnjeg odmora"),
+    field("Otkazni rok poslodavac"), field("Otkazni rok radnik"), field("Ostala prava i obveze", 24, true),
+    field("Nadležni sud"), field("Datum ili opis stupanja ugovora na snagu")
+  ];
+}
+
+function blankAnnexParties() {
+  return [
+    field("Poslodavac - naziv, adresa, OIB, zastupnik", 28, true),
+    field("Radnik - ime, prezime, adresa, OIB/putovnica", 28, true)
+  ];
+}
+
+function blankEmploymentDocumentFields(type) {
+  const labelMap = {
+    docPlace: "Mjesto dokumenta", docDate: "Datum dokumenta", contractDate: "Datum ugovora o radu",
+    contractType: "Vrsta ugovora", jobTitle: "Naziv poslova", workPlace: "Mjesto rada",
+    startDate: "Početak rada", endDate: "Prestanak radnog odnosa / kraj ugovora",
+    noticePeriod: "Otkazni rok", vacationYear: "Godina godišnjeg odmora",
+    vacationTotal: "Pripada godišnjeg odmora - broj dana", vacationUsed: "Iskorišteno godišnjeg odmora - broj dana",
+    vacationRemaining: "Preostalo godišnjeg odmora - broj dana", vacationFrom: "Godišnji odmor od",
+    vacationTo: "Godišnji odmor do", paymentAmount: "Iznos plaće / naknade / otpremnine",
+    probationPeriod: "Probni rad", probationNotice: "Otkazni rok na probnom radu",
+    employeeAge: "Navršene godine života", pensionYears: "Godine mirovinskog staža",
+    reason: "Razlog / opis okolnosti", violation: "Opis povrede / upozorenja",
+    changedContractSummary: "Sažetak izmijenjenog ugovora", housingAddress: "Adresa smještaja",
+    housingDescription: "Opis smještaja"
+  };
+  const largeFields = new Set(["reason", "violation", "changedContractSummary", "housingDescription"]);
+  return [
+    field("Poslodavac - naziv, adresa, OIB, zastupnik", 28, true),
+    field("Radnik - ime, prezime, adresa, OIB/putovnica", 28, true),
+    ...(employmentDocumentFieldSets[type] || []).map((key) => field(labelMap[key] || key, largeFields.has(key) ? 42 : 0, largeFields.has(key)))
+  ];
+}
+
+function field(label, height = 0, box = false) {
+  return { label, height, box };
+}
+
+function buildBusinessCooperationDocument(data) {
+  const executor = resolveParty("pa", data);
+  const client = resolveParty("pb", data);
+  const html = `
+    ${partyIntroFull(executor, "Izvršitelj")}
+    ${center("I")}
+    ${partyIntroFull(client, "Naručitelj")}
+    ${p(`sklopili su dana ${b(formatDate(data.template_document_date))} godine u ${b(data.template_document_place)} sljedeći`)}
+    ${centerTitle("UGOVOR O POSLOVNOJ SURADNJI")}
+    ${center("Članak 1.")}
+    ${p("Ugovorne strane suglasne su da sklapanje ovog Ugovora ima za cilj ostvarenje međusobnih poslovnih i ekonomskih interesa te utvrđivanje međusobnih prava i obveza.")}
+    ${center("Članak 2.")}
+    ${p(`Izvršitelj se obvezuje izvršiti ${b(data.business_work_description)}, kao i druge povezane radove naručene od strane Naručitelja, a Naručitelj se obvezuje podmiriti zaračunate naknade Izvršitelju.`)}
+    ${center("Članak 3.")}
+    ${p("Izvršitelj je dužan izvršiti ugovorene poslove stručno, savjesno i u skladu s primjenjivim propisima, pravilima struke i dogovorenim rokovima. Izvršitelj odgovara Naručitelju za štetu nastalu povredom ovog Ugovora, kašnjenjem, neizvođenjem ugovorenih radova ili nepridržavanjem primjenjivih propisa i standarda.")}
+    ${center("Članak 4.")}
+    ${p(`Za radove iz članka 2. ovog Ugovora ugovara se ${b(data.business_price)}.`)}
+    ${p(`Naručitelj će plaćanje izvršiti na račun Izvršitelja IBAN: ${b(data.business_iban)}. Izvršitelj izdaje račun s rokom dospijeća 14 dana, osim ako ugovorne strane pisanim putem ne ugovore drugačije.`)}
+    ${center("Članak 5.")}
+    ${p("Ugovorne strane obvezuju se čuvati kao poslovnu tajnu sve podatke i dokumentaciju koje koriste ili saznaju radi izvršenja ovog Ugovora.")}
+    ${center("Članak 6.")}
+    ${p(`Ovaj Ugovor sklapa se na određeno vrijeme do ${b(formatDate(data.business_end_date))}.`)}
+    ${center("Članak 7.")}
+    ${p("Ugovorne strane suglasne su da će eventualne sporove rješavati mirnim putem i sporazumno, a ako to nije moguće, ugovara se nadležnost stvarno nadležnog suda.")}
+    ${center("Članak 8.")}
+    ${p("Ovaj Ugovor sastavljen je u četiri istovjetna primjerka. Svaka ugovorna strana zadržava po dva primjerka.")}
+    ${p(`U ${b(data.template_document_place)}, dana ${b(formatDate(data.template_document_date))} godine.`)}
+    ${twoPartySignature("Izvršitelj", executor.name, "Naručitelj", client.name)}
+  `;
+  return { title: "UGOVOR O POSLOVNOJ SURADNJI", html, body: htmlToText(html) };
+}
+
+function buildVehiclePowerOfAttorneyDocument(data) {
+  const owner = resolveParty("pa", data);
+  const agent = resolveParty("pb", data);
+  const ownerLine = owner.isCompany
+    ? `Kojom tvrtka ${b(owner.name)}, adresa: ${b(owner.address)}, OIB: ${b(owner.oib)}, zastupana po ${b(owner.director)}, kao opunomoćitelj i vlasnik vozila ${b(data.vehicle_description)}, broj šasije: ${b(data.vehicle_vin)}, registarske oznake ${b(data.vehicle_plate)} (u daljnjem tekstu: vozilo)`
+    : `Kojom ja ${b(owner.name)}, adresa: ${b(owner.address)}, OIB: ${b(owner.oib)}, broj osobne iskaznice: ${b(data.pa_id_card || "")}, kao opunomoćitelj i vlasnik vozila ${b(data.vehicle_description)}, broj šasije: ${b(data.vehicle_vin)}, registarske oznake ${b(data.vehicle_plate)} (u daljnjem tekstu: vozilo)`;
+  const html = `
+    ${centerTitle("PUNOMOĆ")}
+    ${p(ownerLine)}
+    ${center("OVLAŠĆUJEM")}
+    ${p(`kao opunomoćenika ${b(agent.name)}, adresa: ${b(agent.address)}, OIB: ${b(agent.oib)}, broj osobne iskaznice: ${b(data.pb_id_card || "")}, da u moje ime i bez moje nazočnosti:`)}
+    ${ul([
+      "upravljati i koristiti vozilo u Hrvatskoj i inozemstvu, uključujući područja unutar i izvan Europske unije",
+      "vozilo prodati, sklopiti, potpisati i ovjeriti valjane kupoprodajne ugovore radi prijenosa vlasništva vozila na novog vlasnika",
+      "odjaviti vozilo i predati registracijske tablice vozila nadležnoj instituciji",
+      "promijeniti registracijske tablice i prometnu dozvolu bez obzira na razlog izmjene",
+      "obaviti tehnički pregled i registraciju vozila",
+      "naplatiti eventualnu nastalu štetu od osiguravajućeg društva ili fizičke osobe"
+    ])}
+    ${p(`Ova punomoć vrijedi do ${b(formatDate(data.vehicle_valid_until))}.`)}
+    ${p(`U ${b(data.template_document_place)}, ${b(formatDate(data.template_document_date))}.`)}
+    ${singleSignature(owner.name)}
+  `;
+  return { title: "PUNOMOĆ ZA VOZILO", html, body: htmlToText(html) };
+}
+
+function buildWorkOrderDocument(data) {
+  const issuer = resolveParty("pa", data);
+  const client = resolveParty("pb", data);
+  const html = `
+    ${centerTitle("RADNI NALOG")}
+    ${p(`Narudžbenica broj: ${b(data.work_order_request_number || "")}`)}
+    ${p(`Radni nalog br. ${b(data.work_order_number || "")}`)}
+    ${p(`Datum: ${b(formatDate(data.template_document_date))}`)}
+    ${p(`Ispostavio: ${b(issuer.name)}`)}
+    ${p(`Naručitelj: ${b(client.name)}`)}
+    ${p(`Mjesto troška: ${b(data.work_order_cost_place || "")}`)}
+    ${p(`Nositelj troška: ${b(data.work_order_cost_owner || "")}`)}
+    ${center("Opis rada")}
+    ${p(safeMultiline(data.work_order_description || ""))}
+    ${twoPartySignature("Ispostavio", issuer.name, "Naručitelj", client.name)}
+  `;
+  return { title: "RADNI NALOG", html, body: htmlToText(html) };
+}
+
+function buildVirtualAddressLeaseDocument(data) {
+  const landlord = resolveParty("pa", data);
+  const tenant = resolveParty("pb", data);
+  const html = `
+    ${partyIntroFull(landlord, "Zakupodavac")}
+    ${center("I")}
+    ${partyIntroFull(tenant, "Zakupnik")}
+    ${p(`sklopili su dana ${b(formatDate(data.template_document_date))} godine u ${b(data.template_document_place)} sljedeći`)}
+    ${centerTitle("UGOVOR O NAJMU VIRTUALNE ADRESE")}
+    ${center("Članak 1.")}
+    ${p(`Predmet ovog Ugovora je najam poslovne adrese nekretnine ${b(data.lease_cadastral)}, na adresi ${b(data.lease_address)}.`)}
+    ${p("Zakupnik će predmet najma koristiti isključivo kao adresu svojeg sjedišta, za registraciju sjedišta u nadležnim registrima i za primanje pošte. Zakupniku se ustupa na korištenje poštanski sandučić Zakupodavca, bez prava posjeda poslovnog prostora.")}
+    ${p(`Zakupodavac ovlašćuje Zakupnika da na temelju ovog Ugovora registrira svoje sjedište na adresi ${b(data.lease_address)}.`)}
+    ${center("Članak 2.")}
+    ${p(`Ovaj Ugovor stupa na snagu dana ${b(formatDate(data.lease_start_date))} i sklapa se na određeno vrijeme do ${b(formatDate(data.lease_end_date))}. Nakon isteka Ugovora može se produžiti isključivo pisanim sporazumom ugovornih strana.`)}
+    ${center("Članak 3.")}
+    ${p(`Ugovorne strane ugovaraju mjesečnu zakupninu u iznosu od ${b(`${normalizeMoney(data.lease_fee)} EUR`)}, koju se Zakupnik obvezuje plaćati unaprijed najkasnije do 15-og u mjesecu za tekući mjesec na račun Zakupodavca IBAN: ${b(data.lease_iban)}.`)}
+    ${center("Članak 4.")}
+    ${p("Zakupodavac ima pravo otkazati ovaj Ugovor ako Zakupnik krši odredbe Ugovora, osobito ako ne plati dospjelu zakupninu u roku od pet dana od opomene. Otkazni rok iznosi jedan mjesec i teče od dana primitka izjave o otkazu.")}
+    ${center("Članak 5.")}
+    ${p(`Ugovorne strane suglasno utvrđuju da će se pisana komunikacija dostavljati na e-mail adrese zakupodavca i zakupnika. E-mail zakupnika: ${b(data.lease_tenant_email)}. Dostava pristigle pošte skeniranim putem na e-mail smatra se urednom.`)}
+    ${center("Članak 6.")}
+    ${p("Zakupnik je dužan sam podnijeti prijavu i odjavu adrese sjedišta. U slučaju prestanka ovog Ugovora Zakupnik je dužan odjaviti adresu u roku od 30 dana, u protivnom odgovara Zakupodavcu za svu nastalu štetu.")}
+    ${center("Članak 7.")}
+    ${p("Izmjene i dopune ovog Ugovora valjane su samo ako su sastavljene u pisanom obliku.")}
+    ${center("Članak 8.")}
+    ${p("Za rješavanje sporova ugovara se nadležnost stvarno nadležnog suda u Vukovaru.")}
+    ${center("Članak 9.")}
+    ${p("Ugovor je sastavljen u tri istovjetna primjerka, od kojih Zakupodavac zadržava dva primjerka, a Zakupnik jedan primjerak.")}
+    ${p(`U ${b(data.template_document_place)}, dana ${b(formatDate(data.template_document_date))} godine.`)}
+    ${twoPartySignature("Zakupodavac", landlord.name, "Zakupnik", tenant.name)}
+  `;
+  return { title: "UGOVOR O NAJMU VIRTUALNE ADRESE", html, body: htmlToText(html) };
+}
+
 function buildEmploymentDocument(data) {
   const definition = employmentDocumentDefinitions[data.type];
   const employer = state.employers.find((item) => item.id === data.employer_id) || state.employers[0] || {};
@@ -1107,8 +2185,8 @@ function buildEmploymentConfirmation(context) {
     p("3. Zaposlenik će ugovorene poslove obavljati osobno, prema uputama Poslodavca."),
     p(`4. Zaposlenik će poslove obavljati u ${b(context.workPlace)}, a u slučaju potrebe, po nalogu Poslodavca, privremeno i u drugim mjestima.`),
     p(`5. Ugovoren je probni rad u trajanju od ${b(context.probationPeriod)} i otkazni rok tijekom probnog rada od ${b(context.probationNotice)}.`),
-    p(`6. Mjesečna osnovna bruto plaća iznosi ${b(context.data.salary || "0,00 EUR")}. Plaća se isplaćuje najkasnije do 15-og u mjesecu za prethodni mjesec.`),
-    p(`7. Zaposlenik ima pravo na godišnji odmor u trajanju od ${b(context.data.vacation || `${context.vacationTotal} dana`)}.`),
+    p(`6. Mjesečna osnovna bruto plaća iznosi ${b(context.paymentAmount)}. Plaća se isplaćuje najkasnije do 15-og u mjesecu za prethodni mjesec.`),
+    p(`7. Zaposlenik ima pravo na godišnji odmor u trajanju od ${b(`${context.vacationTotal} dana`)}.`),
     p(`8. Za slučaj spora ugovara se nadležnost stvarno nadležnog suda u ${b(`${context.data.court || "Zagrebu"}.`)}`),
     employerOnlySignature(context)
   ]);
@@ -1394,7 +2472,7 @@ function salaryAndWorkSections(context) {
     p(`2. Radno vrijeme određuje se ${shiftText}`),
     p("3. U tijeku rada Radnik ima pravo koristiti dnevni odmor (stanku) u trajanju od 30 minuta."),
     p(`4. Tjedni odmor Radnik će koristiti ${b(`${context.weekly_time_off}.`)}`),
-    p(`5. Radnik ima pravo na godišnji odmor u trajanju od ${b(`${context.vacation} ${context.vacation_description}.`)}`),
+    p(`5. Radnik ima pravo na godišnji odmor u trajanju od ${b(`${vacationDaysText(context.vacation, context.vacation_description)}.`)}`),
     center("V. Čuvanje poslovne tajne"),
     p("1, Radnik se obvezuje da će za vrijeme trajnja Ugovora o radu, a i njegovo prestanka, čuvati sve poslovne tajne Poslodavca i njegovih komitenata prema neovlaštenim osobama, koje su po svojoj prirodi povjerene i zaštićene, a koje su mu bile povjerene ili koje je mogao saznati na poslu.")
   ].join("");
@@ -1443,6 +2521,34 @@ function serviceSignatureHtml(client, accounting) {
         <div class="signature-line"></div>
         <div class="signature-name">${escapeHtml(accounting.company_name || "")}</div>
         <div>${escapeHtml(accounting.director || "")}</div>
+      </div>
+    </div>
+  `;
+}
+
+function twoPartySignature(leftRole, leftName, rightRole, rightName) {
+  return `
+    <div class="signature-block">
+      <div class="signature-card">
+        <div class="signature-role">${escapeHtml(leftRole)}</div>
+        <div class="signature-line"></div>
+        <div class="signature-name">${escapeHtml(leftName)}</div>
+      </div>
+      <div class="signature-card">
+        <div class="signature-role">${escapeHtml(rightRole)}</div>
+        <div class="signature-line"></div>
+        <div class="signature-name">${escapeHtml(rightName)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function singleSignature(name) {
+  return `
+    <div class="signature-block single-signature">
+      <div class="signature-card">
+        <div class="signature-line"></div>
+        <div class="signature-name">${escapeHtml(name)}</div>
       </div>
     </div>
   `;
@@ -1595,14 +2701,14 @@ function buildPrintableHtml(documentData, logoSrc) {
           html { background: #eef2f6; }
           body { width: min(100%, 210mm); margin: 0 auto; padding: 14mm 18mm 18mm; font: 13.5px/1.38 Arial, sans-serif; color: #111827; background: #ffffff; }
           body.wide-document { width: min(100%, 297mm); padding: 12mm; }
-          .print-header { display: flex; justify-content: flex-end; align-items: flex-start; min-height: 18mm; margin-bottom: 2mm; }
-          main { position: relative; z-index: 1; }
-          .print-brand { width: 18mm; height: 18mm; text-align: right; }
-          .print-brand img { display: block; width: 18mm; height: 18mm; object-fit: contain; margin-left: auto; }
+          .print-header { display: flex; justify-content: flex-end; align-items: flex-start; min-height: 22mm; margin-bottom: 2mm; }
+          main { position: relative; z-index: 1; text-align: justify; }
+          .print-brand { width: 22mm; height: 22mm; text-align: right; }
+          .print-brand img { display: block; width: 22mm; height: 22mm; object-fit: contain; margin-left: auto; }
           h1 { text-align: center; font-size: 17px; line-height: 1.22; margin: 0 0 16px; text-transform: uppercase; }
-          p { margin: 0 0 6px; orphans: 3; widows: 3; }
+          p { margin: 0 0 6px; text-align: justify; orphans: 3; widows: 3; }
           ul, ol { margin: 0 0 8px 22px; padding: 0; }
-          li { margin: 0 0 3px; }
+          li { margin: 0 0 3px; text-align: justify; }
           .center { text-align: center; }
           .title { font-weight: 700; }
           strong { font-weight: 700; }
@@ -1612,11 +2718,16 @@ function buildPrintableHtml(documentData, logoSrc) {
           .signature-role { color: #667085; font-size: 11px; margin-bottom: 28px; text-transform: uppercase; }
           .signature-line { border-top: 1.5px solid #111827; margin-bottom: 8px; }
           .signature-name { font-weight: 700; min-height: 24px; }
+          .blank-row { display: grid; grid-template-columns: 42mm minmax(0, 1fr); gap: 8px; align-items: end; margin-bottom: 8px; text-align: left; }
+          .blank-row span { font-weight: 700; }
+          .blank-row i { display: block; min-height: 11mm; border: 1px solid #9aa6b2; background: #ffffff; }
+          .blank-box { margin: 0 0 10px; padding: 8px; border: 1px solid #9aa6b2; background: #ffffff; text-align: left; break-inside: avoid; }
+          .blank-box strong { display: block; margin-bottom: 5px; color: #475467; }
           .erv-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 7px; table-layout: fixed; }
           .erv-table th, .erv-table td { border: 1px solid #9aa6b2; padding: 3px 2px; text-align: center; vertical-align: middle; overflow-wrap: anywhere; }
           .erv-table .blocked-cell { background: #eef2f6; }
           .erv-acronyms { font-size: 8px; line-height: 1.35; }
-          pre { white-space: pre-wrap; font: inherit; }
+          pre { white-space: pre-wrap; font: inherit; text-align: justify; }
           .actions { position: fixed; right: 16px; top: 16px; z-index: 5; display: flex; justify-content: flex-end; max-width: calc(100vw - 32px); }
           .actions button { border: 0; background: #0b6bcb; color: #ffffff; border-radius: 8px; min-height: 42px; padding: 0 16px; font: 700 14px Arial, sans-serif; box-shadow: 0 8px 24px rgba(11, 107, 203, 0.22); white-space: normal; }
           .actions button:hover { background: #084d93; }
@@ -1630,9 +2741,9 @@ function buildPrintableHtml(documentData, logoSrc) {
             html { background: #ffffff; }
             body,
             body.wide-document { width: auto; max-width: none; margin: 0; padding: 0; }
-            .print-header { min-height: 16mm; margin-bottom: 2mm; }
+            .print-header { min-height: 20mm; margin-bottom: 2mm; }
             .print-brand,
-            .print-brand img { width: 16mm; height: 16mm; }
+            .print-brand img { width: 20mm; height: 20mm; }
             .actions { display: none; }
           }
         </style>
@@ -1708,15 +2819,21 @@ function readSessionData() {
   }
 }
 
+function snapshotData() {
+  return { employers: state.employers, accounting: state.accounting, employees: state.employees };
+}
+
+function writeSessionData() {
+  sessionStorage.setItem(sessionDataKey, JSON.stringify(snapshotData()));
+}
+
 function hasSessionData() {
   const raw = sessionStorage.getItem(sessionDataKey);
   if (!raw) return false;
   try {
     const data = JSON.parse(raw);
     return ["employers", "accounting", "employees"].some((key) => Array.isArray(data[key]) && data[key].length);
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 function getStaticDataUrl() {
@@ -1734,16 +2851,14 @@ async function loadStaticData(url) {
     const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) {
       if (url === defaultStaticDataUrl && response.status === 404) return false;
-      throw new Error(`Static JSON returned ${response.status}.`);
+      throw new Error(`HTTP ${response.status}`);
     }
     applyImportedData(await response.json());
     writeSessionData();
     return true;
   } catch (error) {
-    if (url !== defaultStaticDataUrl) {
-      toast("Statički JSON uvoz nije uspio. Provjerite putanju ili datoteku.");
-      console.error(error);
-    }
+    if (url !== defaultStaticDataUrl) toast("Statički JSON uvoz nije uspio. Provjerite putanju ili datoteku.");
+    console.error(error);
     return false;
   }
 }
@@ -1752,54 +2867,27 @@ function applyImportedData(parsed) {
   const employers = Array.isArray(parsed.employers) ? parsed.employers : [];
   const accounting = Array.isArray(parsed.accounting) ? parsed.accounting : [];
   const employees = Array.isArray(parsed.employees) ? parsed.employees : [];
-
-  state.employers = employers.map((employer, index) => ({
-    id: employer.id || createId("employer", employer.company_name || `poslodavac-${index + 1}`),
-    company_name: employer.company_name || "",
-    street: employer.street || "",
-    city: employer.city || "",
-    postal: employer.postal || "",
-    vat: employer.vat || "",
-    director: employer.director || ""
+  state.employers = employers.map((e, i) => ({
+    id: e.id || createId("employer", e.company_name || `poslodavac-${i + 1}`),
+    company_name: e.company_name || "", street: e.street || "", city: e.city || "",
+    postal: e.postal || "", vat: e.vat || "", director: e.director || ""
   }));
-  state.accounting = accounting.map((office, index) => ({
-    id: office.id || createId("accounting", office.company_name || `knjigovodstvo-${index + 1}`),
-    company_name: office.company_name || "",
-    street: office.street || "",
-    city: office.city || "",
-    postal: office.postal || "",
-    vat: office.vat || "",
-    director: office.director || "",
-    email: office.email || ""
+  state.accounting = accounting.map((e, i) => ({
+    id: e.id || createId("accounting", e.company_name || `knjigovodstvo-${i + 1}`),
+    company_name: e.company_name || "", street: e.street || "", city: e.city || "",
+    postal: e.postal || "", vat: e.vat || "", director: e.director || "", email: e.email || ""
   }));
-  state.employees = employees.map((employee, index) => ({
-    id: employee.id || createId("employee", `${employee.name || "radnik"}-${employee.lastname || index + 1}`),
-    name: employee.name || "",
-    lastname: employee.lastname || "",
-    street: employee.street || "",
-    city: employee.city || "",
-    postal: employee.postal || "",
-    personal_id: employee.personal_id || "",
-    employer_names: Array.isArray(employee.employer_names) ? employee.employer_names : []
+  state.employees = employees.map((e, i) => ({
+    id: e.id || createId("employee", `${e.name || "radnik"}-${e.lastname || i + 1}`),
+    name: e.name || "", lastname: e.lastname || "", street: e.street || "",
+    city: e.city || "", postal: e.postal || "", personal_id: e.personal_id || "",
+    employer_names: Array.isArray(e.employer_names) ? e.employer_names : []
   }));
-}
-
-function writeSessionData() {
-  sessionStorage.setItem(sessionDataKey, JSON.stringify(snapshotData()));
-}
-
-function snapshotData() {
-  return {
-    employers: state.employers,
-    accounting: state.accounting,
-    employees: state.employees
-  };
 }
 
 async function saveStaticDataFile() {
   const url = getStaticDataUrl();
   if (!url) return false;
-
   try {
     const response = await fetch(url, {
       method: "PUT",
@@ -1811,8 +2899,164 @@ async function saveStaticDataFile() {
   } catch (error) {
     console.warn("Static JSON save failed.", error);
   }
-
   return false;
+}
+
+function readDrafts() {
+  try {
+    const raw = localStorage.getItem(draftsKey);
+    const data = raw ? JSON.parse(raw) : [];
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDrafts() {
+  localStorage.setItem(draftsKey, JSON.stringify(state.drafts));
+}
+
+function saveDraft() {
+  const form = $("#documentForm");
+  const data = formToObject(form);
+  const type = data.type || "full_time";
+  const typeSelect = $("#contractType");
+  const docTypeLabel = typeSelect.options[typeSelect.selectedIndex]?.text || type;
+  const employerId = data.employer_id || data.a1_employer_id || data.erv_employer_id || data.services_client_id;
+  const employeeId = data.employee_id || data.a1_employee_id || data.erv_employee_id;
+  const employer = state.employers.find((e) => e.id === employerId);
+  const employee = state.employees.find((e) => e.id === employeeId);
+  const paPartyName = templateDocumentFieldSets[type]
+    ? (data.pa_source === "adhoc_company" || data.pa_source === "adhoc_person"
+        ? data.pa_name
+        : state.employers.find((e) => e.id === data.pa_entity_id)?.company_name ||
+          state.employees.find((e) => e.id === data.pa_entity_id)?.name)
+    : null;
+  const partyParts = [
+    employer?.company_name || paPartyName,
+    employee ? `${employee.name} ${employee.lastname}`.trim() : ""
+  ].filter(Boolean);
+  const autoName = partyParts.length ? `${docTypeLabel} – ${partyParts.join(", ")}` : docTypeLabel;
+  const draft = {
+    id: createId("draft", `${type}-${Date.now()}`),
+    name: autoName,
+    type,
+    formData: data,
+    savedAt: new Date().toISOString()
+  };
+  state.drafts.unshift(draft);
+  writeDrafts();
+  renderDrafts();
+  renderCurrentTypeDrafts(type);
+  toast("Nacrt je spremljen.");
+}
+
+function loadDraft(id) {
+  const draft = state.drafts.find((d) => d.id === id);
+  if (!draft) return;
+  const type = draft.formData.type || "full_time";
+  showView("documents");
+  showDocumentForm(type);
+  const form = $("#documentForm");
+  fillFormFromObject(form, draft.formData);
+  if (type === "erv") {
+    populateDocumentEmployeeSelect("ervEmployee", form.elements.erv_employer_id?.value || "");
+    if (draft.formData.erv_employee_id) form.elements.erv_employee_id.value = draft.formData.erv_employee_id;
+    updateErvNonWorkingDays();
+  } else if (type === "annex_a1" || type === "annex_standard") {
+    populateDocumentEmployeeSelect("a1Employee", form.elements.a1_employer_id?.value || "");
+    if (draft.formData.a1_employee_id) form.elements.a1_employee_id.value = draft.formData.a1_employee_id;
+  } else {
+    populateDocumentEmployeeSelect("documentEmployee", form.elements.employer_id?.value || "");
+    if (draft.formData.employee_id) form.elements.employee_id.value = draft.formData.employee_id;
+  }
+  form.querySelectorAll(".date-hr-input").forEach(syncDatePickerFromDisplay);
+  updateDocumentDisplayFields();
+  renderCurrentTypeDrafts(type);
+  $("#documentPreview").innerHTML = buildDocument().html;
+  toast(`Nacrt "${draft.name}" je učitan.`);
+}
+
+function renameDraft(id) {
+  const draft = state.drafts.find((d) => d.id === id);
+  if (!draft) return;
+  const newName = window.prompt("Upiši naziv nacrta:", draft.name);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) return;
+  draft.name = trimmed;
+  writeDrafts();
+  renderDrafts();
+}
+
+function deleteDraft(id) {
+  if (!window.confirm("Izbrisati nacrt?")) return;
+  const type = state.drafts.find((d) => d.id === id)?.type;
+  state.drafts = state.drafts.filter((d) => d.id !== id);
+  writeDrafts();
+  renderDrafts();
+  if (type) renderCurrentTypeDrafts(type);
+  toast("Nacrt je izbrisan.");
+}
+
+function renderDrafts() {
+  const countEl = $("#draftCount");
+  if (countEl) countEl.textContent = state.drafts.length;
+
+  renderDocumentPicker();
+
+  const list = $("#nacrtiList");
+  if (!list) return;
+
+  const query = ($("#nacrtiSearch")?.value || "").trim().toLowerCase();
+  const filtered = query
+    ? state.drafts.filter((d) => `${d.name} ${documentTypeLabels[d.type] || d.type}`.toLowerCase().includes(query))
+    : state.drafts;
+
+  if (!filtered.length) {
+    list.innerHTML = `<p class="drafts-empty">${query ? "Nema nacrta koji odgovaraju pretrazi." : "Nema spremljenih nacrta. Otvorite dokument i kliknite <strong>Spremi nacrt</strong>."}</p>`;
+    return;
+  }
+  list.innerHTML = filtered.map((draft) => `
+    <div class="draft-row">
+      <div class="draft-info">
+        <strong class="draft-name">${escapeHtml(draft.name)}</strong>
+        <small class="draft-meta">${escapeHtml(documentTypeLabels[draft.type] || draft.type)} · ${escapeHtml(new Date(draft.savedAt).toLocaleDateString("hr-HR", { day: "2-digit", month: "2-digit", year: "numeric" }))}</small>
+      </div>
+      <div class="draft-actions">
+        <button class="ghost-button" data-load-draft="${escapeHtml(draft.id)}" type="button">Učitaj</button>
+        <button class="ghost-button" data-rename-draft="${escapeHtml(draft.id)}" type="button">Preimenuj</button>
+        <button class="danger-button" data-delete-draft="${escapeHtml(draft.id)}" type="button">Izbriši</button>
+      </div>
+    </div>
+  `).join("");
+  list.querySelectorAll("[data-load-draft]").forEach((btn) => btn.addEventListener("click", () => loadDraft(btn.dataset.loadDraft)));
+  list.querySelectorAll("[data-rename-draft]").forEach((btn) => btn.addEventListener("click", () => renameDraft(btn.dataset.renameDraft)));
+  list.querySelectorAll("[data-delete-draft]").forEach((btn) => btn.addEventListener("click", () => deleteDraft(btn.dataset.deleteDraft)));
+}
+
+function fillFormFromObject(form, data) {
+  Array.from(form.elements).forEach((el) => {
+    if (el.type === "checkbox") el.checked = false;
+  });
+  Object.entries(data).forEach(([key, value]) => {
+    const el = form.elements[key];
+    if (!el || el.name === "type") return;
+    if (el.type === "checkbox") {
+      el.checked = value === "on";
+    } else if (!Array.isArray(value)) {
+      el.value = value ?? "";
+    }
+  });
+  ["endJob", "startJob", "contractStart"].forEach(updatePairedCheckboxes);
+  updateTrailNumbers();
+  updateWorkType();
+  updateWorkingShift();
+  updateContractTermination();
+  updateServicesDurationUi();
+  updateStandardAnnexUi();
+  updateTemplateDocumentFields();
+  updateEmploymentDocumentFields(data.type || "full_time");
 }
 
 function setDefaultDates() {
@@ -1824,6 +3068,16 @@ function setDefaultDates() {
   $("#documentForm").elements.a1_contract_date.value = today;
   $("#documentForm").elements.a1_end_date.value = today;
   $("#documentForm").elements.a1_signature_date.value = today;
+  $("#documentForm").elements.annex_contract_date.value = today;
+  $("#documentForm").elements.annex_effective_date.value = today;
+  $("#documentForm").elements.annex_new_end_date.value = today;
+  $("#documentForm").elements.annex_start_date.value = today;
+  $("#documentForm").elements.annex_signature_date.value = today;
+  $("#documentForm").elements.template_document_date.value = today;
+  $("#documentForm").elements.business_end_date.value = today;
+  $("#documentForm").elements.vehicle_valid_until.value = today;
+  $("#documentForm").elements.lease_start_date.value = today;
+  $("#documentForm").elements.lease_end_date.value = today;
   $("#documentForm").elements.services_contract_date.value = today;
   $("#documentForm").elements.services_end_date.value = today;
   $("#documentForm").elements.employment_doc_date.value = today;
@@ -1840,6 +3094,121 @@ function setDefaultDates() {
 
 function formatAddress(item = {}) {
   return [item.street, [item.postal, item.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+}
+
+function getEmployer(id) {
+  return state.employers.find((item) => item.id === id) || state.employers[0] || {};
+}
+
+function getEmployee(id) {
+  return state.employees.find((item) => item.id === id) || state.employees[0] || {};
+}
+
+function partyDisplayName(party = {}) {
+  return party.company_name || `${party.name || ""} ${party.lastname || ""}`.trim();
+}
+
+function partyOib(party = {}) {
+  return party.vat || party.personal_id || "";
+}
+
+function partyIntro(party, role) {
+  return p(`${b(partyDisplayName(party))}, ${formatAddress(party)}, OIB: ${b(partyOib(party))}, zastupano po ${b(party.director || "")} (u daljnjem tekstu: ${role})`);
+}
+
+function vacationDaysText(value, description = "") {
+  const days = `${value || "0"} dana`;
+  const cleanDescription = String(description || "").trim();
+  return cleanDescription && cleanDescription !== "(-)" ? `${days} ${cleanDescription}` : days;
+}
+
+function resolveParty(prefix, data) {
+  const source = data[`${prefix}_source`] || (prefix === "pa" ? "employer" : "employee");
+  if (source === "employer") {
+    const e = getEmployer(data[`${prefix}_entity_id`]);
+    return { name: partyDisplayName(e), address: formatAddress(e), oib: partyOib(e), director: e.director || "", isCompany: true };
+  }
+  if (source === "employee") {
+    const e = getEmployee(data[`${prefix}_entity_id`]);
+    return { name: `${e.name || ""} ${e.lastname || ""}`.trim(), address: formatAddress(e), oib: e.personal_id || "", director: "", isCompany: false };
+  }
+  if (source === "accounting") {
+    const e = state.accounting.find((a) => a.id === data[`${prefix}_entity_id`]) || {};
+    return { name: partyDisplayName(e), address: formatAddress(e), oib: partyOib(e), director: e.director || "", isCompany: true };
+  }
+  const street = data[`${prefix}_street`] || "";
+  const postal = data[`${prefix}_postal`] || "";
+  const city = data[`${prefix}_city`] || "";
+  const address = [street, [postal, city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  const isCompany = source === "adhoc_company";
+  return {
+    name: data[`${prefix}_name`] || "",
+    address,
+    oib: data[`${prefix}_oib`] || "",
+    director: isCompany ? (data[`${prefix}_director`] || "") : "",
+    isCompany
+  };
+}
+
+function partyIntroFull(party, role) {
+  const rep = party.director ? `, zastupano po ${party.director}` : "";
+  return p(`${b(party.name)}, ${party.address}, OIB: ${b(party.oib)}${rep} (u daljnjem tekstu: ${role})`);
+}
+
+function updatePartyPickerVisibility() {
+  ["pa", "pb"].forEach((prefix) => {
+    const sourceEl = $(`#${prefix}Source`);
+    if (!sourceEl) return;
+    const source = sourceEl.value;
+    const isEntity = ["employer", "employee", "accounting"].includes(source);
+    const isAdhoc = source === "adhoc_company" || source === "adhoc_person";
+    const isCompany = source === "adhoc_company";
+    $$(`[data-${prefix}-field="entity"]`).forEach((el) => {
+      el.classList.toggle("hidden", !isEntity);
+      el.querySelectorAll("input, select, textarea").forEach((c) => { c.disabled = !isEntity; });
+    });
+    $$(`[data-${prefix}-field="adhoc"]`).forEach((el) => {
+      el.classList.toggle("hidden", !isAdhoc);
+      el.querySelectorAll("input, select, textarea").forEach((c) => { c.disabled = !isAdhoc; });
+    });
+    $$(`[data-${prefix}-field="director"]`).forEach((el) => {
+      el.classList.toggle("hidden", !isCompany);
+      el.querySelectorAll("input, select, textarea").forEach((c) => { c.disabled = !isCompany; });
+    });
+  });
+}
+
+function updatePartySourceOptions(type) {
+  ["pa", "pb"].forEach((prefix) => {
+    const select = $(`#${prefix}Source`);
+    if (!select) return;
+    const sources = (partySourceOptions[prefix] || {})[type] || ["employer"];
+    const prev = select.value;
+    select.innerHTML = sources.map((s) => `<option value="${s}"${s === prev ? " selected" : ""}>${escapeHtml(sourceLabels[s] || s)}</option>`).join("");
+    if (!sources.includes(select.value)) select.value = sources[0];
+  });
+  renderPartyEntitySelects();
+  updatePartyPickerVisibility();
+}
+
+function renderPartyEntitySelects() {
+  ["pa", "pb"].forEach((prefix) => {
+    const sourceEl = $(`#${prefix}Source`);
+    const entitySelect = $(`#${prefix}Entity`);
+    if (!sourceEl || !entitySelect) return;
+    const source = sourceEl.value;
+    const prev = entitySelect.value;
+    if (source === "employer") {
+      entitySelect.innerHTML = state.employers.map((e) => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.company_name || "")}</option>`).join("");
+    } else if (source === "employee") {
+      entitySelect.innerHTML = state.employees.map((e) => `<option value="${escapeHtml(e.id)}">${escapeHtml(`${e.name} ${e.lastname}`.trim())}</option>`).join("");
+    } else if (source === "accounting") {
+      entitySelect.innerHTML = state.accounting.map((a) => `<option value="${escapeHtml(a.id)}">${escapeHtml(a.company_name || "")}</option>`).join("");
+    } else {
+      entitySelect.innerHTML = "";
+    }
+    if (prev && entitySelect.querySelector(`option[value="${CSS.escape(prev)}"]`)) entitySelect.value = prev;
+  });
 }
 
 function formatDate(value) {
