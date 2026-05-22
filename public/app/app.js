@@ -8,10 +8,12 @@ const state = {
   employers: [],
   accounting: [],
   employees: [],
+  drafts: [],
   currentView: "dashboard"
 };
 
 const sessionDataKey = "contract-office-session-data-v2";
+const draftsKey = "contract-office-drafts-v1";
 
 const numbers1To30 = Array.from({ length: 31 }, (_, index) => String(index + 1));
 const numbers1To12 = Array.from({ length: 12 }, (_, index) => String(index + 1));
@@ -20,6 +22,55 @@ const courtOptions = [
   "Bjelovaru", "Dubrovniku", "Karlovcu", "Osijeku", "Puli", "Rijeci", "Sisku",
   "Slavonskom Brodu", "Splitu", "Šibeniku", "Varaždinu", "Velikoj Gorici",
   "Vukovaru", "Zadru", "Zagrebu"
+];
+
+const documentTypeLabels = {
+  full_time: "Ugovor o radu na neodređeno vrijeme",
+  part_time: "Ugovor o radu na određeno vrijeme",
+  annex_standard: "Aneks ugovora o radu",
+  annex_a1: "Aneks ugovora o radu za A1",
+  erv: "Evidencija radnog vremena",
+  accounting_services: "Ugovor o knjigovodstveno-računovodstvenim uslugama",
+  business_cooperation: "Ugovor o poslovnoj suradnji",
+  vehicle_power_of_attorney: "Punomoć za vozilo",
+  work_order: "Radni nalog",
+  virtual_address_lease: "Ugovor o najmu virtualne adrese",
+  confirmation_indefinite: "Potvrda o sklopljenom ugovoru o radu na neodređeno",
+  mutual_termination: "Sporazum o prestanku ugovora o radu",
+  probation_unsatisfactory: "Otkaz zbog nezadovoljavanja na probnom radu",
+  work_obligation_warning: "Upozorenje na obveze iz radnog odnosa",
+  misconduct_notice: "Otkaz zbog skrivljenog ponašanja",
+  personal_notice: "Osobno uvjetovani otkaz",
+  business_economic_notice: "Poslovno uvjetovani otkaz – gospodarski razlozi",
+  business_organizational_notice: "Poslovno uvjetovani otkaz – organizacijski razlozi",
+  business_technological_notice: "Poslovno uvjetovani otkaz – tehnološki razlozi",
+  changed_contract_offer: "Otkaz s ponudom izmijenjenog ugovora",
+  employee_regular_notice: "Redoviti otkaz zaposlenika",
+  employer_extraordinary_notice: "Izvanredni otkaz poslodavca",
+  employee_extraordinary_notice: "Izvanredni otkaz zaposlenika",
+  fixed_term_expiry_notice: "Obavijest o isteku ugovora na određeno",
+  retirement_65_15_notice: "Obavijest o prestanku – 65 god. / 15 god. staža",
+  housing_statement: "Izjava o stanovanju"
+};
+
+const documentCategories = [
+  { title: "Ugovori o radu", types: ["full_time", "part_time"] },
+  { title: "Aneksi", types: ["annex_standard", "annex_a1"] },
+  { title: "Evidencija radnog vremena", types: ["erv"] },
+  { title: "Ugovori o uslugama i suradnji", types: ["accounting_services", "business_cooperation", "virtual_address_lease"] },
+  { title: "Punomoći i nalozi", types: ["vehicle_power_of_attorney", "work_order"] },
+  { title: "Potvrde i izjave", types: ["confirmation_indefinite", "housing_statement"] },
+  {
+    title: "Sporazumi i otkazi",
+    types: [
+      "mutual_termination", "probation_unsatisfactory", "work_obligation_warning",
+      "misconduct_notice", "personal_notice",
+      "business_economic_notice", "business_organizational_notice", "business_technological_notice",
+      "changed_contract_offer", "employee_regular_notice",
+      "employer_extraordinary_notice", "employee_extraordinary_notice",
+      "fixed_term_expiry_notice", "retirement_65_15_notice"
+    ]
+  }
 ];
 const monthNamesHr = [
   "siječanj", "veljača", "ožujak", "travanj", "svibanj", "lipanj",
@@ -210,25 +261,45 @@ const employmentDocumentFieldSets = {
 
 const templateDocumentFieldSets = {
   business_cooperation: [
-    "businessPartyA", "businessPartyB", "businessDate", "businessPlace", "businessWork",
+    "partyA", "partyB", "businessDate", "businessPlace", "businessWork",
     "businessPrice", "businessIban", "businessEnd"
   ],
   vehicle_power_of_attorney: [
-    "businessPartyA", "businessPartyB", "businessDate", "businessPlace", "vehicleOwnerType",
-    "vehicleAgentType", "vehicleOwnerEmployee", "vehicleAgentEmployee", "vehicleOwnerManual",
-    "vehicleAgentManual", "vehicleIdCard", "vehicleAgentIdCard", "vehicleInfo", "vehicleVin",
-    "vehiclePlate", "vehicleValidUntil"
+    "partyA", "paIdCard", "partyB", "pbIdCard",
+    "businessDate", "businessPlace", "vehicleInfo", "vehicleVin", "vehiclePlate", "vehicleValidUntil"
   ],
   work_order: [
-    "businessPartyA", "businessPartyB", "businessDate", "workOrderNumber", "workOrderRequest",
+    "partyA", "partyB", "businessDate", "workOrderNumber", "workOrderRequest",
     "workOrderCostPlace", "workOrderCostOwner", "workOrderDescription"
   ],
   virtual_address_lease: [
-    "businessPartyA", "businessPartyB", "leaseLandlordType", "leaseTenantType",
-    "leaseLandlordManual", "leaseTenantManual", "businessDate", "businessPlace",
+    "partyA", "partyB", "businessDate", "businessPlace",
     "leaseAddress", "leaseCadastral", "leaseStart", "leaseEnd", "leaseFee",
     "leaseIban", "leaseEmail"
   ]
+};
+
+const partySourceOptions = {
+  pa: {
+    business_cooperation:        ["employer", "adhoc_company", "adhoc_person"],
+    vehicle_power_of_attorney:   ["employer", "employee", "adhoc_company", "adhoc_person"],
+    work_order:                  ["employer", "adhoc_company", "adhoc_person"],
+    virtual_address_lease:       ["employer", "adhoc_company", "adhoc_person"]
+  },
+  pb: {
+    business_cooperation:        ["employer", "accounting", "employee", "adhoc_company", "adhoc_person"],
+    vehicle_power_of_attorney:   ["employee", "adhoc_person"],
+    work_order:                  ["employer", "employee", "adhoc_company", "adhoc_person"],
+    virtual_address_lease:       ["employer", "employee", "adhoc_company", "adhoc_person"]
+  }
+};
+
+const sourceLabels = {
+  employer:     "Poslodavac (iz baze)",
+  employee:     "Radnik (iz baze)",
+  accounting:   "Knjigovodstvo (iz baze)",
+  adhoc_company: "Pravna osoba (ručni unos)",
+  adhoc_person:  "Fizička osoba (ručni unos)"
 };
 
 const blankControlLabels = {
@@ -379,22 +450,30 @@ const blankControlLabels = {
   employment_changed_contract_summary: "Sažetak izmijenjenog ugovora",
   housing_address: "Adresa smještaja",
   housing_description: "Opis smještaja",
-  template_party_a_id: "Izvršitelj / zakupodavac / vlasnik",
-  template_party_b_id: "Naručitelj / zakupnik / opunomoćenik",
+  pa_source: "Stranka A - vrsta",
+  pa_entity_id: "Stranka A - odabir iz baze",
+  pa_name: "Stranka A - ime / naziv tvrtke",
+  pa_oib: "Stranka A - OIB",
+  pa_street: "Stranka A - ulica",
+  pa_city: "Stranka A - grad",
+  pa_postal: "Stranka A - poštanski broj",
+  pa_director: "Stranka A - zastupnik / direktor",
+  pa_id_card: "Stranka A - osobna iskaznica",
+  pb_source: "Stranka B - vrsta",
+  pb_entity_id: "Stranka B - odabir iz baze",
+  pb_name: "Stranka B - ime / naziv tvrtke",
+  pb_oib: "Stranka B - OIB",
+  pb_street: "Stranka B - ulica",
+  pb_city: "Stranka B - grad",
+  pb_postal: "Stranka B - poštanski broj",
+  pb_director: "Stranka B - zastupnik / direktor",
+  pb_id_card: "Stranka B - osobna iskaznica",
   template_document_date: "Datum dokumenta",
   template_document_place: "Mjesto dokumenta",
   business_work_description: "Opis posla / radova",
   business_price: "Cijena / naknada",
   business_iban: "IBAN izvršitelja",
   business_end_date: "Trajanje do",
-  vehicle_owner_type: "Vlasnik vozila - vrsta osobe",
-  vehicle_agent_type: "Opunomoćenik - vrsta osobe",
-  vehicle_owner_employee_id: "Vlasnik vozila - radnik / privatna osoba",
-  vehicle_agent_employee_id: "Opunomoćenik - radnik / privatna osoba",
-  vehicle_owner_manual: "Vlasnik vozila - ručni unos imena/naziva, adrese i OIB-a",
-  vehicle_agent_manual: "Opunomoćenik - ručni unos imena/naziva, adrese i OIB-a",
-  vehicle_owner_id_card: "Osobna iskaznica vlasnika",
-  vehicle_agent_id_card: "Osobna iskaznica opunomoćenika",
   vehicle_description: "Vozilo",
   vehicle_vin: "Broj šasije",
   vehicle_plate: "Registracija",
@@ -406,10 +485,6 @@ const blankControlLabels = {
   work_order_description: "Opis rada",
   lease_address: "Virtualna adresa",
   lease_cadastral: "ZK / k.č. opis",
-  lease_landlord_type: "Zakupodavac - vrsta unosa",
-  lease_tenant_type: "Zakupnik - vrsta unosa",
-  lease_landlord_manual: "Zakupodavac - ručni unos imena/naziva, adrese, OIB-a i zastupnika",
-  lease_tenant_manual: "Zakupnik - ručni unos imena/naziva, adrese, OIB-a i zastupnika",
   lease_start_date: "Početak najma",
   lease_end_date: "Kraj najma",
   lease_fee: "Mjesečna zakupnina",
@@ -433,7 +508,8 @@ const views = {
   employers: ["Poslodavci", "Dodaj, uredi i izbriši poslodavce."],
   accounting: ["Knjigovodstvo", "Dodaj knjigovodstvene urede za ugovore o uslugama."],
   employees: ["Radnici", "Dodaj radnike i povezi ih s poslodavcima."],
-  documents: ["Generiranje dokumenata", "Generiraj ugovore, anekse i evidenciju radnog vremena."],
+  documents: ["Generiranje dokumenata", "Odaberi vrstu dokumenta, ispuni obrazac i preuzmi."],
+  nacrti: ["Nacrti", "Upravljaj spremljenim nacrtima dokumenata."],
   gfi: ["GFI", "Pripremi osnovnu odluku i izvještaj za GFI."]
 };
 
@@ -456,7 +532,13 @@ async function init() {
 
 function bindNavigation() {
   $$(".nav-item").forEach((button) => {
-    button.addEventListener("click", () => showView(button.dataset.view));
+    button.addEventListener("click", () => {
+      if (button.dataset.view === "documents" && state.currentView === "documents") {
+        showDocumentPicker();
+      } else {
+        showView(button.dataset.view);
+      }
+    });
   });
 }
 
@@ -488,6 +570,10 @@ function bindForms() {
     $("#documentPreview").innerHTML = buildDocument().html;
   });
   $("#resetContractButton").addEventListener("click", resetContractForm);
+  $("#saveDraftButton").addEventListener("click", saveDraft);
+  $("#backToPickerButton").addEventListener("click", () => {
+    showView("documents");
+  });
   $("#contractType").addEventListener("change", updateContractUi);
   $("#documentEmployer").addEventListener("change", () => {
     populateDocumentEmployeeSelect("documentEmployee", $("#documentEmployer").value);
@@ -514,10 +600,13 @@ function bindForms() {
   $("#servicesClient").addEventListener("change", updateDocumentDisplayFields);
   $("#servicesAccounting").addEventListener("change", updateDocumentDisplayFields);
   $("#servicesDurationType").addEventListener("change", updateServicesDurationUi);
-  $("#vehicleOwnerType").addEventListener("change", updateTemplateDocumentFields);
-  $("#vehicleAgentType").addEventListener("change", updateTemplateDocumentFields);
-  $("#leaseLandlordType").addEventListener("change", updateTemplateDocumentFields);
-  $("#leaseTenantType").addEventListener("change", updateTemplateDocumentFields);
+  ["#paSource", "#pbSource"].forEach((id) => {
+    $(id)?.addEventListener("change", () => {
+      renderPartyEntitySelects();
+      updatePartyPickerVisibility();
+      updateDocumentDisplayFields();
+    });
+  });
   $$(".paired-checkbox").forEach((checkbox) => {
     checkbox.addEventListener("change", () => updatePairedCheckboxes(checkbox.dataset.pair));
   });
@@ -548,12 +637,16 @@ function bindActions() {
     render();
     toast("Podaci sesije su osvježeni.");
   });
+  $("#nacrtiSearch")?.addEventListener("input", renderDrafts);
   $("#importButton").addEventListener("click", () => $("#importFile").click());
   $("#importFile").addEventListener("change", importJsonData);
   $("#exportButton").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify({ employers: state.employers, accounting: state.accounting, employees: state.employees }, null, 2)], {
-      type: "application/json"
-    });
+    const blob = new Blob([JSON.stringify({
+      employers: state.employers,
+      accounting: state.accounting,
+      employees: state.employees,
+      drafts: state.drafts
+    }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -604,9 +697,18 @@ async function importJsonData(event) {
       employer_names: Array.isArray(employee.employer_names) ? employee.employer_names : []
     }));
 
+    const importedDrafts = Array.isArray(parsed.drafts) ? parsed.drafts : [];
+    const validDrafts = importedDrafts.filter((d) => d && d.id && d.formData && d.type);
+    if (validDrafts.length) {
+      const existingIds = new Set(state.drafts.map((d) => d.id));
+      validDrafts.forEach((d) => { if (!existingIds.has(d.id)) state.drafts.push(d); });
+      writeDrafts();
+    }
+
     writeSessionData();
     render();
-    toast("JSON podaci su uvezeni u ovu sesiju.");
+    const draftMsg = validDrafts.length ? `, ${validDrafts.length} nacrta` : "";
+    toast(`Uvezeno: ${state.employers.length} poslodavaca, ${state.employees.length} radnika${draftMsg}.`);
   } catch {
     toast("Uvoz nije uspio. Provjerite JSON datoteku.");
   } finally {
@@ -755,11 +857,14 @@ function renderErvFieldExplanations() {
 }
 
 function resetContractForm() {
+  const currentType = $("#contractType").value;
   const form = $("#documentForm");
   form.reset();
+  $("#contractType").value = currentType;
   hydrateContractControls();
   setDefaultDates();
   renderSelects();
+  renderCurrentTypeDrafts(currentType);
   $("#documentPreview").innerHTML = buildDocument().html;
 }
 
@@ -845,23 +950,14 @@ function updateStandardAnnexUi() {
 function updateTemplateDocumentFields() {
   const type = $("#contractType")?.value;
   const selectedFields = new Set(templateDocumentFieldSets[type] || []);
-  const ownerType = $("#vehicleOwnerType")?.value || "employer";
-  const agentType = $("#vehicleAgentType")?.value || "employee";
-  const landlordType = $("#leaseLandlordType")?.value || "employer";
-  const tenantType = $("#leaseTenantType")?.value || "employer";
   $$("[data-template-field]").forEach((element) => {
-    let visible = selectedFields.has(element.dataset.templateField);
-    if (element.dataset.templateField === "vehicleOwnerEmployee") visible = visible && ownerType === "employee";
-    if (element.dataset.templateField === "vehicleAgentEmployee") visible = visible && agentType === "employee";
-    if (element.dataset.templateField === "vehicleOwnerManual") visible = visible && ownerType === "manual";
-    if (element.dataset.templateField === "vehicleAgentManual") visible = visible && agentType === "manual";
-    if (element.dataset.templateField === "leaseLandlordManual") visible = visible && landlordType === "manual";
-    if (element.dataset.templateField === "leaseTenantManual") visible = visible && tenantType === "manual";
+    const visible = selectedFields.has(element.dataset.templateField);
     element.classList.toggle("hidden", !visible);
     element.querySelectorAll("input, select, textarea").forEach((control) => {
       control.disabled = !visible;
     });
   });
+  updatePartyPickerVisibility();
 }
 
 function toggleElementWithDatePicker(element, hidden) {
@@ -938,6 +1034,7 @@ async function loadData() {
   state.employers = cached.employers;
   state.accounting = cached.accounting;
   state.employees = cached.employees;
+  state.drafts = readDrafts();
   writeSessionData();
 }
 
@@ -1002,6 +1099,7 @@ function render() {
   renderAccounting();
   renderEmployees();
   renderSelects();
+  renderDrafts();
   $("#documentPreview").innerHTML = buildDocument().html;
 }
 
@@ -1084,10 +1182,7 @@ function renderSelects() {
   $("#ervEmployer").innerHTML = employerIdOptions;
   $("#servicesClient").innerHTML = employerIdOptions;
   $("#servicesAccounting").innerHTML = accountingIdOptions;
-  $("#templatePartyA").innerHTML = employerIdOptions;
-  $("#templatePartyB").innerHTML = employerIdOptions;
-  $("#vehicleOwnerEmployee").innerHTML = state.employees.map((employee) => `<option value="${escapeHtml(employee.id)}">${escapeHtml(employee.name)} ${escapeHtml(employee.lastname)}</option>`).join("");
-  $("#vehicleAgentEmployee").innerHTML = state.employees.map((employee) => `<option value="${escapeHtml(employee.id)}">${escapeHtml(employee.name)} ${escapeHtml(employee.lastname)}</option>`).join("");
+  renderPartyEntitySelects();
   populateDocumentEmployeeSelect("documentEmployee", $("#documentEmployer").value);
   populateDocumentEmployeeSelect("a1Employee", $("#a1Employer").value);
   populateDocumentEmployeeSelect("ervEmployee", $("#ervEmployer").value);
@@ -1171,6 +1266,75 @@ function showView(name) {
   $(`#${name}View`).classList.add("active");
   $("#viewTitle").textContent = views[name][0];
   $("#viewSubtitle").textContent = views[name][1];
+  if (name === "documents") showDocumentPicker();
+}
+
+function showDocumentPicker() {
+  $("#documentsPickerView")?.classList.remove("hidden");
+  $("#documentsFormView")?.classList.add("hidden");
+  renderDocumentPicker();
+}
+
+function showDocumentForm(type) {
+  $("#documentsPickerView")?.classList.add("hidden");
+  $("#documentsFormView")?.classList.remove("hidden");
+  $("#contractType").value = type;
+  updateContractUi();
+  updatePartySourceOptions(type);
+  renderSelects();
+  renderCurrentTypeDrafts(type);
+}
+
+function renderDocumentPicker() {
+  const container = $("#documentCategoryList");
+  if (!container) return;
+  const draftCountByType = {};
+  state.drafts.forEach((d) => { draftCountByType[d.type] = (draftCountByType[d.type] || 0) + 1; });
+  container.innerHTML = documentCategories.map((category) => `
+    <div class="doc-category">
+      <h3 class="doc-category-title">${escapeHtml(category.title)}</h3>
+      <div class="doc-type-grid">
+        ${category.types.map((type) => {
+          const count = draftCountByType[type] || 0;
+          const badge = count ? `<span class="doc-type-badge">${count} nacrt${count === 1 ? "" : "a"}</span>` : "";
+          return `<button class="doc-type-card" data-doc-type="${escapeHtml(type)}" type="button">
+            <span class="doc-type-name">${escapeHtml(documentTypeLabels[type] || type)}</span>${badge}
+          </button>`;
+        }).join("")}
+      </div>
+    </div>
+  `).join("");
+  $$("[data-doc-type]").forEach((btn) => {
+    btn.addEventListener("click", () => showDocumentForm(btn.dataset.docType));
+  });
+}
+
+function renderCurrentTypeDrafts(type) {
+  const container = $("#currentTypeDraftsList");
+  const panel = $("#currentTypeDraftsPanel");
+  if (!container || !panel) return;
+  const matching = state.drafts.filter((d) => d.type === type);
+  if (!matching.length) {
+    panel.classList.add("hidden");
+    return;
+  }
+  panel.classList.remove("hidden");
+  container.innerHTML = matching.map((draft) => `
+    <div class="draft-row">
+      <div class="draft-info">
+        <strong class="draft-name">${escapeHtml(draft.name)}</strong>
+        <small class="draft-meta">${escapeHtml(new Date(draft.savedAt).toLocaleDateString("hr-HR", { day: "2-digit", month: "2-digit", year: "numeric" }))}</small>
+      </div>
+      <div class="draft-actions">
+        <button class="ghost-button" data-load-draft="${escapeHtml(draft.id)}" type="button">Učitaj</button>
+        <button class="ghost-button" data-rename-draft="${escapeHtml(draft.id)}" type="button">Preimenuj</button>
+        <button class="danger-button" data-delete-draft="${escapeHtml(draft.id)}" type="button">Izbriši</button>
+      </div>
+    </div>
+  `).join("");
+  container.querySelectorAll("[data-load-draft]").forEach((btn) => btn.addEventListener("click", () => loadDraft(btn.dataset.loadDraft)));
+  container.querySelectorAll("[data-rename-draft]").forEach((btn) => btn.addEventListener("click", () => renameDraft(btn.dataset.renameDraft)));
+  container.querySelectorAll("[data-delete-draft]").forEach((btn) => btn.addEventListener("click", () => deleteDraft(btn.dataset.deleteDraft)));
 }
 
 function buildDocument() {
@@ -1825,12 +1989,12 @@ function field(label, height = 0, box = false) {
 }
 
 function buildBusinessCooperationDocument(data) {
-  const executor = getEmployer(data.template_party_a_id);
-  const client = getEmployer(data.template_party_b_id);
+  const executor = resolveParty("pa", data);
+  const client = resolveParty("pb", data);
   const html = `
-    ${partyIntro(executor, "Izvršitelj")}
+    ${partyIntroFull(executor, "Izvršitelj")}
     ${center("I")}
-    ${partyIntro(client, "Naručitelj")}
+    ${partyIntroFull(client, "Naručitelj")}
     ${p(`sklopili su dana ${b(formatDate(data.template_document_date))} godine u ${b(data.template_document_place)} sljedeći`)}
     ${centerTitle("UGOVOR O POSLOVNOJ SURADNJI")}
     ${center("Članak 1.")}
@@ -1851,19 +2015,22 @@ function buildBusinessCooperationDocument(data) {
     ${center("Članak 8.")}
     ${p("Ovaj Ugovor sastavljen je u četiri istovjetna primjerka. Svaka ugovorna strana zadržava po dva primjerka.")}
     ${p(`U ${b(data.template_document_place)}, dana ${b(formatDate(data.template_document_date))} godine.`)}
-    ${twoPartySignature("Izvršitelj", executor.company_name || "", "Naručitelj", client.company_name || "")}
+    ${twoPartySignature("Izvršitelj", executor.name, "Naručitelj", client.name)}
   `;
   return { title: "UGOVOR O POSLOVNOJ SURADNJI", html, body: htmlToText(html) };
 }
 
 function buildVehiclePowerOfAttorneyDocument(data) {
-  const owner = getTemplatePerson(data.vehicle_owner_type, data.template_party_a_id, data.vehicle_owner_employee_id, data.vehicle_owner_manual);
-  const agent = getTemplatePerson(data.vehicle_agent_type, data.template_party_b_id, data.vehicle_agent_employee_id, data.vehicle_agent_manual);
+  const owner = resolveParty("pa", data);
+  const agent = resolveParty("pb", data);
+  const ownerLine = owner.isCompany
+    ? `Kojom tvrtka ${b(owner.name)}, adresa: ${b(owner.address)}, OIB: ${b(owner.oib)}, zastupana po ${b(owner.director)}, kao opunomoćitelj i vlasnik vozila ${b(data.vehicle_description)}, broj šasije: ${b(data.vehicle_vin)}, registarske oznake ${b(data.vehicle_plate)} (u daljnjem tekstu: vozilo)`
+    : `Kojom ja ${b(owner.name)}, adresa: ${b(owner.address)}, OIB: ${b(owner.oib)}, broj osobne iskaznice: ${b(data.pa_id_card || "")}, kao opunomoćitelj i vlasnik vozila ${b(data.vehicle_description)}, broj šasije: ${b(data.vehicle_vin)}, registarske oznake ${b(data.vehicle_plate)} (u daljnjem tekstu: vozilo)`;
   const html = `
     ${centerTitle("PUNOMOĆ")}
-    ${p(`Kojom ja ${b(owner.name)}, adresa: ${b(owner.address)}, OIB: ${b(owner.oib)}, broj osobne iskaznice: ${b(data.vehicle_owner_id_card)}, kao opunomoćitelj i vlasnik vozila ${b(data.vehicle_description)}, broj šasije: ${b(data.vehicle_vin)}, registarske oznake ${b(data.vehicle_plate)} (u daljnjem tekstu: vozilo)`)}
+    ${p(ownerLine)}
     ${center("OVLAŠĆUJEM")}
-    ${p(`kao opunomoćenika ${b(agent.name)}, adresa: ${b(agent.address)}, OIB: ${b(agent.oib)}, broj osobne iskaznice: ${b(data.vehicle_agent_id_card)}, da u moje ime i bez moje nazočnosti:`)}
+    ${p(`kao opunomoćenika ${b(agent.name)}, adresa: ${b(agent.address)}, OIB: ${b(agent.oib)}, broj osobne iskaznice: ${b(data.pb_id_card || "")}, da u moje ime i bez moje nazočnosti:`)}
     ${ul([
       "upravljati i koristiti vozilo u Hrvatskoj i inozemstvu, uključujući područja unutar i izvan Europske unije",
       "vozilo prodati, sklopiti, potpisati i ovjeriti valjane kupoprodajne ugovore radi prijenosa vlasništva vozila na novog vlasnika",
@@ -1880,31 +2047,31 @@ function buildVehiclePowerOfAttorneyDocument(data) {
 }
 
 function buildWorkOrderDocument(data) {
-  const issuer = getEmployer(data.template_party_a_id);
-  const client = getEmployer(data.template_party_b_id);
+  const issuer = resolveParty("pa", data);
+  const client = resolveParty("pb", data);
   const html = `
     ${centerTitle("RADNI NALOG")}
     ${p(`Narudžbenica broj: ${b(data.work_order_request_number || "")}`)}
     ${p(`Radni nalog br. ${b(data.work_order_number || "")}`)}
     ${p(`Datum: ${b(formatDate(data.template_document_date))}`)}
-    ${p(`Ispostavio: ${b(partyDisplayName(issuer))}`)}
-    ${p(`Naručitelj: ${b(partyDisplayName(client))}`)}
+    ${p(`Ispostavio: ${b(issuer.name)}`)}
+    ${p(`Naručitelj: ${b(client.name)}`)}
     ${p(`Mjesto troška: ${b(data.work_order_cost_place || "")}`)}
     ${p(`Nositelj troška: ${b(data.work_order_cost_owner || "")}`)}
     ${center("Opis rada")}
     ${p(safeMultiline(data.work_order_description || ""))}
-    ${twoPartySignature("Ispostavio", partyDisplayName(issuer), "Naručitelj", partyDisplayName(client))}
+    ${twoPartySignature("Ispostavio", issuer.name, "Naručitelj", client.name)}
   `;
   return { title: "RADNI NALOG", html, body: htmlToText(html) };
 }
 
 function buildVirtualAddressLeaseDocument(data) {
-  const landlord = getLeaseParty(data.lease_landlord_type, data.template_party_a_id, data.lease_landlord_manual);
-  const tenant = getLeaseParty(data.lease_tenant_type, data.template_party_b_id, data.lease_tenant_manual);
+  const landlord = resolveParty("pa", data);
+  const tenant = resolveParty("pb", data);
   const html = `
-    ${partyIntro(landlord, "Zakupodavac")}
+    ${partyIntroFull(landlord, "Zakupodavac")}
     ${center("I")}
-    ${partyIntro(tenant, "Zakupnik")}
+    ${partyIntroFull(tenant, "Zakupnik")}
     ${p(`sklopili su dana ${b(formatDate(data.template_document_date))} godine u ${b(data.template_document_place)} sljedeći`)}
     ${centerTitle("UGOVOR O NAJMU VIRTUALNE ADRESE")}
     ${center("Članak 1.")}
@@ -1928,7 +2095,7 @@ function buildVirtualAddressLeaseDocument(data) {
     ${center("Članak 9.")}
     ${p("Ugovor je sastavljen u tri istovjetna primjerka, od kojih Zakupodavac zadržava dva primjerka, a Zakupnik jedan primjerak.")}
     ${p(`U ${b(data.template_document_place)}, dana ${b(formatDate(data.template_document_date))} godine.`)}
-    ${twoPartySignature("Zakupodavac", partyDisplayName(landlord), "Zakupnik", partyDisplayName(tenant))}
+    ${twoPartySignature("Zakupodavac", landlord.name, "Zakupnik", tenant.name)}
   `;
   return { title: "UGOVOR O NAJMU VIRTUALNE ADRESE", html, body: htmlToText(html) };
 }
@@ -2651,6 +2818,163 @@ function writeSessionData() {
   }));
 }
 
+function readDrafts() {
+  try {
+    const raw = localStorage.getItem(draftsKey);
+    const data = raw ? JSON.parse(raw) : [];
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDrafts() {
+  localStorage.setItem(draftsKey, JSON.stringify(state.drafts));
+}
+
+function saveDraft() {
+  const form = $("#documentForm");
+  const data = formToObject(form);
+  const type = data.type || "full_time";
+  const typeSelect = $("#contractType");
+  const docTypeLabel = typeSelect.options[typeSelect.selectedIndex]?.text || type;
+  const employerId = data.employer_id || data.a1_employer_id || data.erv_employer_id || data.services_client_id;
+  const employeeId = data.employee_id || data.a1_employee_id || data.erv_employee_id;
+  const employer = state.employers.find((e) => e.id === employerId);
+  const employee = state.employees.find((e) => e.id === employeeId);
+  const paPartyName = templateDocumentFieldSets[type]
+    ? (data.pa_source === "adhoc_company" || data.pa_source === "adhoc_person"
+        ? data.pa_name
+        : state.employers.find((e) => e.id === data.pa_entity_id)?.company_name ||
+          state.employees.find((e) => e.id === data.pa_entity_id)?.name)
+    : null;
+  const partyParts = [
+    employer?.company_name || paPartyName,
+    employee ? `${employee.name} ${employee.lastname}`.trim() : ""
+  ].filter(Boolean);
+  const autoName = partyParts.length ? `${docTypeLabel} – ${partyParts.join(", ")}` : docTypeLabel;
+  const draft = {
+    id: createId("draft", `${type}-${Date.now()}`),
+    name: autoName,
+    type,
+    formData: data,
+    savedAt: new Date().toISOString()
+  };
+  state.drafts.unshift(draft);
+  writeDrafts();
+  renderDrafts();
+  renderCurrentTypeDrafts(type);
+  toast("Nacrt je spremljen.");
+}
+
+function loadDraft(id) {
+  const draft = state.drafts.find((d) => d.id === id);
+  if (!draft) return;
+  const type = draft.formData.type || "full_time";
+  showView("documents");
+  showDocumentForm(type);
+  const form = $("#documentForm");
+  fillFormFromObject(form, draft.formData);
+  if (type === "erv") {
+    populateDocumentEmployeeSelect("ervEmployee", form.elements.erv_employer_id?.value || "");
+    if (draft.formData.erv_employee_id) form.elements.erv_employee_id.value = draft.formData.erv_employee_id;
+    updateErvNonWorkingDays();
+  } else if (type === "annex_a1" || type === "annex_standard") {
+    populateDocumentEmployeeSelect("a1Employee", form.elements.a1_employer_id?.value || "");
+    if (draft.formData.a1_employee_id) form.elements.a1_employee_id.value = draft.formData.a1_employee_id;
+  } else {
+    populateDocumentEmployeeSelect("documentEmployee", form.elements.employer_id?.value || "");
+    if (draft.formData.employee_id) form.elements.employee_id.value = draft.formData.employee_id;
+  }
+  form.querySelectorAll(".date-hr-input").forEach(syncDatePickerFromDisplay);
+  updateDocumentDisplayFields();
+  renderCurrentTypeDrafts(type);
+  $("#documentPreview").innerHTML = buildDocument().html;
+  toast(`Nacrt "${draft.name}" je učitan.`);
+}
+
+function renameDraft(id) {
+  const draft = state.drafts.find((d) => d.id === id);
+  if (!draft) return;
+  const newName = window.prompt("Upiši naziv nacrta:", draft.name);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) return;
+  draft.name = trimmed;
+  writeDrafts();
+  renderDrafts();
+}
+
+function deleteDraft(id) {
+  if (!window.confirm("Izbrisati nacrt?")) return;
+  const type = state.drafts.find((d) => d.id === id)?.type;
+  state.drafts = state.drafts.filter((d) => d.id !== id);
+  writeDrafts();
+  renderDrafts();
+  if (type) renderCurrentTypeDrafts(type);
+  toast("Nacrt je izbrisan.");
+}
+
+function renderDrafts() {
+  const countEl = $("#draftCount");
+  if (countEl) countEl.textContent = state.drafts.length;
+
+  renderDocumentPicker();
+
+  const list = $("#nacrtiList");
+  if (!list) return;
+
+  const query = ($("#nacrtiSearch")?.value || "").trim().toLowerCase();
+  const filtered = query
+    ? state.drafts.filter((d) => `${d.name} ${documentTypeLabels[d.type] || d.type}`.toLowerCase().includes(query))
+    : state.drafts;
+
+  if (!filtered.length) {
+    list.innerHTML = `<p class="drafts-empty">${query ? "Nema nacrta koji odgovaraju pretrazi." : "Nema spremljenih nacrta. Otvorite dokument i kliknite <strong>Spremi nacrt</strong>."}</p>`;
+    return;
+  }
+  list.innerHTML = filtered.map((draft) => `
+    <div class="draft-row">
+      <div class="draft-info">
+        <strong class="draft-name">${escapeHtml(draft.name)}</strong>
+        <small class="draft-meta">${escapeHtml(documentTypeLabels[draft.type] || draft.type)} · ${escapeHtml(new Date(draft.savedAt).toLocaleDateString("hr-HR", { day: "2-digit", month: "2-digit", year: "numeric" }))}</small>
+      </div>
+      <div class="draft-actions">
+        <button class="ghost-button" data-load-draft="${escapeHtml(draft.id)}" type="button">Učitaj</button>
+        <button class="ghost-button" data-rename-draft="${escapeHtml(draft.id)}" type="button">Preimenuj</button>
+        <button class="danger-button" data-delete-draft="${escapeHtml(draft.id)}" type="button">Izbriši</button>
+      </div>
+    </div>
+  `).join("");
+  list.querySelectorAll("[data-load-draft]").forEach((btn) => btn.addEventListener("click", () => loadDraft(btn.dataset.loadDraft)));
+  list.querySelectorAll("[data-rename-draft]").forEach((btn) => btn.addEventListener("click", () => renameDraft(btn.dataset.renameDraft)));
+  list.querySelectorAll("[data-delete-draft]").forEach((btn) => btn.addEventListener("click", () => deleteDraft(btn.dataset.deleteDraft)));
+}
+
+function fillFormFromObject(form, data) {
+  Array.from(form.elements).forEach((el) => {
+    if (el.type === "checkbox") el.checked = false;
+  });
+  Object.entries(data).forEach(([key, value]) => {
+    const el = form.elements[key];
+    if (!el || el.name === "type") return;
+    if (el.type === "checkbox") {
+      el.checked = value === "on";
+    } else if (!Array.isArray(value)) {
+      el.value = value ?? "";
+    }
+  });
+  ["endJob", "startJob", "contractStart"].forEach(updatePairedCheckboxes);
+  updateTrailNumbers();
+  updateWorkType();
+  updateWorkingShift();
+  updateContractTermination();
+  updateServicesDurationUi();
+  updateStandardAnnexUi();
+  updateTemplateDocumentFields();
+  updateEmploymentDocumentFields(data.type || "full_time");
+}
+
 function setDefaultDates() {
   const today = formatDate(new Date());
   $("#documentForm").elements.contract_date.value = today;
@@ -2714,45 +3038,93 @@ function vacationDaysText(value, description = "") {
   return cleanDescription && cleanDescription !== "(-)" ? `${days} ${cleanDescription}` : days;
 }
 
-function getTemplatePerson(type, employerId, employeeId, manualValue = "") {
-  if (type === "manual") return parseManualTemplatePerson(manualValue);
-  const item = type === "employee" ? getEmployee(employeeId) : getEmployer(employerId);
+function resolveParty(prefix, data) {
+  const source = data[`${prefix}_source`] || (prefix === "pa" ? "employer" : "employee");
+  if (source === "employer") {
+    const e = getEmployer(data[`${prefix}_entity_id`]);
+    return { name: partyDisplayName(e), address: formatAddress(e), oib: partyOib(e), director: e.director || "", isCompany: true };
+  }
+  if (source === "employee") {
+    const e = getEmployee(data[`${prefix}_entity_id`]);
+    return { name: `${e.name || ""} ${e.lastname || ""}`.trim(), address: formatAddress(e), oib: e.personal_id || "", director: "", isCompany: false };
+  }
+  if (source === "accounting") {
+    const e = state.accounting.find((a) => a.id === data[`${prefix}_entity_id`]) || {};
+    return { name: partyDisplayName(e), address: formatAddress(e), oib: partyOib(e), director: e.director || "", isCompany: true };
+  }
+  const street = data[`${prefix}_street`] || "";
+  const postal = data[`${prefix}_postal`] || "";
+  const city = data[`${prefix}_city`] || "";
+  const address = [street, [postal, city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  const isCompany = source === "adhoc_company";
   return {
-    name: partyDisplayName(item),
-    address: formatAddress(item),
-    oib: partyOib(item)
+    name: data[`${prefix}_name`] || "",
+    address,
+    oib: data[`${prefix}_oib`] || "",
+    director: isCompany ? (data[`${prefix}_director`] || "") : "",
+    isCompany
   };
 }
 
-function getLeaseParty(type, employerId, manualValue = "") {
-  return type === "manual" ? parseManualLeaseParty(manualValue) : getEmployer(employerId);
+function partyIntroFull(party, role) {
+  const rep = party.director ? `, zastupano po ${party.director}` : "";
+  return p(`${b(party.name)}, ${party.address}, OIB: ${b(party.oib)}${rep} (u daljnjem tekstu: ${role})`);
 }
 
-function parseManualTemplatePerson(value) {
-  const lines = String(value || "")
-    .split(/\r?\n|,/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-  return {
-    name: lines[0] || "",
-    address: lines.slice(1, -1).join(", "),
-    oib: lines.length > 1 ? lines[lines.length - 1].replace(/^OIB[:\s]*/i, "") : ""
-  };
+function updatePartyPickerVisibility() {
+  ["pa", "pb"].forEach((prefix) => {
+    const sourceEl = $(`#${prefix}Source`);
+    if (!sourceEl) return;
+    const source = sourceEl.value;
+    const isEntity = ["employer", "employee", "accounting"].includes(source);
+    const isAdhoc = source === "adhoc_company" || source === "adhoc_person";
+    const isCompany = source === "adhoc_company";
+    $$(`[data-${prefix}-field="entity"]`).forEach((el) => {
+      el.classList.toggle("hidden", !isEntity);
+      el.querySelectorAll("input, select, textarea").forEach((c) => { c.disabled = !isEntity; });
+    });
+    $$(`[data-${prefix}-field="adhoc"]`).forEach((el) => {
+      el.classList.toggle("hidden", !isAdhoc);
+      el.querySelectorAll("input, select, textarea").forEach((c) => { c.disabled = !isAdhoc; });
+    });
+    $$(`[data-${prefix}-field="director"]`).forEach((el) => {
+      el.classList.toggle("hidden", !isCompany);
+      el.querySelectorAll("input, select, textarea").forEach((c) => { c.disabled = !isCompany; });
+    });
+  });
 }
 
-function parseManualLeaseParty(value) {
-  const lines = String(value || "")
-    .split(/\r?\n|,/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-  return {
-    company_name: lines[0] || "",
-    street: lines[1] || "",
-    city: lines[2] || "",
-    postal: "",
-    vat: (lines[3] || "").replace(/^OIB[:\s]*/i, ""),
-    director: lines.slice(4).join(", ")
-  };
+function updatePartySourceOptions(type) {
+  ["pa", "pb"].forEach((prefix) => {
+    const select = $(`#${prefix}Source`);
+    if (!select) return;
+    const sources = (partySourceOptions[prefix] || {})[type] || ["employer"];
+    const prev = select.value;
+    select.innerHTML = sources.map((s) => `<option value="${s}"${s === prev ? " selected" : ""}>${escapeHtml(sourceLabels[s] || s)}</option>`).join("");
+    if (!sources.includes(select.value)) select.value = sources[0];
+  });
+  renderPartyEntitySelects();
+  updatePartyPickerVisibility();
+}
+
+function renderPartyEntitySelects() {
+  ["pa", "pb"].forEach((prefix) => {
+    const sourceEl = $(`#${prefix}Source`);
+    const entitySelect = $(`#${prefix}Entity`);
+    if (!sourceEl || !entitySelect) return;
+    const source = sourceEl.value;
+    const prev = entitySelect.value;
+    if (source === "employer") {
+      entitySelect.innerHTML = state.employers.map((e) => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.company_name || "")}</option>`).join("");
+    } else if (source === "employee") {
+      entitySelect.innerHTML = state.employees.map((e) => `<option value="${escapeHtml(e.id)}">${escapeHtml(`${e.name} ${e.lastname}`.trim())}</option>`).join("");
+    } else if (source === "accounting") {
+      entitySelect.innerHTML = state.accounting.map((a) => `<option value="${escapeHtml(a.id)}">${escapeHtml(a.company_name || "")}</option>`).join("");
+    } else {
+      entitySelect.innerHTML = "";
+    }
+    if (prev && entitySelect.querySelector(`option[value="${CSS.escape(prev)}"]`)) entitySelect.value = prev;
+  });
 }
 
 function formatDate(value) {

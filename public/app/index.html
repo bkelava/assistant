@@ -18,7 +18,8 @@
           <button class="nav-item" data-view="employers">Poslodavci</button>
           <button class="nav-item" data-view="accounting">Knjigovodstvo</button>
           <button class="nav-item" data-view="employees">Radnici</button>
-          <button class="nav-item" data-view="documents">Generiranje</button>
+          <button class="nav-item" data-view="documents">Dokumenti</button>
+          <button class="nav-item" data-view="nacrti">Nacrti</button>
           <button class="nav-item" data-view="gfi">GFI</button>
         </nav>
       </aside>
@@ -59,17 +60,21 @@
               <strong id="accountingCount">0</strong>
             </article>
             <article class="stat">
-              <span>Dokumenti</span>
+              <span>Predlošci dokumenata</span>
               <strong>26</strong>
+            </article>
+            <article class="stat">
+              <span>Nacrti</span>
+              <strong id="draftCount">0</strong>
             </article>
           </div>
           <div class="panel">
             <h2>Radni tok</h2>
             <div class="workflow">
               <span>1. Unesi poslodavca</span>
-              <span>2. Unesi knjigovodstvo</span>
-              <span>3. Unesi radnika po potrebi</span>
-              <span>4. Generiraj i spremi PDF</span>
+              <span>2. Unesi radnika po potrebi</span>
+              <span>3. Odaberi vrstu dokumenta</span>
+              <span>4. Spremi nacrt ili preuzmi PDF</span>
             </div>
           </div>
         </section>
@@ -178,12 +183,23 @@
         </section>
 
         <section class="view" id="documentsView">
+
+          <!-- Picker sub-view -->
+          <div id="documentsPickerView">
+            <div id="documentCategoryList"></div>
+          </div>
+
+          <!-- Form sub-view -->
+          <div id="documentsFormView" class="hidden">
+          <div class="form-back-row">
+            <button class="ghost-button" id="backToPickerButton" type="button">← Popis vrsta dokumenata</button>
+          </div>
           <form class="panel document-panel" id="documentForm">
             <h2>Ugovor o radu</h2>
-            <div class="contract-editor">
+            <!-- hidden type select used programmatically -->
+            <div class="contract-editor visually-hidden">
               <p class="contract-line document-type-row">
-                <span>Tip dokumenta</span>
-                <select name="type" id="contractType">
+                <select name="type" id="contractType" aria-hidden="true" tabindex="-1">
                   <option value="full_time">UGOVOR O RADU NA NEODREĐENO VRIJEME</option>
                   <option value="part_time">UGOVOR O RADU NA ODREĐENO VRIJEME</option>
                   <option value="annex_standard">ANEKS UGOVORA O RADU</option>
@@ -637,31 +653,81 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
 
             <div class="field-group template-doc-section hidden">
               <h3>Poslovni predlošci</h3>
+
+              <!-- ── Stranka A ── -->
+              <div class="party-section" data-template-field="partyA">
+                <h4 class="party-section-title">Stranka A</h4>
+                <div class="document-grid">
+                  <label class="span-2">Vrsta stranke A
+                    <select name="pa_source" id="paSource">
+                      <option value="employer">Poslodavac (iz baze)</option>
+                    </select>
+                  </label>
+                  <label class="span-2" data-pa-field="entity">Odabir iz baze
+                    <select name="pa_entity_id" id="paEntity"></select>
+                  </label>
+                  <label data-pa-field="adhoc">Ime / naziv tvrtke
+                    <input name="pa_name">
+                  </label>
+                  <label data-pa-field="adhoc">OIB
+                    <input name="pa_oib" inputmode="numeric" maxlength="11">
+                  </label>
+                  <label data-pa-field="adhoc">Ulica i kućni broj
+                    <input name="pa_street">
+                  </label>
+                  <label data-pa-field="adhoc">Grad
+                    <input name="pa_city">
+                  </label>
+                  <label data-pa-field="adhoc">Poštanski broj
+                    <input name="pa_postal" inputmode="numeric">
+                  </label>
+                  <label data-pa-field="director">Zastupnik / direktor
+                    <input name="pa_director">
+                  </label>
+                </div>
+              </div>
+              <label data-template-field="paIdCard">Osobna iskaznica — stranka A (vlasnik vozila)
+                <input name="pa_id_card">
+              </label>
+
+              <!-- ── Stranka B ── -->
+              <div class="party-section" data-template-field="partyB">
+                <h4 class="party-section-title">Stranka B</h4>
+                <div class="document-grid">
+                  <label class="span-2">Vrsta stranke B
+                    <select name="pb_source" id="pbSource">
+                      <option value="employee">Radnik (iz baze)</option>
+                    </select>
+                  </label>
+                  <label class="span-2" data-pb-field="entity">Odabir iz baze
+                    <select name="pb_entity_id" id="pbEntity"></select>
+                  </label>
+                  <label data-pb-field="adhoc">Ime / naziv tvrtke
+                    <input name="pb_name">
+                  </label>
+                  <label data-pb-field="adhoc">OIB
+                    <input name="pb_oib" inputmode="numeric" maxlength="11">
+                  </label>
+                  <label data-pb-field="adhoc">Ulica i kućni broj
+                    <input name="pb_street">
+                  </label>
+                  <label data-pb-field="adhoc">Grad
+                    <input name="pb_city">
+                  </label>
+                  <label data-pb-field="adhoc">Poštanski broj
+                    <input name="pb_postal" inputmode="numeric">
+                  </label>
+                  <label data-pb-field="director">Zastupnik / direktor
+                    <input name="pb_director">
+                  </label>
+                </div>
+              </div>
+              <label data-template-field="pbIdCard">Osobna iskaznica — stranka B (opunomoćenik)
+                <input name="pb_id_card">
+              </label>
+
+              <!-- ── Zajednički podaci ── -->
               <div class="document-grid">
-                <label data-template-field="businessPartyA">Izvršitelj / zakupodavac / vlasnik
-                  <select name="template_party_a_id" id="templatePartyA"></select>
-                </label>
-                <label data-template-field="businessPartyB">Naručitelj / zakupnik / opunomoćenik
-                  <select name="template_party_b_id" id="templatePartyB"></select>
-                </label>
-                <label data-template-field="leaseLandlordType">Zakupodavac
-                  <select name="lease_landlord_type" id="leaseLandlordType">
-                    <option value="employer">Poslodavac</option>
-                    <option value="manual">Ručni unos</option>
-                  </select>
-                </label>
-                <label data-template-field="leaseTenantType">Zakupnik
-                  <select name="lease_tenant_type" id="leaseTenantType">
-                    <option value="employer">Poslodavac</option>
-                    <option value="manual">Ručni unos</option>
-                  </select>
-                </label>
-                <label data-template-field="leaseLandlordManual">Zakupodavac - ručni unos
-                  <textarea name="lease_landlord_manual" rows="3" placeholder="Ime/naziv, adresa, OIB, zastupnik"></textarea>
-                </label>
-                <label data-template-field="leaseTenantManual">Zakupnik - ručni unos
-                  <textarea name="lease_tenant_manual" rows="3" placeholder="Ime/naziv, adresa, OIB, zastupnik"></textarea>
-                </label>
                 <label data-template-field="businessDate">Datum dokumenta
                   <input name="template_document_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
                 </label>
@@ -680,39 +746,7 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
                 <label data-template-field="businessEnd">Trajanje do
                   <input name="business_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
                 </label>
-                <label data-template-field="vehicleOwnerType">Vlasnik vozila
-                  <select name="vehicle_owner_type" id="vehicleOwnerType">
-                    <option value="employer">Poslodavac</option>
-                    <option value="employee">Radnik / privatna osoba</option>
-                    <option value="manual">Ručni unos</option>
-                  </select>
-                </label>
-                <label data-template-field="vehicleAgentType">Opunomoćenik
-                  <select name="vehicle_agent_type" id="vehicleAgentType">
-                    <option value="employee">Radnik / privatna osoba</option>
-                    <option value="employer">Poslodavac</option>
-                    <option value="manual">Ručni unos</option>
-                  </select>
-                </label>
-                <label data-template-field="vehicleOwnerEmployee">Vlasnik - radnik
-                  <select name="vehicle_owner_employee_id" id="vehicleOwnerEmployee"></select>
-                </label>
-                <label data-template-field="vehicleAgentEmployee">Opunomoćenik - radnik
-                  <select name="vehicle_agent_employee_id" id="vehicleAgentEmployee"></select>
-                </label>
-                <label data-template-field="vehicleOwnerManual">Vlasnik - ručni unos
-                  <textarea name="vehicle_owner_manual" rows="3" placeholder="Ime/naziv, adresa, OIB"></textarea>
-                </label>
-                <label data-template-field="vehicleAgentManual">Opunomoćenik - ručni unos
-                  <textarea name="vehicle_agent_manual" rows="3" placeholder="Ime/naziv, adresa, OIB"></textarea>
-                </label>
-                <label data-template-field="vehicleIdCard">Osobna iskaznica vlasnika
-                  <input name="vehicle_owner_id_card" value="">
-                </label>
-                <label data-template-field="vehicleAgentIdCard">Osobna iskaznica opunomoćenika
-                  <input name="vehicle_agent_id_card" value="">
-                </label>
-                <label data-template-field="vehicleInfo">Vozilo
+                <label data-template-field="vehicleInfo">Vozilo (marka, model, snaga/motor)
                   <input name="vehicle_description" value="marka, model, snaga/motor">
                 </label>
                 <label data-template-field="vehicleVin">Broj šasije
@@ -813,12 +847,31 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
               <button class="primary-button" type="button" id="downloadDocumentButton">Preuzmi HTML za print</button>
               <button class="ghost-button" type="button" id="downloadBlankDocumentButton">Preuzmi prazan HTML</button>
               <button class="ghost-button" type="button" id="previewButton">Pregled</button>
+              <button class="ghost-button" type="button" id="saveDraftButton">Spremi nacrt</button>
               <button class="ghost-button" type="button" id="resetContractButton">Vrati polja na izvorno</button>
             </div>
           </form>
           <div class="panel preview-panel">
             <h2>Pregled</h2>
             <div id="documentPreview" class="contract-preview"></div>
+          </div>
+          <div class="panel drafts-panel hidden" id="currentTypeDraftsPanel">
+            <div class="panel-title-row">
+              <h2>Nacrti za ovaj dokument</h2>
+            </div>
+            <div id="currentTypeDraftsList"></div>
+          </div>
+          </div><!-- end documentsFormView -->
+        </section>
+
+        <section class="view" id="nacrtiView">
+          <div class="panel">
+            <div class="panel-title-row">
+              <h2>Svi nacrti</h2>
+              <input class="search" id="nacrtiSearch" placeholder="Pretraga nacrta">
+            </div>
+            <p class="nacrti-hint">Nacrti se čuvaju u pregledniku (localStorage) i ne gube se zatvaranjem kartice. Koristite <strong>Izvoz JSON</strong> za sigurnosnu kopiju.</p>
+            <div id="nacrtiList"></div>
           </div>
         </section>
 
