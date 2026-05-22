@@ -60,7 +60,7 @@
             </article>
             <article class="stat">
               <span>Dokumenti</span>
-              <strong>21</strong>
+              <strong>26</strong>
             </article>
           </div>
           <div class="panel">
@@ -186,9 +186,14 @@
                 <select name="type" id="contractType">
                   <option value="full_time">UGOVOR O RADU NA NEODREĐENO VRIJEME</option>
                   <option value="part_time">UGOVOR O RADU NA ODREĐENO VRIJEME</option>
+                  <option value="annex_standard">ANEKS UGOVORA O RADU</option>
                   <option value="annex_a1">ANEKS UGOVORA O RADU ZA A1</option>
                   <option value="erv">EVIDENCIJA RADNOG VREMENA</option>
                   <option value="accounting_services">UGOVOR O KNJIGOVODSTVENO-RAČUNOVODSTVENIM USLUGAMA</option>
+                  <option value="business_cooperation">UGOVOR O POSLOVNOJ SURADNJI</option>
+                  <option value="vehicle_power_of_attorney">PUNOMOĆ ZA VOZILO</option>
+                  <option value="work_order">RADNI NALOG</option>
+                  <option value="virtual_address_lease">UGOVOR O NAJMU VIRTUALNE ADRESE</option>
                   <option value="confirmation_indefinite">POTVRDA O SKLOPLJENOM UGOVORU O RADU NA NEODREĐENO VRIJEME</option>
                   <option value="mutual_termination">SPORAZUM O PRESTANKU UGOVORA O RADU</option>
                   <option value="probation_unsatisfactory">OTKAZ ZBOG NEZADOVOLJAVANJA RADNIKA NA PROBNOM RADU</option>
@@ -221,9 +226,10 @@
               <p class="contract-line">
                 <select name="employee_id" id="documentEmployee" required></select>
                 <input name="employee_personal_id_display" id="documentEmployeePersonalId" readonly>
-                <span>(dalje: Radnik) dana</span>
-                <input name="contract_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy." required>
-                <span>sklopljen je</span>
+                <span class="contract-party-contract-only">(dalje: Radnik) dana</span>
+                <span class="contract-party-employment-only hidden">(dalje: Radnik)</span>
+                <input name="contract_date" class="date-hr-input contract-party-contract-only" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy." required>
+                <span class="contract-party-contract-only">sklopljen je</span>
               </p>
             </div>
 
@@ -239,7 +245,7 @@
                 <span>i</span>
                 <select name="a1_employee_id" id="a1Employee" required></select>
                 <input name="a1_employee_personal_id_display" id="a1EmployeePersonalId" readonly>
-                <span>(u daljnjem tekstu: radnik), zaključili su sljedeći:</span>
+                <span>(u daljnjem tekstu: Radnik), zaključili su sljedeći:</span>
               </p>
             </div>
 
@@ -359,6 +365,120 @@
                 <label><span><input class="paired-checkbox" data-pair="contractStart" data-target="contract_starting_with" name="contract_start_use_date" type="checkbox" checked> Datum</span><input name="contract_starting_with" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
                 <label><span><input class="paired-checkbox" data-pair="contractStart" data-target="contract_start_with_description" name="contract_start_use_description" type="checkbox"> Opis</span><input name="contract_start_with_description" value="OPIS UGOVORA STUPANJA NA SNAGU" disabled></label>
               </div>
+            </div>
+
+            <div class="field-group standard-annex-doc-section hidden">
+              <h3>Aneks ugovora o radu</h3>
+              <div class="document-grid">
+                <label>Datum osnovnog ugovora
+                  <input name="annex_contract_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
+                </label>
+                <label>Osnovni ugovor
+                  <select name="annex_base_contract_type">
+                    <option value="indefinite">na neodređeno vrijeme</option>
+                    <option value="fixed">na određeno vrijeme</option>
+                  </select>
+                </label>
+                <label>Aneks stupa na snagu
+                  <input name="annex_effective_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
+                </label>
+                <label>Mjesto potpisa
+                  <input name="annex_signature_place" value="Mjesto">
+                </label>
+                <label>Datum potpisa
+                  <input name="annex_signature_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
+                </label>
+                <label>Nadležni sud
+                  <select name="annex_court" id="annexCourtSelect"></select>
+                </label>
+              </div>
+
+              <div class="document-grid">
+                <label><span><input name="annex_change_duration" type="checkbox"> Trajanje ugovora</span>
+                  <select name="annex_new_contract_type" id="annexNewContractType">
+                    <option value="indefinite">ugovor na neodređeno vrijeme</option>
+                    <option value="fixed">ugovor na određeno vrijeme</option>
+                  </select>
+                </label>
+                <label class="standard-annex-fixed-end hidden">Novi datum isteka
+                  <input name="annex_new_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
+                </label>
+                <label><span><input name="annex_change_job" type="checkbox"> Poslovi radnika</span>
+                  <input name="annex_job_description" value="POSAO - OPIS POSLA">
+                </label>
+                <label><span><input name="annex_change_probation" type="checkbox"> Probni rad</span>
+                  <input name="annex_probation_period" value="1 mjesec">
+                </label>
+                <label><span><input name="annex_change_work_place" type="checkbox"> Mjesto rada</span>
+                  <input name="annex_working_place" value="NASELJE/GRAD/OPĆINA U KOJEM SE RADI">
+                </label>
+                <label><span><input name="annex_change_start_date" type="checkbox"> Početak rada</span>
+                  <input name="annex_start_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
+                </label>
+                <label><span><input name="annex_change_salary" type="checkbox"> Osnovna bruto plaća</span>
+                  <input name="annex_salary" class="money-input" value="0.00" inputmode="decimal">
+                </label>
+                <label>Stimulativni dio plaće
+                  <input name="annex_salary_bonus" class="money-input" value="0.00" inputmode="decimal">
+                </label>
+                <label>Otežani uvjeti rada
+                  <input name="annex_salary_increment_1" class="percent-input" data-minimum="20" value="20%">
+                </label>
+                <label>Blagdani/neradni dani/Uskrs
+                  <input name="annex_salary_increment_2" class="percent-input" data-minimum="30" value="30%">
+                </label>
+                <label>Rad nedjeljom
+                  <input name="annex_salary_increment_3" class="percent-input" data-minimum="50" value="50%">
+                </label>
+                <label>Noćni rad
+                  <input name="annex_salary_increment_4" class="percent-input" data-minimum="20" value="20%">
+                </label>
+                <label>Prekovremeni rad
+                  <input name="annex_salary_increment_5" class="percent-input" data-minimum="20" value="20%">
+                </label>
+                <label>Druga smjena
+                  <input name="annex_salary_increment_6" class="percent-input" data-minimum="20" value="20%">
+                </label>
+                <label>Vrsta radnog vremena
+                  <select name="annex_work_type">
+                    <option>puno</option>
+                    <option>ne puno</option>
+                  </select>
+                </label>
+                <label><span><input name="annex_change_work_time" type="checkbox"> Radno vrijeme</span>
+                  <input name="annex_weekly_hours" type="number" step="0.5" value="40.0">
+                </label>
+                <label>Raspored radnog vremena
+                  <input name="annex_working_shift_description" value="prema rasporedu Poslodavca">
+                </label>
+                <label><span><input name="annex_change_weekly_rest" type="checkbox"> Tjedni odmor</span>
+                  <select name="annex_weekly_time_off">
+                    <option>subota</option>
+                    <option>nedjelja</option>
+                    <option selected>subota i nedjelja</option>
+                    <option>nedjelja i ponedjeljak</option>
+                    <option>petak i subota</option>
+                  </select>
+                </label>
+                <label><span><input name="annex_change_vacation" type="checkbox"> Godišnji odmor</span>
+                  <select name="annex_vacation" id="annexVacationSelect"></select>
+                </label>
+                <label>Opis godišnjeg odmora
+                  <input name="annex_vacation_description" value="(-)">
+                </label>
+                <label><span><input name="annex_change_notice" type="checkbox"> Otkazni rok poslodavac</span>
+                  <input name="annex_notice_employer" type="number" min="0" step="1" value="15">
+                </label>
+                <label>Otkazni rok radnik
+                  <input name="annex_notice_employee" type="number" min="0" step="1" value="15">
+                </label>
+                <label><span><input name="annex_change_rights" type="checkbox"> Ostala prava i obveze</span>
+                  <input name="annex_rights_and_obligations" value="Ostala prava i obveze utvrđuju se prema Zakonu o radu">
+                </label>
+              </div>
+              <label>Druge izmjene i dopune
+                <textarea name="annex_other_changes" rows="4" placeholder="Upiši dodatne izmjene koje nisu pokrivene gore navedenim poljima."></textarea>
+              </label>
             </div>
 
             <div class="field-group annex-doc-section hidden">
@@ -515,54 +635,183 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
               </label>
             </div>
 
+            <div class="field-group template-doc-section hidden">
+              <h3>Poslovni predlošci</h3>
+              <div class="document-grid">
+                <label data-template-field="businessPartyA">Izvršitelj / zakupodavac / vlasnik
+                  <select name="template_party_a_id" id="templatePartyA"></select>
+                </label>
+                <label data-template-field="businessPartyB">Naručitelj / zakupnik / opunomoćenik
+                  <select name="template_party_b_id" id="templatePartyB"></select>
+                </label>
+                <label data-template-field="leaseLandlordType">Zakupodavac
+                  <select name="lease_landlord_type" id="leaseLandlordType">
+                    <option value="employer">Poslodavac</option>
+                    <option value="manual">Ručni unos</option>
+                  </select>
+                </label>
+                <label data-template-field="leaseTenantType">Zakupnik
+                  <select name="lease_tenant_type" id="leaseTenantType">
+                    <option value="employer">Poslodavac</option>
+                    <option value="manual">Ručni unos</option>
+                  </select>
+                </label>
+                <label data-template-field="leaseLandlordManual">Zakupodavac - ručni unos
+                  <textarea name="lease_landlord_manual" rows="3" placeholder="Ime/naziv, adresa, OIB, zastupnik"></textarea>
+                </label>
+                <label data-template-field="leaseTenantManual">Zakupnik - ručni unos
+                  <textarea name="lease_tenant_manual" rows="3" placeholder="Ime/naziv, adresa, OIB, zastupnik"></textarea>
+                </label>
+                <label data-template-field="businessDate">Datum dokumenta
+                  <input name="template_document_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
+                </label>
+                <label data-template-field="businessPlace">Mjesto dokumenta
+                  <input name="template_document_place" value="Županja">
+                </label>
+                <label data-template-field="businessWork">Opis posla / radova
+                  <input name="business_work_description" value="izvođenja elektro instalacijskih radova prema potrebama Naručitelja">
+                </label>
+                <label data-template-field="businessPrice">Cijena / naknada
+                  <input name="business_price" value="paušalna cijena projekta po dogovoru">
+                </label>
+                <label data-template-field="businessIban">IBAN izvršitelja
+                  <input name="business_iban" value="HR">
+                </label>
+                <label data-template-field="businessEnd">Trajanje do
+                  <input name="business_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
+                </label>
+                <label data-template-field="vehicleOwnerType">Vlasnik vozila
+                  <select name="vehicle_owner_type" id="vehicleOwnerType">
+                    <option value="employer">Poslodavac</option>
+                    <option value="employee">Radnik / privatna osoba</option>
+                    <option value="manual">Ručni unos</option>
+                  </select>
+                </label>
+                <label data-template-field="vehicleAgentType">Opunomoćenik
+                  <select name="vehicle_agent_type" id="vehicleAgentType">
+                    <option value="employee">Radnik / privatna osoba</option>
+                    <option value="employer">Poslodavac</option>
+                    <option value="manual">Ručni unos</option>
+                  </select>
+                </label>
+                <label data-template-field="vehicleOwnerEmployee">Vlasnik - radnik
+                  <select name="vehicle_owner_employee_id" id="vehicleOwnerEmployee"></select>
+                </label>
+                <label data-template-field="vehicleAgentEmployee">Opunomoćenik - radnik
+                  <select name="vehicle_agent_employee_id" id="vehicleAgentEmployee"></select>
+                </label>
+                <label data-template-field="vehicleOwnerManual">Vlasnik - ručni unos
+                  <textarea name="vehicle_owner_manual" rows="3" placeholder="Ime/naziv, adresa, OIB"></textarea>
+                </label>
+                <label data-template-field="vehicleAgentManual">Opunomoćenik - ručni unos
+                  <textarea name="vehicle_agent_manual" rows="3" placeholder="Ime/naziv, adresa, OIB"></textarea>
+                </label>
+                <label data-template-field="vehicleIdCard">Osobna iskaznica vlasnika
+                  <input name="vehicle_owner_id_card" value="">
+                </label>
+                <label data-template-field="vehicleAgentIdCard">Osobna iskaznica opunomoćenika
+                  <input name="vehicle_agent_id_card" value="">
+                </label>
+                <label data-template-field="vehicleInfo">Vozilo
+                  <input name="vehicle_description" value="marka, model, snaga/motor">
+                </label>
+                <label data-template-field="vehicleVin">Broj šasije
+                  <input name="vehicle_vin" value="">
+                </label>
+                <label data-template-field="vehiclePlate">Registracija
+                  <input name="vehicle_plate" value="">
+                </label>
+                <label data-template-field="vehicleValidUntil">Punomoć vrijedi do
+                  <input name="vehicle_valid_until" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
+                </label>
+                <label data-template-field="workOrderNumber">Radni nalog broj
+                  <input name="work_order_number" value="">
+                </label>
+                <label data-template-field="workOrderRequest">Narudžbenica broj
+                  <input name="work_order_request_number" value="">
+                </label>
+                <label data-template-field="workOrderCostPlace">Mjesto troška
+                  <input name="work_order_cost_place" value="">
+                </label>
+                <label data-template-field="workOrderCostOwner">Nositelj troška
+                  <input name="work_order_cost_owner" value="">
+                </label>
+                <label data-template-field="leaseAddress">Virtualna adresa
+                  <input name="lease_address" value="Hanibala Lucića 12, 32270 Županja">
+                </label>
+                <label data-template-field="leaseCadastral">ZK / k.č. opis
+                  <input name="lease_cadastral" value="z.k.ul.br. 4264, k.o. 336394 Županja, k.č. 3888/107">
+                </label>
+                <label data-template-field="leaseStart">Početak najma
+                  <input name="lease_start_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
+                </label>
+                <label data-template-field="leaseEnd">Kraj najma
+                  <input name="lease_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
+                </label>
+                <label data-template-field="leaseFee">Mjesečna zakupnina
+                  <input name="lease_fee" class="money-input" value="50.00" inputmode="decimal">
+                </label>
+                <label data-template-field="leaseIban">IBAN zakupodavca
+                  <input name="lease_iban" value="HR">
+                </label>
+                <label data-template-field="leaseEmail">E-mail zakupnika
+                  <input name="lease_tenant_email" value="">
+                </label>
+              </div>
+              <label data-template-field="workOrderDescription">Opis rada
+                <textarea name="work_order_description" rows="5"></textarea>
+              </label>
+            </div>
+
             <div class="field-group employment-doc-section hidden">
               <h3>Dodatni podaci za radno-pravni dokument</h3>
               <div class="document-grid">
-                <label>Mjesto dokumenta<input name="employment_doc_place" value="Zagreb"></label>
-                <label>Datum dokumenta<input name="employment_doc_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-                <label>Datum ugovora o radu<input name="employment_contract_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-                <label>Vrsta ugovora
+                <label data-employment-field="docPlace">Mjesto dokumenta<input name="employment_doc_place" value="Zagreb"></label>
+                <label data-employment-field="docDate">Datum dokumenta<input name="employment_doc_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label data-employment-field="contractDate">Datum ugovora o radu<input name="employment_contract_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label data-employment-field="contractType">Vrsta ugovora
                   <select name="employment_contract_type">
                     <option>neodređeno vrijeme</option>
                     <option>određeno vrijeme</option>
                   </select>
                 </label>
-                <label>Naziv poslova<input name="employment_job_title" value="POSAO - OPIS POSLA"></label>
-                <label>Mjesto rada<input name="employment_work_place" value="NASELJE/GRAD/OPĆINA U KOJEM SE RADI"></label>
-                <label>Početak rada<input name="employment_start_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-                <label>Prestanak radnog odnosa<input name="employment_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-                <label>Otkazni rok<input name="employment_notice_period" value="15 dana"></label>
-                <label>Godina godišnjeg odmora<input name="employment_vacation_year" type="number" min="2000" max="2100"></label>
-                <label>Pripada godišnjeg odmora<input name="employment_vacation_total" type="number" min="0" step="1" value="0"></label>
-                <label>Iskorišteno godišnjeg odmora<input name="employment_vacation_used" type="number" min="0" step="1" value="0"></label>
-                <label>Preostalo godišnjeg odmora<input name="employment_vacation_remaining" type="number" min="0" step="1" value="0"></label>
-                <label>GO od<input name="employment_vacation_from" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-                <label>GO do<input name="employment_vacation_to" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-                <label>Otpremnina / naknada<input name="employment_payment_amount" value="0,00 EUR"></label>
-                <label>Probni rad<input name="employment_probation_period" value="1 mjesec"></label>
-                <label>Otkazni rok na probnom radu<input name="employment_probation_notice" value="7 dana"></label>
-                <label>Navršene godine života<input name="employment_employee_age" type="number" min="0" max="100" value="65"></label>
-                <label>Godine mirovinskog staža<input name="employment_pension_years" type="number" min="0" max="80" value="15"></label>
+                <label data-employment-field="jobTitle">Naziv poslova<input name="employment_job_title" value="POSAO - OPIS POSLA"></label>
+                <label data-employment-field="workPlace">Mjesto rada<input name="employment_work_place" value="NASELJE/GRAD/OPĆINA U KOJEM SE RADI"></label>
+                <label data-employment-field="startDate">Početak rada<input name="employment_start_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label data-employment-field="endDate">Prestanak radnog odnosa<input name="employment_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label data-employment-field="noticePeriod">Otkazni rok<input name="employment_notice_period" value="15 dana"></label>
+                <label data-employment-field="vacationYear">Godina godišnjeg odmora<input name="employment_vacation_year" type="number" min="2000" max="2100"></label>
+                <label data-employment-field="vacationTotal">Pripada godišnjeg odmora<select name="employment_vacation_total" id="employmentVacationTotalSelect"></select></label>
+                <label data-employment-field="vacationUsed">Iskorišteno godišnjeg odmora<select name="employment_vacation_used" id="employmentVacationUsedSelect"></select></label>
+                <label data-employment-field="vacationRemaining">Preostalo godišnjeg odmora<select name="employment_vacation_remaining" id="employmentVacationRemainingSelect"></select></label>
+                <label data-employment-field="vacationFrom">GO od<input name="employment_vacation_from" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label data-employment-field="vacationTo">GO do<input name="employment_vacation_to" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+                <label data-employment-field="paymentAmount">Iznos plaće / naknade / otpremnine<input name="employment_payment_amount" value="0,00 EUR"></label>
+                <label data-employment-field="probationPeriod">Probni rad<input name="employment_probation_period" value="1 mjesec"></label>
+                <label data-employment-field="probationNotice">Otkazni rok na probnom radu<input name="employment_probation_notice" value="7 dana"></label>
+                <label data-employment-field="employeeAge">Navršene godine života<input name="employment_employee_age" type="number" min="0" max="100" value="65"></label>
+                <label data-employment-field="pensionYears">Godine mirovinskog staža<input name="employment_pension_years" type="number" min="0" max="80" value="15"></label>
               </div>
-              <label>Razlog / opis okolnosti
+              <label data-employment-field="reason">Razlog / opis okolnosti
                 <textarea name="employment_reason" rows="4">Unesite konkretne činjenice i okolnosti na kojima se temelji dokument.</textarea>
               </label>
-              <label>Opis povrede / upozorenja
+              <label data-employment-field="violation">Opis povrede / upozorenja
                 <textarea name="employment_violation" rows="4">Radnik je povrijedio obveze iz radnog odnosa na način koji je potrebno detaljno opisati.</textarea>
               </label>
-              <label>Sažetak izmijenjenog ugovora
+              <label data-employment-field="changedContractSummary">Sažetak izmijenjenog ugovora
                 <textarea name="employment_changed_contract_summary" rows="4">Uz ovu odluku radniku se nudi sklapanje izmijenjenog ugovora o radu pod uvjetima navedenima u priloženom prijedlogu.</textarea>
               </label>
-              <label>Adresa smještaja
+              <label data-employment-field="housingAddress">Adresa smještaja
                 <input name="housing_address" value="ADRESA SMJEŠTAJA">
               </label>
-              <label>Opis smještaja
+              <label data-employment-field="housingDescription">Opis smještaja
                 <input name="housing_description" value="soba, kuhinja, kupaonica i sanitarni čvor">
               </label>
             </div>
 
             <div class="button-row">
               <button class="primary-button" type="button" id="downloadDocumentButton">Preuzmi HTML za print</button>
+              <button class="ghost-button" type="button" id="downloadBlankDocumentButton">Preuzmi prazan HTML</button>
               <button class="ghost-button" type="button" id="previewButton">Pregled</button>
               <button class="ghost-button" type="button" id="resetContractButton">Vrati polja na izvorno</button>
             </div>
@@ -591,6 +840,7 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
             </div>
             <div class="button-row">
               <button class="primary-button" type="button" id="downloadGfiButton">Preuzmi HTML za print</button>
+              <button class="ghost-button" type="button" id="downloadBlankGfiButton">Preuzmi prazan HTML</button>
             </div>
           </form>
         </section>

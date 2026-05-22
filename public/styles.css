@@ -180,6 +180,62 @@ a {
   background: var(--soft);
 }
 
+.document-tools {
+  background: var(--white);
+}
+
+.document-tools-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1.08fr);
+  gap: 34px;
+  align-items: start;
+}
+
+.document-tools-copy h2 {
+  margin-bottom: 28px;
+  text-align: left;
+}
+
+.document-tools-copy h2::after {
+  left: 0;
+  transform: none;
+}
+
+.document-tools-copy p {
+  max-width: 680px;
+  margin: 0 0 16px;
+}
+
+.document-tools-link {
+  margin-top: 12px;
+}
+
+.document-tools-list {
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  box-shadow: var(--shadow);
+}
+
+.document-tools-list h3 {
+  margin: 0 0 18px;
+  color: var(--blue);
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.document-tools-list ul {
+  columns: 2;
+  column-gap: 34px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.document-tools-list li {
+  break-inside: avoid;
+  margin: 0 0 8px;
+}
+
 .split-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
@@ -489,12 +545,22 @@ a {
 
   .hero-grid,
   .split-grid,
+  .document-tools-layout,
   .contact-grid {
     grid-template-columns: 1fr;
   }
 
   .hero-image {
     order: -1;
+  }
+
+  .document-tools-copy h2 {
+    text-align: center;
+  }
+
+  .document-tools-copy h2::after {
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .split-copy h2 {
@@ -527,8 +593,13 @@ a {
 
   .service-card,
   .price-card,
-  .contact-info {
+  .contact-info,
+  .document-tools-list {
     padding: 24px 18px;
+  }
+
+  .document-tools-list ul {
+    columns: 1;
   }
 
   .contact-info article {
