@@ -1043,6 +1043,7 @@ async function loadData(forceStaticImport = false) {
   state.employers = cached.employers;
   state.accounting = cached.accounting;
   state.employees = cached.employees;
+  state.drafts = readDrafts();
   writeSessionData();
 }
 
@@ -2674,7 +2675,9 @@ async function downloadPrintableHtml(documentData) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${fileSlug(documentData.title)}-${new Date().toISOString().slice(0, 10)}.html`;
+  const uid = Math.random().toString(36).slice(2, 8);
+  const partySlugs = (documentData.parties || []).map((p) => fileSlug(p).slice(0, 28)).filter(Boolean);
+  link.download = [fileSlug(documentData.title), ...partySlugs, new Date().toISOString().slice(0, 10), uid].join("-") + ".html";
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -2698,14 +2701,15 @@ function buildPrintableHtml(documentData, logoSrc) {
         <style>
           ${pageRule}
           * { box-sizing: border-box; }
-          html { background: #eef2f6; }
+          html { background: #eef2f6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           body { width: min(100%, 210mm); margin: 0 auto; padding: 14mm 18mm 18mm; font: 13.5px/1.38 Arial, sans-serif; color: #111827; background: #ffffff; }
           body.wide-document { width: min(100%, 297mm); padding: 12mm; }
-          .print-header { display: flex; justify-content: flex-end; align-items: flex-start; min-height: 22mm; margin-bottom: 2mm; }
+          .print-header { position: relative; z-index: 1; display: flex; justify-content: flex-end; align-items: flex-start; min-height: 22mm; margin-bottom: 2mm; }
+          h1 { position: relative; z-index: 1; text-align: center; font-size: 17px; line-height: 1.22; margin: 0 0 16px; text-transform: uppercase; }
           main { position: relative; z-index: 1; text-align: justify; }
+          .watermark { position: fixed; top: 50%; left: 50%; width: 160mm; height: 160mm; background-image: url('${logoSrc}'); background-repeat: no-repeat; background-size: contain; background-position: center; opacity: 0.2; pointer-events: none; z-index: 0; transform: translate(-50%, -50%) rotate(-30deg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print-brand { width: 22mm; height: 22mm; text-align: right; }
           .print-brand img { display: block; width: 22mm; height: 22mm; object-fit: contain; margin-left: auto; }
-          h1 { text-align: center; font-size: 17px; line-height: 1.22; margin: 0 0 16px; text-transform: uppercase; }
           p { margin: 0 0 6px; text-align: justify; orphans: 3; widows: 3; }
           ul, ol { margin: 0 0 8px 22px; padding: 0; }
           li { margin: 0 0 3px; text-align: justify; }
@@ -2749,6 +2753,7 @@ function buildPrintableHtml(documentData, logoSrc) {
         </style>
       </head>
       <body class="${bodyClass}">
+        <div class="watermark" aria-hidden="true"></div>
         <div class="actions"><button onclick="window.print()">Ispiši / spremi PDF</button></div>
         <header class="print-header"><div class="print-brand"><img src="${escapeHtml(logoSrc)}" alt=""></div></header>
         <h1>${escapeHtml(documentData.title)}</h1>
@@ -2900,6 +2905,163 @@ async function saveStaticDataFile() {
     console.warn("Static JSON save failed.", error);
   }
   return false;
+}
+
+function readDrafts() {
+  try {
+    const raw = localStorage.getItem(draftsKey);
+    const data = raw ? JSON.parse(raw) : [];
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDrafts() {
+  localStorage.setItem(draftsKey, JSON.stringify(state.drafts));
+}
+
+function saveDraft() {
+  const form = $("#documentForm");
+  const data = formToObject(form);
+  const type = data.type || "full_time";
+  const typeSelect = $("#contractType");
+  const docTypeLabel = typeSelect.options[typeSelect.selectedIndex]?.text || type;
+  const employerId = data.employer_id || data.a1_employer_id || data.erv_employer_id || data.services_client_id;
+  const employeeId = data.employee_id || data.a1_employee_id || data.erv_employee_id;
+  const employer = state.employers.find((e) => e.id === employerId);
+  const employee = state.employees.find((e) => e.id === employeeId);
+  const paPartyName = templateDocumentFieldSets[type]
+    ? (data.pa_source === "adhoc_company" || data.pa_source === "adhoc_person"
+        ? data.pa_name
+        : state.employers.find((e) => e.id === data.pa_entity_id)?.company_name ||
+          state.employees.find((e) => e.id === data.pa_entity_id)?.name)
+    : null;
+  const partyParts = [
+    employer?.company_name || paPartyName,
+    employee ? `${employee.name} ${employee.lastname}`.trim() : ""
+  ].filter(Boolean);
+  const autoName = partyParts.length ? `${docTypeLabel} – ${partyParts.join(", ")}` : docTypeLabel;
+  const draft = {
+    id: createId("draft", `${type}-${Date.now()}`),
+    name: autoName,
+    type,
+    formData: data,
+    savedAt: new Date().toISOString()
+  };
+  state.drafts.unshift(draft);
+  writeDrafts();
+  renderDrafts();
+  renderCurrentTypeDrafts(type);
+  toast("Nacrt je spremljen.");
+}
+
+function loadDraft(id) {
+  const draft = state.drafts.find((d) => d.id === id);
+  if (!draft) return;
+  const type = draft.formData.type || "full_time";
+  showView("documents");
+  showDocumentForm(type);
+  const form = $("#documentForm");
+  fillFormFromObject(form, draft.formData);
+  if (type === "erv") {
+    populateDocumentEmployeeSelect("ervEmployee", form.elements.erv_employer_id?.value || "");
+    if (draft.formData.erv_employee_id) form.elements.erv_employee_id.value = draft.formData.erv_employee_id;
+    updateErvNonWorkingDays();
+  } else if (type === "annex_a1" || type === "annex_standard") {
+    populateDocumentEmployeeSelect("a1Employee", form.elements.a1_employer_id?.value || "");
+    if (draft.formData.a1_employee_id) form.elements.a1_employee_id.value = draft.formData.a1_employee_id;
+  } else {
+    populateDocumentEmployeeSelect("documentEmployee", form.elements.employer_id?.value || "");
+    if (draft.formData.employee_id) form.elements.employee_id.value = draft.formData.employee_id;
+  }
+  form.querySelectorAll(".date-hr-input").forEach(syncDatePickerFromDisplay);
+  updateDocumentDisplayFields();
+  renderCurrentTypeDrafts(type);
+  $("#documentPreview").innerHTML = buildDocument().html;
+  toast(`Nacrt "${draft.name}" je učitan.`);
+}
+
+function renameDraft(id) {
+  const draft = state.drafts.find((d) => d.id === id);
+  if (!draft) return;
+  const newName = window.prompt("Upiši naziv nacrta:", draft.name);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) return;
+  draft.name = trimmed;
+  writeDrafts();
+  renderDrafts();
+}
+
+function deleteDraft(id) {
+  if (!window.confirm("Izbrisati nacrt?")) return;
+  const type = state.drafts.find((d) => d.id === id)?.type;
+  state.drafts = state.drafts.filter((d) => d.id !== id);
+  writeDrafts();
+  renderDrafts();
+  if (type) renderCurrentTypeDrafts(type);
+  toast("Nacrt je izbrisan.");
+}
+
+function renderDrafts() {
+  const countEl = $("#draftCount");
+  if (countEl) countEl.textContent = state.drafts.length;
+
+  renderDocumentPicker();
+
+  const list = $("#nacrtiList");
+  if (!list) return;
+
+  const query = ($("#nacrtiSearch")?.value || "").trim().toLowerCase();
+  const filtered = query
+    ? state.drafts.filter((d) => `${d.name} ${documentTypeLabels[d.type] || d.type}`.toLowerCase().includes(query))
+    : state.drafts;
+
+  if (!filtered.length) {
+    list.innerHTML = `<p class="drafts-empty">${query ? "Nema nacrta koji odgovaraju pretrazi." : "Nema spremljenih nacrta. Otvorite dokument i kliknite <strong>Spremi nacrt</strong>."}</p>`;
+    return;
+  }
+  list.innerHTML = filtered.map((draft) => `
+    <div class="draft-row">
+      <div class="draft-info">
+        <strong class="draft-name">${escapeHtml(draft.name)}</strong>
+        <small class="draft-meta">${escapeHtml(documentTypeLabels[draft.type] || draft.type)} · ${escapeHtml(new Date(draft.savedAt).toLocaleDateString("hr-HR", { day: "2-digit", month: "2-digit", year: "numeric" }))}</small>
+      </div>
+      <div class="draft-actions">
+        <button class="ghost-button" data-load-draft="${escapeHtml(draft.id)}" type="button">Učitaj</button>
+        <button class="ghost-button" data-rename-draft="${escapeHtml(draft.id)}" type="button">Preimenuj</button>
+        <button class="danger-button" data-delete-draft="${escapeHtml(draft.id)}" type="button">Izbriši</button>
+      </div>
+    </div>
+  `).join("");
+  list.querySelectorAll("[data-load-draft]").forEach((btn) => btn.addEventListener("click", () => loadDraft(btn.dataset.loadDraft)));
+  list.querySelectorAll("[data-rename-draft]").forEach((btn) => btn.addEventListener("click", () => renameDraft(btn.dataset.renameDraft)));
+  list.querySelectorAll("[data-delete-draft]").forEach((btn) => btn.addEventListener("click", () => deleteDraft(btn.dataset.deleteDraft)));
+}
+
+function fillFormFromObject(form, data) {
+  Array.from(form.elements).forEach((el) => {
+    if (el.type === "checkbox") el.checked = false;
+  });
+  Object.entries(data).forEach(([key, value]) => {
+    const el = form.elements[key];
+    if (!el || el.name === "type") return;
+    if (el.type === "checkbox") {
+      el.checked = value === "on";
+    } else if (!Array.isArray(value)) {
+      el.value = value ?? "";
+    }
+  });
+  ["endJob", "startJob", "contractStart"].forEach(updatePairedCheckboxes);
+  updateTrailNumbers();
+  updateWorkType();
+  updateWorkingShift();
+  updateContractTermination();
+  updateServicesDurationUi();
+  updateStandardAnnexUi();
+  updateTemplateDocumentFields();
+  updateEmploymentDocumentFields(data.type || "full_time");
 }
 
 function readDrafts() {

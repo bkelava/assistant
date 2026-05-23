@@ -50,36 +50,86 @@ a {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(55, 81, 126, 0.96);
+  background: rgba(55, 81, 126, 0.97);
   color: var(--white);
-  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(6px);
 }
 
 .header-inner {
-  min-height: 70px;
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto auto auto;
+  min-height: 72px;
+  display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 20px;
+}
+
+.site-brand {
+  margin: 0;
   font-size: 14px;
   font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.header-inner p {
-  margin: 0;
+.main-nav {
+  display: flex;
+  flex: 1;
+  justify-content: center;
 }
 
-.header-inner a {
-  justify-self: center;
+.main-nav a {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 14px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color 140ms, border-color 140ms;
+}
+
+.main-nav a:hover {
+  color: var(--white);
+  border-bottom-color: var(--accent);
+}
+
+.main-nav a + a {
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.header-phone {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 140ms;
+}
+
+.header-phone:hover {
+  color: var(--white);
 }
 
 .app-link {
-  justify-self: end;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
   border-radius: 999px;
   color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
   white-space: nowrap;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 140ms, border-color 140ms;
+}
+
+.app-link:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+address {
+  font-style: normal;
 }
 
 .hero {
@@ -178,6 +228,62 @@ a {
 .split-section,
 .pricing {
   background: var(--soft);
+}
+
+.document-tools {
+  background: var(--white);
+}
+
+.document-tools-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1.08fr);
+  gap: 34px;
+  align-items: start;
+}
+
+.document-tools-copy h2 {
+  margin-bottom: 28px;
+  text-align: left;
+}
+
+.document-tools-copy h2::after {
+  left: 0;
+  transform: none;
+}
+
+.document-tools-copy p {
+  max-width: 680px;
+  margin: 0 0 16px;
+}
+
+.document-tools-link {
+  margin-top: 12px;
+}
+
+.document-tools-list {
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  box-shadow: var(--shadow);
+}
+
+.document-tools-list h3 {
+  margin: 0 0 18px;
+  color: var(--blue);
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.document-tools-list ul {
+  columns: 2;
+  column-gap: 34px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.document-tools-list li {
+  break-inside: avoid;
+  margin: 0 0 8px;
 }
 
 .split-grid {
@@ -466,15 +572,21 @@ a {
 
 @media (max-width: 820px) {
   .header-inner {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 4px;
-    padding: 12px 0;
-    text-align: center;
+    gap: 12px;
+    min-height: 60px;
   }
 
-  .app-link {
-    justify-self: center;
+  .main-nav {
+    display: none;
+  }
+
+  .header-phone {
+    display: none;
+  }
+
+  .site-brand {
+    flex: 1;
+    font-size: 13px;
   }
 
   .hero {
@@ -489,12 +601,22 @@ a {
 
   .hero-grid,
   .split-grid,
+  .document-tools-layout,
   .contact-grid {
     grid-template-columns: 1fr;
   }
 
   .hero-image {
     order: -1;
+  }
+
+  .document-tools-copy h2 {
+    text-align: center;
+  }
+
+  .document-tools-copy h2::after {
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .split-copy h2 {
@@ -527,8 +649,13 @@ a {
 
   .service-card,
   .price-card,
-  .contact-info {
+  .contact-info,
+  .document-tools-list {
     padding: 24px 18px;
+  }
+
+  .document-tools-list ul {
+    columns: 1;
   }
 
   .contact-info article {
