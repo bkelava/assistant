@@ -1369,10 +1369,11 @@ function buildDocument() {
     director: employer.director || ""
   };
 
-  if (data.type === "annex_standard") return buildStandardAnnex(context);
-  if (data.type === "annex_a1") return buildAnnexA1Exact(context);
-  if (data.type === "erv") return buildErvDocument(context);
-  return data.type === "part_time" ? buildPartTimeContractExact(context) : buildFullTimeContractExact(context);
+  const parties = [employer.company_name, employeeName].filter(Boolean);
+  if (data.type === "annex_standard") return { ...buildStandardAnnex(context), parties };
+  if (data.type === "annex_a1") return { ...buildAnnexA1Exact(context), parties };
+  if (data.type === "erv") return { ...buildErvDocument(context), parties };
+  return { ...(data.type === "part_time" ? buildPartTimeContractExact(context) : buildFullTimeContractExact(context)), parties };
 }
 
 function buildFullTimeContractExact(context) {
@@ -2122,7 +2123,8 @@ function buildEmploymentDocument(data) {
     housing: buildHousingStatement
   };
   const html = builders[definition.category](context, definition);
-  return { title: definition.title, html, body: htmlToText(html) };
+  const parties = [employer.company_name, `${employee.name || ""} ${employee.lastname || ""}`.trim()].filter(Boolean);
+  return { title: definition.title, html, body: htmlToText(html), parties };
 }
 
 function employmentDocumentContext(data, employer, employee) {
@@ -2665,7 +2667,9 @@ async function downloadPrintableHtml(documentData) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${fileSlug(documentData.title)}-${new Date().toISOString().slice(0, 10)}.html`;
+  const uid = Math.random().toString(36).slice(2, 8);
+  const partySlugs = (documentData.parties || []).map((p) => fileSlug(p).slice(0, 28)).filter(Boolean);
+  link.download = [fileSlug(documentData.title), ...partySlugs, new Date().toISOString().slice(0, 10), uid].join("-") + ".html";
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -2689,14 +2693,15 @@ function buildPrintableHtml(documentData, logoSrc) {
         <style>
           ${pageRule}
           * { box-sizing: border-box; }
-          html { background: #eef2f6; }
+          html { background: #eef2f6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           body { width: min(100%, 210mm); margin: 0 auto; padding: 14mm 18mm 18mm; font: 13.5px/1.38 Arial, sans-serif; color: #111827; background: #ffffff; }
           body.wide-document { width: min(100%, 297mm); padding: 12mm; }
-          .print-header { display: flex; justify-content: flex-end; align-items: flex-start; min-height: 22mm; margin-bottom: 2mm; }
+          .print-header { position: relative; z-index: 1; display: flex; justify-content: flex-end; align-items: flex-start; min-height: 22mm; margin-bottom: 2mm; }
+          h1 { position: relative; z-index: 1; text-align: center; font-size: 17px; line-height: 1.22; margin: 0 0 16px; text-transform: uppercase; }
           main { position: relative; z-index: 1; text-align: justify; }
+          .watermark { position: fixed; top: 50%; left: 50%; width: 160mm; height: 160mm; background-image: url('${logoSrc}'); background-repeat: no-repeat; background-size: contain; background-position: center; opacity: 0.2; pointer-events: none; z-index: 0; transform: translate(-50%, -50%) rotate(-30deg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .print-brand { width: 22mm; height: 22mm; text-align: right; }
           .print-brand img { display: block; width: 22mm; height: 22mm; object-fit: contain; margin-left: auto; }
-          h1 { text-align: center; font-size: 17px; line-height: 1.22; margin: 0 0 16px; text-transform: uppercase; }
           p { margin: 0 0 6px; text-align: justify; orphans: 3; widows: 3; }
           ul, ol { margin: 0 0 8px 22px; padding: 0; }
           li { margin: 0 0 3px; text-align: justify; }
@@ -2740,6 +2745,7 @@ function buildPrintableHtml(documentData, logoSrc) {
         </style>
       </head>
       <body class="${bodyClass}">
+        <div class="watermark" aria-hidden="true"></div>
         <div class="actions"><button onclick="window.print()">Ispiši / spremi PDF</button></div>
         <header class="print-header"><div class="print-brand"><img src="${escapeHtml(logoSrc)}" alt=""></div></header>
         <h1>${escapeHtml(documentData.title)}</h1>
