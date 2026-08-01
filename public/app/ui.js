@@ -16,6 +16,7 @@ import { buildDocument, buildGfiDocument, buildBlankDocumentFromForm } from "./d
 import { downloadPrintableHtml } from "./print.js";
 import { parseGfiFile } from "./gfi-parser.js";
 import { buildGfiNotesDocument } from "./gfi-notes.js";
+import { buildGfiDistributionDocument } from "./gfi-distribution.js";
 import { isFileSystemAccessSupported, openLocalFile, saveLocalFile, currentFileName } from "./localfile.js";
 
 let gfiParsedData = null;
@@ -129,9 +130,12 @@ function bindForms() {
       gfiParsedData = null;
       statusEl.textContent = `Greška pri čitanju datoteke: ${error.message}`;
       statusEl.classList.remove("success");
+      updateGfiDistributionUi(null);
       toast("Neuspješno učitavanje GFI datoteke.");
     }
   });
+  $("#gfiForm").elements.payout_to_members.addEventListener("input", recalcGfiRetainedGain);
+  $("#gfiForm").elements.retained_for_loss_coverage.addEventListener("input", recalcGfiRetainedGain);
   $("#downloadDocumentButton").addEventListener("click", async () => {
     if (!validateForm($("#documentForm"))) return;
     await downloadPrintableHtml(buildDocument());
@@ -155,6 +159,31 @@ function bindForms() {
     await downloadPrintableHtml(buildGfiNotesDocument(gfiParsedData, {
       signPlace: gf.notes_sign_place.value,
       signDate: gf.notes_sign_date.value
+    }));
+  });
+  $("#downloadGfiDistributionButton").addEventListener("click", async () => {
+    if (!gfiParsedData) {
+      toast("Prvo učitajte GFI-POD Excel datoteku.");
+      return;
+    }
+    const gf = $("#gfiForm").elements;
+    const result = gfiParsedData.rdg[186];
+    const isLoss = !!(result && result.curr < 0);
+    if (isLoss && !gf.loss_coverage.value.trim()) {
+      toast("Unesite opis pokrića gubitka prije preuzimanja odluke.");
+      gf.loss_coverage.focus();
+      return;
+    }
+    await downloadPrintableHtml(buildGfiDistributionDocument(gfiParsedData, {
+      signPlace: gf.notes_sign_place.value,
+      signDate: gf.notes_sign_date.value,
+      lossCoverageText: gf.loss_coverage.value,
+      gainBeforeTax: gf.gain_before_tax.value,
+      gainTax: gf.gain_tax.value,
+      gainAfterTax: gf.gain_after_tax.value,
+      payoutToMembers: gf.payout_to_members.value,
+      retainedForLossCoverage: gf.retained_for_loss_coverage.value,
+      retainedGain: gf.retained_gain.value
     }));
   });
   $("#previewButton").addEventListener("click", () => {
@@ -719,6 +748,47 @@ function fillGfiFormFromParsedData(gfiData) {
     : "";
   gf.notes_sign_place.value = company.city;
   $$(".date-hr-input").forEach(syncDatePickerFromDisplay);
+  updateGfiDistributionUi(gfiData);
+}
+
+function recalcGfiRetainedGain() {
+  const gf = $("#gfiForm").elements;
+  const total = Number(String(gf.gain_after_tax.value || "0").replace(",", ".")) || 0;
+  const payout = Number(String(gf.payout_to_members.value || "0").replace(",", ".")) || 0;
+  const coverage = Number(String(gf.retained_for_loss_coverage.value || "0").replace(",", ".")) || 0;
+  gf.retained_gain.value = (total - payout - coverage).toFixed(2);
+}
+
+function updateGfiDistributionUi(gfiData) {
+  const box = $("#gfiDistributionBox");
+  const statusEl = $("#gfiDistributionStatus");
+  const lossFields = $("#gfiLossFields");
+  const gainFields = $("#gfiGainFields");
+  if (!gfiData || !gfiData.rdg) {
+    box.classList.add("hidden");
+    return;
+  }
+  const result = gfiData.rdg[186];
+  const isLoss = !!(result && result.curr < 0);
+  box.classList.remove("hidden");
+  if (isLoss) {
+    statusEl.textContent = `Utvrđen je GUBITAK u iznosu ${Math.abs(result.curr).toFixed(2)} EUR. Unesite kako će gubitak biti pokriven.`;
+    statusEl.classList.remove("success");
+    statusEl.classList.add("warning");
+    lossFields.classList.remove("hidden");
+    gainFields.classList.add("hidden");
+  } else {
+    const gain = result ? result.curr : 0;
+    statusEl.textContent = `Utvrđena je DOBIT u iznosu ${gain.toFixed(2)} EUR. Rasporedite iznos na isplatu članovima i/ili zadržanu dobit.`;
+    statusEl.classList.remove("warning");
+    statusEl.classList.add("success");
+    gainFields.classList.remove("hidden");
+    lossFields.classList.add("hidden");
+    const gf = $("#gfiForm").elements;
+    gf.payout_to_members.value = "0.00";
+    gf.retained_for_loss_coverage.value = "0.00";
+    recalcGfiRetainedGain();
+  }
 }
 
 // --- Data operations (entity save/remove) ---

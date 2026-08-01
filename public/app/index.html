@@ -927,14 +927,28 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
               <label>Dobit prije poreza<input name="gain_before_tax"></label>
               <label>Porez na dobit<input name="gain_tax"></label>
               <label>Dobit nakon poreza<input name="gain_after_tax"></label>
-              <label>Pokriće gubitka<input name="loss_coverage"></label>
               <label>Mjesto potpisa (za bilješke)<input name="notes_sign_place"></label>
               <label>Datum potpisa (za bilješke)<input name="notes_sign_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
             </div>
+
+            <div class="gfi-import-box hidden" id="gfiDistributionBox">
+              <h3>Raspodjela dobiti / pokriće gubitka</h3>
+              <p class="gfi-import-status" id="gfiDistributionStatus"></p>
+              <div class="document-grid hidden" id="gfiLossFields">
+                <label class="span-2">Pokriće gubitka<textarea name="loss_coverage" rows="3" placeholder="Opišite na koji način će se gubitak pokriti..."></textarea></label>
+              </div>
+              <div class="document-grid hidden" id="gfiGainFields">
+                <label>Isplata članovima društva<input name="payout_to_members" class="money-input" value="0.00" inputmode="decimal"></label>
+                <label>Zadržana dobit za pokriće gubitka iz prethodnih godina<input name="retained_for_loss_coverage" class="money-input" value="0.00" inputmode="decimal"></label>
+                <label>Zadržana dobit (preostatak)<input name="retained_gain" class="money-input" readonly></label>
+              </div>
+            </div>
+
             <div class="button-row">
               <button class="primary-button" type="button" id="downloadGfiButton">Preuzmi HTML za print</button>
               <button class="ghost-button" type="button" id="downloadBlankGfiButton">Preuzmi prazan HTML</button>
               <button class="primary-button" type="button" id="downloadGfiNotesButton">Preuzmi Bilješke (HTML)</button>
+              <button class="primary-button" type="button" id="downloadGfiDistributionButton">Preuzmi Odluku o raspodjeli dobiti / pokriću gubitka</button>
             </div>
           </form>
         </section>
