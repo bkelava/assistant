@@ -3,6 +3,16 @@ import { createId, toast } from "./utils.js";
 
 // --- Session helpers ---
 
+let dirty = false;
+
+export function isDirty() {
+  return dirty;
+}
+
+export function markSaved() {
+  dirty = false;
+}
+
 export function snapshotData() {
   return { employers: state.employers, accounting: state.accounting, employees: state.employees };
 }
@@ -26,6 +36,7 @@ export function readSessionData() {
 
 export function writeSessionData() {
   sessionStorage.setItem(sessionDataKey, JSON.stringify(snapshotData()));
+  dirty = true;
 }
 
 export function hasSessionData() {
@@ -49,6 +60,7 @@ export function readDrafts() {
 
 export function writeDrafts() {
   localStorage.setItem(draftsKey, JSON.stringify(state.drafts));
+  dirty = true;
 }
 
 // --- Static file (Windows local server) helpers ---
@@ -67,22 +79,48 @@ export function applyImportedData(parsed) {
   const employers = Array.isArray(parsed.employers) ? parsed.employers : [];
   const accounting = Array.isArray(parsed.accounting) ? parsed.accounting : [];
   const employees = Array.isArray(parsed.employees) ? parsed.employees : [];
-  state.employers = employers.map((e, i) => ({
-    id: e.id || createId("employer", e.company_name || `poslodavac-${i + 1}`),
-    company_name: e.company_name || "", street: e.street || "", city: e.city || "",
-    postal: e.postal || "", vat: e.vat || "", director: e.director || ""
+
+  state.employers = employers.map((employer, index) => ({
+    id: employer.id || createId("employer", employer.company_name || `poslodavac-${index + 1}`),
+    company_name: employer.company_name || "",
+    street: employer.street || "",
+    city: employer.city || "",
+    postal: employer.postal || "",
+    vat: employer.vat || "",
+    director: employer.director || ""
   }));
-  state.accounting = accounting.map((e, i) => ({
-    id: e.id || createId("accounting", e.company_name || `knjigovodstvo-${i + 1}`),
-    company_name: e.company_name || "", street: e.street || "", city: e.city || "",
-    postal: e.postal || "", vat: e.vat || "", director: e.director || "", email: e.email || ""
+  state.accounting = accounting.map((office, index) => ({
+    id: office.id || createId("accounting", office.company_name || `knjigovodstvo-${index + 1}`),
+    company_name: office.company_name || "",
+    street: office.street || "",
+    city: office.city || "",
+    postal: office.postal || "",
+    vat: office.vat || "",
+    director: office.director || "",
+    email: office.email || ""
   }));
-  state.employees = employees.map((e, i) => ({
-    id: e.id || createId("employee", `${e.name || "radnik"}-${e.lastname || i + 1}`),
-    name: e.name || "", lastname: e.lastname || "", street: e.street || "",
-    city: e.city || "", postal: e.postal || "", personal_id: e.personal_id || "",
-    employer_names: Array.isArray(e.employer_names) ? e.employer_names : []
+  state.employees = employees.map((employee, index) => ({
+    id: employee.id || createId("employee", `${employee.name || "radnik"}-${employee.lastname || index + 1}`),
+    name: employee.name || "",
+    lastname: employee.lastname || "",
+    street: employee.street || "",
+    city: employee.city || "",
+    postal: employee.postal || "",
+    personal_id: employee.personal_id || "",
+    employer_names: Array.isArray(employee.employer_names) ? employee.employer_names : []
   }));
+
+  const importedDrafts = Array.isArray(parsed.drafts) ? parsed.drafts : [];
+  const validDrafts = importedDrafts.filter((d) => d && d.id && d.formData && d.type);
+  if (validDrafts.length) {
+    const existingIds = new Set(state.drafts.map((d) => d.id));
+    validDrafts.forEach((d) => { if (!existingIds.has(d.id)) state.drafts.push(d); });
+    writeDrafts();
+  }
+
+  writeSessionData();
+  markSaved();
+  return { employerCount: state.employers.length, employeeCount: state.employees.length, draftCount: validDrafts.length };
 }
 
 export async function loadStaticData(url) {
@@ -93,7 +131,6 @@ export async function loadStaticData(url) {
       throw new Error(`HTTP ${response.status}`);
     }
     applyImportedData(await response.json());
-    writeSessionData();
     return true;
   } catch (error) {
     if (url !== defaultStaticDataUrl) toast("Statički JSON uvoz nije uspio. Provjerite putanju ili datoteku.");
@@ -134,6 +171,7 @@ export async function loadData(forceStaticImport = false) {
   state.employees = cached.employees;
   state.drafts = readDrafts();
   writeSessionData();
+  markSaved();
 }
 
 export async function persist(resource, record) {
@@ -153,53 +191,11 @@ export async function importJsonData(event, onSuccess) {
 
   try {
     const parsed = JSON.parse(await file.text());
-    const employers = Array.isArray(parsed.employers) ? parsed.employers : [];
-    const accounting = Array.isArray(parsed.accounting) ? parsed.accounting : [];
-    const employees = Array.isArray(parsed.employees) ? parsed.employees : [];
-
-    state.employers = employers.map((employer, index) => ({
-      id: employer.id || createId("employer", employer.company_name || `poslodavac-${index + 1}`),
-      company_name: employer.company_name || "",
-      street: employer.street || "",
-      city: employer.city || "",
-      postal: employer.postal || "",
-      vat: employer.vat || "",
-      director: employer.director || ""
-    }));
-    state.accounting = accounting.map((office, index) => ({
-      id: office.id || createId("accounting", office.company_name || `knjigovodstvo-${index + 1}`),
-      company_name: office.company_name || "",
-      street: office.street || "",
-      city: office.city || "",
-      postal: office.postal || "",
-      vat: office.vat || "",
-      director: office.director || "",
-      email: office.email || ""
-    }));
-    state.employees = employees.map((employee, index) => ({
-      id: employee.id || createId("employee", `${employee.name || "radnik"}-${employee.lastname || index + 1}`),
-      name: employee.name || "",
-      lastname: employee.lastname || "",
-      street: employee.street || "",
-      city: employee.city || "",
-      postal: employee.postal || "",
-      personal_id: employee.personal_id || "",
-      employer_names: Array.isArray(employee.employer_names) ? employee.employer_names : []
-    }));
-
-    const importedDrafts = Array.isArray(parsed.drafts) ? parsed.drafts : [];
-    const validDrafts = importedDrafts.filter((d) => d && d.id && d.formData && d.type);
-    if (validDrafts.length) {
-      const existingIds = new Set(state.drafts.map((d) => d.id));
-      validDrafts.forEach((d) => { if (!existingIds.has(d.id)) state.drafts.push(d); });
-      writeDrafts();
-    }
-
-    writeSessionData();
+    const summary = applyImportedData(parsed);
     const savedToFile = await saveStaticDataFile();
     onSuccess?.();
-    const draftMsg = validDrafts.length ? `, ${validDrafts.length} nacrta` : "";
-    const baseMsg = `Uvezeno: ${state.employers.length} poslodavaca, ${state.employees.length} radnika${draftMsg}.`;
+    const draftMsg = summary.draftCount ? `, ${summary.draftCount} nacrta` : "";
+    const baseMsg = `Uvezeno: ${summary.employerCount} poslodavaca, ${summary.employeeCount} radnika${draftMsg}.`;
     toast(savedToFile ? `${baseMsg} Spremljeno u JSON datoteku.` : baseMsg);
   } catch {
     toast("Uvoz nije uspio. Provjerite JSON datoteku.");
