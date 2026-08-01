@@ -11,6 +11,9 @@
     "db:migrate": "wrangler d1 migrations apply contract-office-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply contract-office-db --remote"
   },
+  "dependencies": {
+    "@cloudflare/puppeteer": "^1.2.0"
+  },
   "devDependencies": {
     "wrangler": "^4.14.0"
   }

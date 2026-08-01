@@ -64,4 +64,4 @@ npm run db:migrate:remote
 npm run deploy
 ```
 
-Generated documents can be opened for print/PDF or downloaded as standalone print-ready HTML files with the app logo embedded.
+Generated documents are rendered server-side (via Cloudflare Browser Rendering, see `functions/api/pdf.js`) and downloaded as ready-to-file PDFs with the app logo embedded. This requires the `BROWSER` binding declared in `wrangler.toml` — it is only available once deployed (`npm run deploy`), since Browser Rendering is not emulated by `wrangler pages dev`.

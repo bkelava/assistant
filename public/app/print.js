@@ -93,21 +93,44 @@ export async function logoDataUrl() {
   }
 }
 
-export async function downloadPrintableHtml(documentData) {
-  const logo = await logoDataUrl();
-  const html = buildPrintableHtml(documentData, logo);
-  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+function downloadFilename(documentData, ext) {
+  const uid = Math.random().toString(36).slice(2, 8);
+  const partySlugs = (documentData.parties || []).map((p) => fileSlug(p).slice(0, 28)).filter(Boolean);
+  return [fileSlug(documentData.title), ...partySlugs, new Date().toISOString().slice(0, 10), uid].join("-") + `.${ext}`;
+}
+
+function triggerBlobDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  const uid = Math.random().toString(36).slice(2, 8);
-  const partySlugs = (documentData.parties || []).map((p) => fileSlug(p).slice(0, 28)).filter(Boolean);
-  link.download = [fileSlug(documentData.title), ...partySlugs, new Date().toISOString().slice(0, 10), uid].join("-") + ".html";
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-  toast("HTML dokument je preuzet.");
+}
+
+export async function downloadPdf(documentData) {
+  const logo = await logoDataUrl();
+  const html = buildPrintableHtml(documentData, logo);
+  let response;
+  try {
+    response = await fetch("/api/pdf", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ html })
+    });
+  } catch {
+    toast("Generiranje PDF-a nije uspjelo. Provjerite internetsku vezu.");
+    return;
+  }
+  if (!response.ok) {
+    toast("Generiranje PDF-a nije uspjelo.");
+    return;
+  }
+  const blob = await response.blob();
+  triggerBlobDownload(blob, downloadFilename(documentData, "pdf"));
+  toast("PDF dokument je preuzet.");
 }
 
 export function openDocument(documentData) {

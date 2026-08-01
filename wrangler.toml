@@ -1,3 +1,6 @@
 name = "assistant"
 compatibility_date = "2026-05-09"
 pages_build_output_dir = "public"
+
+[browser]
+binding = "BROWSER"

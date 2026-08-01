@@ -13,7 +13,7 @@ import {
 } from "./utils.js";
 import { loadData, persist, writeSessionData, writeDrafts, importJsonData, isDirty } from "./storage.js";
 import { buildDocument, buildGfiDocument, buildBlankDocumentFromForm } from "./documents.js";
-import { downloadPrintableHtml } from "./print.js";
+import { downloadPdf } from "./print.js";
 import { parseGfiFile } from "./gfi-parser.js";
 import { buildGfiNotesDocument } from "./gfi-notes.js";
 import { buildGfiDistributionDocument } from "./gfi-distribution.js";
@@ -84,6 +84,18 @@ function clearFieldInvalid(event) {
   event.target.classList?.remove("field-invalid");
 }
 
+async function withBusyButton(button, fn) {
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = "Generiram PDF...";
+  try {
+    await fn();
+  } finally {
+    button.disabled = false;
+    button.textContent = original;
+  }
+}
+
 function validateForm(form) {
   form.querySelectorAll(".field-invalid").forEach((el) => el.classList.remove("field-invalid"));
   const invalid = Array.from(form.querySelectorAll("[required]")).filter((el) => el.offsetParent !== null && !el.checkValidity());
@@ -105,12 +117,12 @@ function bindForms() {
   $("#documentForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!validateForm(event.currentTarget)) return;
-    await downloadPrintableHtml(buildDocument());
+    await downloadPdf(buildDocument());
   });
   $("#gfiForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!validateForm(event.currentTarget)) return;
-    await downloadPrintableHtml(buildGfiDocument());
+    await downloadPdf(buildGfiDocument());
   });
   $("#documentForm").addEventListener("input", clearFieldInvalid);
   $("#documentForm").addEventListener("change", clearFieldInvalid);
@@ -136,32 +148,32 @@ function bindForms() {
   });
   $("#gfiForm").elements.payout_to_members.addEventListener("input", recalcGfiRetainedGain);
   $("#gfiForm").elements.retained_for_loss_coverage.addEventListener("input", recalcGfiRetainedGain);
-  $("#downloadDocumentButton").addEventListener("click", async () => {
+  $("#downloadDocumentButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
     if (!validateForm($("#documentForm"))) return;
-    await downloadPrintableHtml(buildDocument());
-  });
-  $("#downloadBlankDocumentButton").addEventListener("click", async () => {
-    await downloadPrintableHtml(buildBlankDocumentFromForm($("#documentForm"), $("#documentForm h2").textContent, $("#contractType").value));
-  });
-  $("#downloadGfiButton").addEventListener("click", async () => {
+    await downloadPdf(buildDocument());
+  }));
+  $("#downloadBlankDocumentButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
+    await downloadPdf(buildBlankDocumentFromForm($("#documentForm"), $("#documentForm h2").textContent, $("#contractType").value));
+  }));
+  $("#downloadGfiButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
     if (!validateForm($("#gfiForm"))) return;
-    await downloadPrintableHtml(buildGfiDocument());
-  });
-  $("#downloadBlankGfiButton").addEventListener("click", async () => {
-    await downloadPrintableHtml(buildBlankDocumentFromForm($("#gfiForm"), "GFI ODLUKA / IZVJEŠTAJ", "gfi"));
-  });
-  $("#downloadGfiNotesButton").addEventListener("click", async () => {
+    await downloadPdf(buildGfiDocument());
+  }));
+  $("#downloadBlankGfiButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
+    await downloadPdf(buildBlankDocumentFromForm($("#gfiForm"), "GFI ODLUKA / IZVJEŠTAJ", "gfi"));
+  }));
+  $("#downloadGfiNotesButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
     if (!gfiParsedData) {
       toast("Prvo učitajte GFI-POD Excel datoteku.");
       return;
     }
     const gf = $("#gfiForm").elements;
-    await downloadPrintableHtml(buildGfiNotesDocument(gfiParsedData, {
+    await downloadPdf(buildGfiNotesDocument(gfiParsedData, {
       signPlace: gf.notes_sign_place.value,
       signDate: gf.notes_sign_date.value
     }));
-  });
-  $("#downloadGfiDistributionButton").addEventListener("click", async () => {
+  }));
+  $("#downloadGfiDistributionButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
     if (!gfiParsedData) {
       toast("Prvo učitajte GFI-POD Excel datoteku.");
       return;
@@ -174,7 +186,7 @@ function bindForms() {
       gf.loss_coverage.focus();
       return;
     }
-    await downloadPrintableHtml(buildGfiDistributionDocument(gfiParsedData, {
+    await downloadPdf(buildGfiDistributionDocument(gfiParsedData, {
       signPlace: gf.notes_sign_place.value,
       signDate: gf.notes_sign_date.value,
       lossCoverageText: gf.loss_coverage.value,
@@ -185,7 +197,7 @@ function bindForms() {
       retainedForLossCoverage: gf.retained_for_loss_coverage.value,
       retainedGain: gf.retained_gain.value
     }));
-  });
+  }));
   $("#previewButton").addEventListener("click", () => {
     $("#documentPreview").innerHTML = buildDocument().html;
   });
