@@ -1,6 +1,6 @@
 {
   "name": "kokelava-cloudflare",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "private": true,
   "type": "module",
   "description": "Cloudflare Pages site for Kokelava with a document-generation application under /app.",
@@ -10,9 +10,6 @@
     "db:create": "wrangler d1 create contract-office-db",
     "db:migrate": "wrangler d1 migrations apply contract-office-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply contract-office-db --remote"
-  },
-  "dependencies": {
-    "@cloudflare/puppeteer": "^1.2.0"
   },
   "devDependencies": {
     "wrangler": "^4.14.0"

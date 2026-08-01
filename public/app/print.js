@@ -1,11 +1,19 @@
 import { escapeHtml, fileSlug, toast } from "./utils.js";
 
+const PAGE_LAYOUTS = {
+  narrow: { widthMm: 210, heightMm: 297, marginMm: [16, 16, 20] },
+  wide: { widthMm: 297, heightMm: 210, marginMm: [10, 10, 18] }
+};
+
+function pageLayoutFor(documentData) {
+  return documentData.html?.includes("erv-table") ? PAGE_LAYOUTS.wide : PAGE_LAYOUTS.narrow;
+}
+
 export function buildPrintableHtml(documentData, logoSrc) {
-  const isWideDocument = documentData.html?.includes("erv-table");
+  const layout = pageLayoutFor(documentData);
+  const isWideDocument = layout === PAGE_LAYOUTS.wide;
   const bodyClass = isWideDocument ? "wide-document" : "";
-  const pageRule = isWideDocument
-    ? "@page { size: auto; margin: 10mm 10mm 18mm; }"
-    : "@page { size: auto; margin: 16mm 16mm 20mm; }";
+  const pageRule = `@page { size: auto; margin: ${layout.marginMm[0]}mm ${layout.marginMm[1]}mm ${layout.marginMm[2]}mm; }`;
   return `
     <!doctype html>
     <html lang="hr">
@@ -110,27 +118,73 @@ function triggerBlobDownload(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
+// Rendered in a hidden same-document iframe so the document's own <style>
+// (which targets bare selectors like body/h1/p) never leaks into the app UI.
+function loadHiddenDocument(html, pxWidth) {
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = `position:fixed; left:-10000px; top:0; width:${pxWidth}px; height:100px; border:0;`;
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.addEventListener("load", () => resolve(iframe), { once: true });
+    iframe.addEventListener("error", () => reject(new Error("Iframe učitavanje nije uspjelo.")), { once: true });
+    document.body.appendChild(iframe);
+    iframe.srcdoc = html;
+  });
+}
+
+// html2canvas can't reproduce a `position: fixed` watermark repeating on every
+// printed page, so it's excluded from the capture and drawn once per PDF page here instead.
+function drawWatermarkOnAllPages(pdf, logoSrc) {
+  const pageCount = pdf.internal.getNumberOfPages();
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const size = Math.min(pageWidth, pageHeight) * 0.75;
+  const x = (pageWidth - size) / 2;
+  const y = (pageHeight - size) / 2;
+  for (let i = 1; i <= pageCount; i += 1) {
+    pdf.setPage(i);
+    pdf.saveGraphicsState();
+    pdf.setGState(pdf.GState({ opacity: 0.07 }));
+    pdf.addImage(logoSrc, x, y, size, size);
+    pdf.restoreGraphicsState();
+  }
+}
+
 export async function downloadPdf(documentData) {
+  if (!window.html2pdf) {
+    toast("PDF biblioteka nije učitana.");
+    return;
+  }
   const logo = await logoDataUrl();
+  const layout = pageLayoutFor(documentData);
   const html = buildPrintableHtml(documentData, logo);
-  let response;
+  const pxWidth = Math.round((layout.widthMm * 96) / 25.4);
+  let iframe;
   try {
-    response = await fetch("/api/pdf", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ html })
-    });
-  } catch {
-    toast("Generiranje PDF-a nije uspjelo. Provjerite internetsku vezu.");
-    return;
-  }
-  if (!response.ok) {
+    iframe = await loadHiddenDocument(html, pxWidth);
+    const pdf = await window.html2pdf()
+      .set({
+        margin: [layout.marginMm[0], layout.marginMm[1], layout.marginMm[2], layout.marginMm[1]],
+        image: { type: "png" },
+        html2canvas: {
+          scale: 3,
+          backgroundColor: "#ffffff",
+          ignoreElements: (el) => el.classList?.contains("actions") || el.classList?.contains("watermark")
+        },
+        jsPDF: { unit: "mm", format: [layout.widthMm, layout.heightMm] },
+        pagebreak: { mode: ["css"], avoid: ["tr"] }
+      })
+      .from(iframe.contentDocument.body)
+      .toPdf()
+      .get("pdf");
+    drawWatermarkOnAllPages(pdf, logo);
+    triggerBlobDownload(pdf.output("blob"), downloadFilename(documentData, "pdf"));
+    toast("PDF dokument je preuzet.");
+  } catch (error) {
     toast("Generiranje PDF-a nije uspjelo.");
-    return;
+  } finally {
+    iframe?.remove();
   }
-  const blob = await response.blob();
-  triggerBlobDownload(blob, downloadFilename(documentData, "pdf"));
-  toast("PDF dokument je preuzet.");
 }
 
 export function openDocument(documentData) {

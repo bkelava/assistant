@@ -64,4 +64,4 @@ npm run db:migrate:remote
 npm run deploy
 ```
 
-Generated documents are rendered server-side (via Cloudflare Browser Rendering, see `functions/api/pdf.js`) and downloaded as ready-to-file PDFs with the app logo embedded. This requires the `BROWSER` binding declared in `wrangler.toml` — it is only available once deployed (`npm run deploy`), since Browser Rendering is not emulated by `wrangler pages dev`.
+Generated documents are rendered client-side (via the vendored `html2pdf.bundle.min.js`, see `public/app/print.js`) and downloaded as ready-to-file PDFs with the app logo embedded. No server or Cloudflare binding is required, so this works identically under `npm run dev` and once deployed.
