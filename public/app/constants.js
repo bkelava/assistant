@@ -1,3 +1,7 @@
+// Keep in sync with the "version" field in package.json — this static site has no
+// build step to copy it automatically.
+export const appVersion = "1.0.1";
+
 export const emptySessionData = {
   employers: [],
   accounting: [],
@@ -71,6 +75,32 @@ export const documentCategories = [
       "fixed_term_expiry_notice", "retirement_65_15_notice"
     ]
   }
+];
+
+// Fallback "last updated" date applied to every template unless overridden below.
+// Update this (and add a changelog entry) whenever templates are reviewed for a law change.
+export const templateLastUpdated = "2026-08-01";
+
+// Per-type overrides — set a type's own date here once only that specific template
+// has actually been revised again, instead of bumping every template at once.
+export const templateLastUpdatedOverrides = {};
+
+export function getTemplateLastUpdated(type) {
+  return templateLastUpdatedOverrides[type] || templateLastUpdated;
+}
+
+// History of app/template changes, newest first. Add a new { date, summary } entry
+// here whenever you update a template's legal text or business logic, so users can
+// see what changed and when. Dates use ISO format (YYYY-MM-DD).
+export const changelog = [
+  { date: "2026-08-01", summary: "Dodane kratke upute (i) uz manje razumljiva polja (npr. otkazni rokovi, ZK/k.č. opis), popravljen prikaz aplikacije na mobitelu i dodan ovaj popis promjena." },
+  { date: "2026-08-01", summary: "Dodan uvodni vodič za nove korisnike, prazna stanja s pozivom na akciju, pretraga predložaka dokumenata, grupirani prikaz nacrta i provjera obaveznih polja prije generiranja dokumenta." },
+  { date: "2026-08-01", summary: "GFI: dodan uvoz FINA GFI-POD Excel obrasca s automatskim popunjavanjem podataka i generator Bilježaka uz financijske izvještaje." },
+  { date: "2026-06-03", summary: "Tehničko poboljšanje izgleda dokumenata (vodeni žig) i podjela koda aplikacije u module." },
+  { date: "2026-05-23", summary: "Dodan vodeni žig u generirane dokumente." },
+  { date: "2026-05-22", summary: "Ažurirana poslovna logika predložaka dokumenata." },
+  { date: "2026-05-22", summary: "Dodane nove vrste dokumenata i predložaka u aplikaciju." },
+  { date: "2026-05-10", summary: "Manje izmjene i dorade predložaka." }
 ];
 
 export const monthNamesHr = [

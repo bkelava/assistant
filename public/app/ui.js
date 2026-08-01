@@ -3,7 +3,7 @@ import {
   numbers1To30, numbers1To12, vacationOptions, courtOptions,
   monthNamesHr, ervColumnDescriptions, ervColumns,
   employmentDocumentDefinitions, employmentDocumentFieldSets, templateDocumentFieldSets,
-  partySourceOptions, sourceLabels
+  partySourceOptions, sourceLabels, getTemplateLastUpdated, changelog, appVersion
 } from "./constants.js";
 import {
   escapeHtml, toast, formatDate, normalizeCroatianDate, normalizeTime24,
@@ -11,9 +11,14 @@ import {
   formToObject, objectToForm, formatAddress, createId, clamp,
   croatianNonWorkingDays, titleCaseDocument
 } from "./utils.js";
-import { loadData, persist, writeSessionData, writeDrafts, importJsonData } from "./storage.js";
+import { loadData, persist, writeSessionData, writeDrafts, importJsonData, isDirty } from "./storage.js";
 import { buildDocument, buildGfiDocument, buildBlankDocumentFromForm } from "./documents.js";
 import { downloadPrintableHtml } from "./print.js";
+import { parseGfiFile } from "./gfi-parser.js";
+import { buildGfiNotesDocument } from "./gfi-notes.js";
+import { isFileSystemAccessSupported, openLocalFile, saveLocalFile, currentFileName } from "./localfile.js";
+
+let gfiParsedData = null;
 
 // --- Initialization ---
 
@@ -25,6 +30,8 @@ export async function init() {
   bindNavigation();
   bindForms();
   bindActions();
+  $("#sidebarFooter").textContent = `v${appVersion}`;
+  $("#footerVersion").textContent = appVersion;
   await loadData();
   render();
 }
@@ -67,6 +74,25 @@ function showDocumentForm(type) {
   updatePartySourceOptions(type);
   renderSelects();
   renderCurrentTypeDrafts(type);
+  $("#templateUpdatedBadge").textContent = `Predložak ažuriran: ${formatDate(getTemplateLastUpdated(type))}`;
+}
+
+// --- Validation ---
+
+function clearFieldInvalid(event) {
+  event.target.classList?.remove("field-invalid");
+}
+
+function validateForm(form) {
+  form.querySelectorAll(".field-invalid").forEach((el) => el.classList.remove("field-invalid"));
+  const invalid = Array.from(form.querySelectorAll("[required]")).filter((el) => el.offsetParent !== null && !el.checkValidity());
+  if (!invalid.length) return true;
+  invalid.forEach((el) => el.classList.add("field-invalid"));
+  invalid[0].scrollIntoView({ behavior: "smooth", block: "center" });
+  invalid[0].focus();
+  const fieldsPhrase = invalid.length === 1 ? "1 obavezno polje označeno" : `${invalid.length} obavezna polja označena`;
+  toast(`Molimo popunite ${fieldsPhrase} crvenom bojom.`);
+  return false;
 }
 
 // --- Form bindings ---
@@ -77,23 +103,59 @@ function bindForms() {
   $("#employeeForm").addEventListener("submit", saveEmployee);
   $("#documentForm").addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (!validateForm(event.currentTarget)) return;
     await downloadPrintableHtml(buildDocument());
   });
   $("#gfiForm").addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (!validateForm(event.currentTarget)) return;
     await downloadPrintableHtml(buildGfiDocument());
   });
+  $("#documentForm").addEventListener("input", clearFieldInvalid);
+  $("#documentForm").addEventListener("change", clearFieldInvalid);
+  $("#gfiForm").addEventListener("input", clearFieldInvalid);
+  $("#gfiForm").addEventListener("change", clearFieldInvalid);
+  $("#gfiFileInput").addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const statusEl = $("#gfiImportStatus");
+    try {
+      gfiParsedData = await parseGfiFile(file);
+      fillGfiFormFromParsedData(gfiParsedData);
+      statusEl.textContent = `Učitano: ${gfiParsedData.company.companyName} (OIB ${gfiParsedData.company.oib}), razdoblje ${gfiParsedData.company.periodFrom}–${gfiParsedData.company.periodTo}.`;
+      statusEl.classList.add("success");
+      toast("GFI podaci su učitani i polja su popunjena.");
+    } catch (error) {
+      gfiParsedData = null;
+      statusEl.textContent = `Greška pri čitanju datoteke: ${error.message}`;
+      statusEl.classList.remove("success");
+      toast("Neuspješno učitavanje GFI datoteke.");
+    }
+  });
   $("#downloadDocumentButton").addEventListener("click", async () => {
+    if (!validateForm($("#documentForm"))) return;
     await downloadPrintableHtml(buildDocument());
   });
   $("#downloadBlankDocumentButton").addEventListener("click", async () => {
     await downloadPrintableHtml(buildBlankDocumentFromForm($("#documentForm"), $("#documentForm h2").textContent, $("#contractType").value));
   });
   $("#downloadGfiButton").addEventListener("click", async () => {
+    if (!validateForm($("#gfiForm"))) return;
     await downloadPrintableHtml(buildGfiDocument());
   });
   $("#downloadBlankGfiButton").addEventListener("click", async () => {
     await downloadPrintableHtml(buildBlankDocumentFromForm($("#gfiForm"), "GFI ODLUKA / IZVJEŠTAJ", "gfi"));
+  });
+  $("#downloadGfiNotesButton").addEventListener("click", async () => {
+    if (!gfiParsedData) {
+      toast("Prvo učitajte GFI-POD Excel datoteku.");
+      return;
+    }
+    const gf = $("#gfiForm").elements;
+    await downloadPrintableHtml(buildGfiNotesDocument(gfiParsedData, {
+      signPlace: gf.notes_sign_place.value,
+      signDate: gf.notes_sign_date.value
+    }));
   });
   $("#previewButton").addEventListener("click", () => {
     $("#documentPreview").innerHTML = buildDocument().html;
@@ -168,6 +230,22 @@ function bindActions() {
     render();
     toast("Podaci sesije su osvježeni.");
   });
+  bindLocalFileControls();
+  $("#onboardingAddEmployerButton").addEventListener("click", () => {
+    showView("employers");
+    focusForm("employerForm", "company_name");
+  });
+  $("#onboardingDemoButton").addEventListener("click", loadDemoData);
+  $("#documentSearch")?.addEventListener("input", renderDocumentPicker);
+  $("#changelogToggleButton")?.addEventListener("click", () => {
+    const panel = $("#changelogPanel");
+    const isHidden = panel.classList.contains("hidden");
+    if (isHidden) renderChangelog();
+    panel.classList.toggle("hidden", !isHidden);
+  });
+  $("#changelogCloseButton")?.addEventListener("click", () => {
+    $("#changelogPanel").classList.add("hidden");
+  });
   $("#nacrtiSearch")?.addEventListener("input", renderDrafts);
   $("#importButton").addEventListener("click", () => $("#importFile").click());
   $("#importFile").addEventListener("change", (event) => importJsonData(event, () => render()));
@@ -184,6 +262,57 @@ function bindActions() {
     link.download = `knjigovodstveni-asistent-izvoz-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
+  });
+}
+
+// --- Local file (draw.io-style open/save) ---
+
+function updateFileStatus() {
+  const el = $("#fileStatus");
+  const name = currentFileName();
+  if (!name) {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.textContent = isDirty() ? `${name} (nespremljene izmjene)` : `${name} (spremljeno)`;
+  el.classList.toggle("dirty", isDirty());
+}
+
+function bindLocalFileControls() {
+  if (!isFileSystemAccessSupported()) return;
+  $("#openFileButton").hidden = false;
+  $("#saveFileButton").hidden = false;
+  $("#saveAsFileButton").hidden = false;
+
+  $("#openFileButton").addEventListener("click", async () => {
+    try {
+      const { fileName, summary } = await openLocalFile();
+      render();
+      const draftMsg = summary.draftCount ? `, ${summary.draftCount} nacrta` : "";
+      toast(`Otvoreno ${fileName}: ${summary.employerCount} poslodavaca, ${summary.employeeCount} radnika${draftMsg}.`);
+    } catch (error) {
+      if (error.name !== "AbortError") toast("Otvaranje datoteke nije uspjelo.");
+    }
+  });
+
+  const save = async (saveAs) => {
+    try {
+      const { fileName } = await saveLocalFile({ saveAs });
+      updateFileStatus();
+      toast(`Spremljeno u ${fileName}.`);
+    } catch (error) {
+      if (error.name !== "AbortError") toast("Spremanje nije uspjelo.");
+    }
+  };
+  $("#saveFileButton").addEventListener("click", () => save(false));
+  $("#saveAsFileButton").addEventListener("click", () => save(true));
+
+  window.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      save(event.shiftKey);
+    }
   });
 }
 
@@ -569,6 +698,29 @@ function setDefaultDates() {
   $$(".date-hr-input").forEach(syncDatePickerFromDisplay);
 }
 
+// --- GFI import ---
+
+function fillGfiFormFromParsedData(gfiData) {
+  const { company, rdg } = gfiData;
+  const gf = $("#gfiForm").elements;
+  gf.company_name.value = company.companyName;
+  gf.address.value = company.street;
+  gf.city.value = `${company.postal} ${company.city}`.trim();
+  gf.oib.value = company.oib;
+  gf.director.value = company.director;
+  gf.report_year.value = company.year;
+  gf.report_date.value = formatDate(company.periodTo);
+  const result = rdg[186];
+  gf.gain_before_tax.value = rdg[182] ? rdg[182].curr.toFixed(2) : "";
+  gf.gain_tax.value = rdg[185] ? rdg[185].curr.toFixed(2) : "";
+  gf.gain_after_tax.value = result ? result.curr.toFixed(2) : "";
+  gf.loss_coverage.value = result && result.curr < 0
+    ? `Gubitak u iznosu ${Math.abs(result.curr).toFixed(2)} EUR prenosi se u sljedeće razdoblje.`
+    : "";
+  gf.notes_sign_place.value = company.city;
+  $$(".date-hr-input").forEach(syncDatePickerFromDisplay);
+}
+
 // --- Data operations (entity save/remove) ---
 
 async function saveEmployer(event) {
@@ -646,19 +798,60 @@ function render() {
   $("#employerCount").textContent = state.employers.length;
   $("#accountingCount").textContent = state.accounting.length;
   $("#employeeCount").textContent = state.employees.length;
+  $("#onboardingPanel").hidden = state.employers.length > 0;
   renderEmployers();
   renderAccounting();
   renderEmployees();
   renderSelects();
   renderDrafts();
   $("#documentPreview").innerHTML = buildDocument().html;
+  updateFileStatus();
+}
+
+function focusForm(formId, fieldName) {
+  const form = $(`#${formId}`);
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+  form.elements[fieldName]?.focus();
+}
+
+async function loadDemoData() {
+  const employer = {
+    id: createId("employer", "demo-obrt"),
+    company_name: "Demo Obrt d.o.o.",
+    street: "Ilica 10",
+    city: "Zagreb",
+    postal: "10000",
+    vat: "12345678901",
+    director: "Ana Anić"
+  };
+  const employee = {
+    id: createId("employee", "demo-marko-maric"),
+    name: "Marko",
+    lastname: "Marić",
+    street: "Ilica 10",
+    city: "Zagreb",
+    postal: "10000",
+    personal_id: "98765432101",
+    employer_names: [employer.company_name]
+  };
+  await persist("employers", employer);
+  await persist("employees", employee);
+  render();
+  toast("Demo podaci su dodani. Slobodno ih uredite ili izbrišite kad više ne trebaju.");
+}
+
+function emptyTableRow(colspan, { hasAny, query, ctaId, ctaLabel, emptyLabel }) {
+  if (hasAny) {
+    return `<tr><td colspan="${colspan}"><div class="table-empty-state"><p>Nema rezultata za „${escapeHtml(query)}”.</p></div></td></tr>`;
+  }
+  return `<tr><td colspan="${colspan}"><div class="table-empty-state"><p>${emptyLabel}</p><button class="ghost-button" type="button" id="${ctaId}">${ctaLabel}</button></div></td></tr>`;
 }
 
 function renderEmployers() {
   const query = $("#employerSearch").value.trim().toLowerCase();
-  const rows = state.employers
-    .filter((employer) => [employer.company_name, employer.city, employer.vat].join(" ").toLowerCase().includes(query))
-    .map((employer) => `
+  const filtered = state.employers
+    .filter((employer) => [employer.company_name, employer.city, employer.vat].join(" ").toLowerCase().includes(query));
+  const rows = filtered.map((employer) => `
       <tr>
         <td><strong>${escapeHtml(employer.company_name)}</strong><br><small>${escapeHtml(formatAddress(employer))}</small></td>
         <td>${escapeHtml(employer.city)}</td>
@@ -671,16 +864,23 @@ function renderEmployers() {
         </td>
       </tr>
     `).join("");
-  $("#employerRows").innerHTML = rows || `<tr><td colspan="4">Nema zapisa.</td></tr>`;
+  $("#employerRows").innerHTML = rows || emptyTableRow(4, {
+    hasAny: state.employers.length > 0,
+    query,
+    ctaId: "employerEmptyCta",
+    ctaLabel: "Dodaj prvog poslodavca →",
+    emptyLabel: "Još nema unesenih poslodavaca."
+  });
+  $("#employerEmptyCta")?.addEventListener("click", () => focusForm("employerForm", "company_name"));
   $$("[data-edit-employer]").forEach((button) => button.addEventListener("click", () => editEmployer(button.dataset.editEmployer)));
   $$("[data-delete-employer]").forEach((button) => button.addEventListener("click", () => removeRecord("employers", button.dataset.deleteEmployer)));
 }
 
 function renderAccounting() {
   const query = $("#accountingSearch").value.trim().toLowerCase();
-  const rows = state.accounting
-    .filter((office) => [office.company_name, office.city, office.vat, office.email].join(" ").toLowerCase().includes(query))
-    .map((office) => `
+  const filtered = state.accounting
+    .filter((office) => [office.company_name, office.city, office.vat, office.email].join(" ").toLowerCase().includes(query));
+  const rows = filtered.map((office) => `
       <tr>
         <td><strong>${escapeHtml(office.company_name)}</strong><br><small>${escapeHtml(formatAddress(office))}</small></td>
         <td>${escapeHtml(office.city)}</td>
@@ -693,16 +893,23 @@ function renderAccounting() {
         </td>
       </tr>
     `).join("");
-  $("#accountingRows").innerHTML = rows || `<tr><td colspan="4">Nema zapisa.</td></tr>`;
+  $("#accountingRows").innerHTML = rows || emptyTableRow(4, {
+    hasAny: state.accounting.length > 0,
+    query,
+    ctaId: "accountingEmptyCta",
+    ctaLabel: "Dodaj prvi knjigovodstveni ured →",
+    emptyLabel: "Još nema unesenih knjigovodstvenih ureda."
+  });
+  $("#accountingEmptyCta")?.addEventListener("click", () => focusForm("accountingForm", "company_name"));
   $$("[data-edit-accounting]").forEach((button) => button.addEventListener("click", () => editAccounting(button.dataset.editAccounting)));
   $$("[data-delete-accounting]").forEach((button) => button.addEventListener("click", () => removeRecord("accounting", button.dataset.deleteAccounting)));
 }
 
 function renderEmployees() {
   const query = $("#employeeSearch").value.trim().toLowerCase();
-  const rows = state.employees
-    .filter((employee) => [employee.name, employee.lastname, employee.personal_id, employee.employer_names.join(" ")].join(" ").toLowerCase().includes(query))
-    .map((employee) => `
+  const filtered = state.employees
+    .filter((employee) => [employee.name, employee.lastname, employee.personal_id, employee.employer_names.join(" ")].join(" ").toLowerCase().includes(query));
+  const rows = filtered.map((employee) => `
       <tr>
         <td><strong>${escapeHtml(employee.name)} ${escapeHtml(employee.lastname)}</strong><br><small>${escapeHtml(formatAddress(employee))}</small></td>
         <td>${escapeHtml(employee.personal_id)}</td>
@@ -715,7 +922,14 @@ function renderEmployees() {
         </td>
       </tr>
     `).join("");
-  $("#employeeRows").innerHTML = rows || `<tr><td colspan="4">Nema zapisa.</td></tr>`;
+  $("#employeeRows").innerHTML = rows || emptyTableRow(4, {
+    hasAny: state.employees.length > 0,
+    query,
+    ctaId: "employeeEmptyCta",
+    ctaLabel: "Dodaj prvog radnika →",
+    emptyLabel: "Još nema unesenih radnika."
+  });
+  $("#employeeEmptyCta")?.addEventListener("click", () => focusForm("employeeForm", "name"));
   $$("[data-edit-employee]").forEach((button) => button.addEventListener("click", () => editEmployee(button.dataset.editEmployee)));
   $$("[data-delete-employee]").forEach((button) => button.addEventListener("click", () => removeRecord("employees", button.dataset.deleteEmployee)));
 }
@@ -795,25 +1009,73 @@ function renderPartyEntitySelects() {
 function renderDocumentPicker() {
   const container = $("#documentCategoryList");
   if (!container) return;
+  const query = ($("#documentSearch")?.value || "").trim().toLowerCase();
   const draftCountByType = {};
   state.drafts.forEach((d) => { draftCountByType[d.type] = (draftCountByType[d.type] || 0) + 1; });
-  container.innerHTML = documentCategories.map((category) => `
-    <div class="doc-category">
-      <h3 class="doc-category-title">${escapeHtml(category.title)}</h3>
-      <div class="doc-type-grid">
-        ${category.types.map((type) => {
-          const count = draftCountByType[type] || 0;
-          const badge = count ? `<span class="doc-type-badge">${count} nacrt${count === 1 ? "" : "a"}</span>` : "";
-          return `<button class="doc-type-card" data-doc-type="${escapeHtml(type)}" type="button">
-            <span class="doc-type-name">${escapeHtml(documentTypeLabels[type] || type)}</span>${badge}
-          </button>`;
-        }).join("")}
+  const categoriesHtml = documentCategories.map((category) => {
+    const matchingTypes = category.types.filter((type) => {
+      if (!query) return true;
+      return `${category.title} ${documentTypeLabels[type] || type}`.toLowerCase().includes(query);
+    });
+    if (!matchingTypes.length) return "";
+    return `
+      <div class="doc-category">
+        <h3 class="doc-category-title">${escapeHtml(category.title)}</h3>
+        <div class="doc-type-grid">
+          ${matchingTypes.map((type) => {
+            const count = draftCountByType[type] || 0;
+            const badge = count ? `<span class="doc-type-badge">${count} nacrt${count === 1 ? "" : "a"}</span>` : "";
+            return `<button class="doc-type-card" data-doc-type="${escapeHtml(type)}" type="button">
+              <span class="doc-type-name">${escapeHtml(documentTypeLabels[type] || type)}</span>${badge}
+              <span class="doc-type-updated">Ažurirano: ${escapeHtml(formatDate(getTemplateLastUpdated(type)))}</span>
+            </button>`;
+          }).join("")}
+        </div>
       </div>
-    </div>
-  `).join("");
+    `;
+  }).filter(Boolean).join("");
+  container.innerHTML = categoriesHtml || `<p class="drafts-empty">Nema predložaka koji odgovaraju pretrazi „${escapeHtml(query)}”.</p>`;
   $$("[data-doc-type]").forEach((btn) => {
     btn.addEventListener("click", () => showDocumentForm(btn.dataset.docType));
   });
+}
+
+function renderChangelog() {
+  const list = $("#changelogList");
+  if (!list) return;
+  list.innerHTML = changelog.map((entry) => `
+    <div class="changelog-entry">
+      <span class="changelog-date">${escapeHtml(formatDate(entry.date))}</span>
+      <span>${escapeHtml(entry.summary)}</span>
+    </div>
+  `).join("");
+}
+
+function draftRowHtml(draft, { showTypeBadge = true } = {}) {
+  const party = draft.partyName || draft.name;
+  const badge = showTypeBadge ? `<span class="doc-type-badge draft-type-badge">${escapeHtml(documentTypeLabels[draft.type] || draft.type)}</span>` : "";
+  return `
+    <div class="draft-row">
+      <div class="draft-info">
+        <div class="draft-top">
+          ${badge}
+          <strong class="draft-name">${escapeHtml(party)}</strong>
+        </div>
+        <small class="draft-meta">${escapeHtml(new Date(draft.savedAt).toLocaleDateString("hr-HR", { day: "2-digit", month: "2-digit", year: "numeric" }))}</small>
+      </div>
+      <div class="draft-actions">
+        <button class="ghost-button" data-load-draft="${escapeHtml(draft.id)}" type="button">Učitaj</button>
+        <button class="ghost-button" data-rename-draft="${escapeHtml(draft.id)}" type="button">Preimenuj</button>
+        <button class="danger-button" data-delete-draft="${escapeHtml(draft.id)}" type="button">Izbriši</button>
+      </div>
+    </div>
+  `;
+}
+
+function bindDraftRowActions(container) {
+  container.querySelectorAll("[data-load-draft]").forEach((btn) => btn.addEventListener("click", () => loadDraft(btn.dataset.loadDraft)));
+  container.querySelectorAll("[data-rename-draft]").forEach((btn) => btn.addEventListener("click", () => renameDraft(btn.dataset.renameDraft)));
+  container.querySelectorAll("[data-delete-draft]").forEach((btn) => btn.addEventListener("click", () => deleteDraft(btn.dataset.deleteDraft)));
 }
 
 function renderCurrentTypeDrafts(type) {
@@ -823,22 +1085,8 @@ function renderCurrentTypeDrafts(type) {
   const matching = state.drafts.filter((d) => d.type === type);
   if (!matching.length) { panel.classList.add("hidden"); return; }
   panel.classList.remove("hidden");
-  container.innerHTML = matching.map((draft) => `
-    <div class="draft-row">
-      <div class="draft-info">
-        <strong class="draft-name">${escapeHtml(draft.name)}</strong>
-        <small class="draft-meta">${escapeHtml(new Date(draft.savedAt).toLocaleDateString("hr-HR", { day: "2-digit", month: "2-digit", year: "numeric" }))}</small>
-      </div>
-      <div class="draft-actions">
-        <button class="ghost-button" data-load-draft="${escapeHtml(draft.id)}" type="button">Učitaj</button>
-        <button class="ghost-button" data-rename-draft="${escapeHtml(draft.id)}" type="button">Preimenuj</button>
-        <button class="danger-button" data-delete-draft="${escapeHtml(draft.id)}" type="button">Izbriši</button>
-      </div>
-    </div>
-  `).join("");
-  container.querySelectorAll("[data-load-draft]").forEach((btn) => btn.addEventListener("click", () => loadDraft(btn.dataset.loadDraft)));
-  container.querySelectorAll("[data-rename-draft]").forEach((btn) => btn.addEventListener("click", () => renameDraft(btn.dataset.renameDraft)));
-  container.querySelectorAll("[data-delete-draft]").forEach((btn) => btn.addEventListener("click", () => deleteDraft(btn.dataset.deleteDraft)));
+  container.innerHTML = matching.map(draftRowHtml).join("");
+  bindDraftRowActions(container);
 }
 
 // --- Draft management ---
@@ -863,11 +1111,13 @@ function saveDraft() {
     employer?.company_name || paPartyName,
     employee ? `${employee.name} ${employee.lastname}`.trim() : ""
   ].filter(Boolean);
+  const partyName = partyParts.join(", ");
   const autoName = partyParts.length ? `${docTypeLabel} – ${partyParts.join(", ")}` : docTypeLabel;
   const draft = {
     id: createId("draft", `${type}-${Date.now()}`),
     name: autoName,
     type,
+    partyName,
     formData: data,
     savedAt: new Date().toISOString()
   };
@@ -934,28 +1184,24 @@ function renderDrafts() {
   if (!list) return;
   const query = ($("#nacrtiSearch")?.value || "").trim().toLowerCase();
   const filtered = query
-    ? state.drafts.filter((d) => `${d.name} ${documentTypeLabels[d.type] || d.type}`.toLowerCase().includes(query))
+    ? state.drafts.filter((d) => `${d.name} ${d.partyName || ""} ${documentTypeLabels[d.type] || d.type}`.toLowerCase().includes(query))
     : state.drafts;
   if (!filtered.length) {
     list.innerHTML = `<p class="drafts-empty">${query ? "Nema nacrta koji odgovaraju pretrazi." : "Nema spremljenih nacrta. Otvorite dokument i kliknite <strong>Spremi nacrt</strong>."}</p>`;
     return;
   }
-  list.innerHTML = filtered.map((draft) => `
-    <div class="draft-row">
-      <div class="draft-info">
-        <strong class="draft-name">${escapeHtml(draft.name)}</strong>
-        <small class="draft-meta">${escapeHtml(documentTypeLabels[draft.type] || draft.type)} · ${escapeHtml(new Date(draft.savedAt).toLocaleDateString("hr-HR", { day: "2-digit", month: "2-digit", year: "numeric" }))}</small>
-      </div>
-      <div class="draft-actions">
-        <button class="ghost-button" data-load-draft="${escapeHtml(draft.id)}" type="button">Učitaj</button>
-        <button class="ghost-button" data-rename-draft="${escapeHtml(draft.id)}" type="button">Preimenuj</button>
-        <button class="danger-button" data-delete-draft="${escapeHtml(draft.id)}" type="button">Izbriši</button>
-      </div>
+  const groups = new Map();
+  filtered.forEach((draft) => {
+    if (!groups.has(draft.type)) groups.set(draft.type, []);
+    groups.get(draft.type).push(draft);
+  });
+  list.innerHTML = Array.from(groups.entries()).map(([type, drafts]) => `
+    <div class="draft-group">
+      <h3 class="draft-group-title">${escapeHtml(documentTypeLabels[type] || type)} (${drafts.length})</h3>
+      ${drafts.map((draft) => draftRowHtml(draft, { showTypeBadge: false })).join("")}
     </div>
   `).join("");
-  list.querySelectorAll("[data-load-draft]").forEach((btn) => btn.addEventListener("click", () => loadDraft(btn.dataset.loadDraft)));
-  list.querySelectorAll("[data-rename-draft]").forEach((btn) => btn.addEventListener("click", () => renameDraft(btn.dataset.renameDraft)));
-  list.querySelectorAll("[data-delete-draft]").forEach((btn) => btn.addEventListener("click", () => deleteDraft(btn.dataset.deleteDraft)));
+  bindDraftRowActions(list);
 }
 
 // --- Form fill from draft ---

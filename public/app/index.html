@@ -22,6 +22,7 @@
           <button class="nav-item" data-view="nacrti">Nacrti</button>
           <button class="nav-item" data-view="gfi">GFI</button>
         </nav>
+        <div class="sidebar-footer" id="sidebarFooter"></div>
       </aside>
 
       <main class="workspace">
@@ -31,7 +32,11 @@
             <p id="viewSubtitle">Uredi podatke i generiraj dokumente u pregledniku.</p>
           </div>
           <div class="topbar-actions">
+            <span class="file-status" id="fileStatus" hidden></span>
             <button class="ghost-button" id="refreshButton" type="button">Osvježi</button>
+            <button class="ghost-button" id="openFileButton" type="button" hidden>Otvori datoteku</button>
+            <button class="primary-button" id="saveFileButton" type="button" hidden>Spremi (Ctrl+S)</button>
+            <button class="ghost-button" id="saveAsFileButton" type="button" hidden>Spremi kao…</button>
             <button class="ghost-button" id="importButton" type="button">Uvoz JSON</button>
             <button class="primary-button" id="exportButton" type="button">Izvoz JSON</button>
             <input id="importFile" class="visually-hidden" type="file" accept="application/json,.json">
@@ -39,12 +44,21 @@
         </header>
 
         <section class="view active" id="dashboardView">
+          <section class="panel onboarding-panel" id="onboardingPanel" hidden>
+            <h2>Dobrodošli! Krenimo od prvog poslodavca</h2>
+            <p>Dokumenti (ugovori, otkazi, evidencije, GFI izvještaji) generiraju se na temelju podataka o poslodavcima i radnicima koje ovdje unesete. Dodajte prvog poslodavca, ili isprobajte aplikaciju s demo podacima koje kasnije možete urediti ili izbrisati.</p>
+            <div class="button-row">
+              <button class="primary-button" id="onboardingAddEmployerButton" type="button">Dodaj prvog poslodavca →</button>
+              <button class="ghost-button" id="onboardingDemoButton" type="button">Isprobaj s demo podacima</button>
+            </div>
+          </section>
           <section class="panel disclaimer-panel" aria-labelledby="disclaimerTitle">
             <h2 id="disclaimerTitle">Važna napomena prije korištenja</h2>
             <p><strong>Podaci koje unesete ne šalju se nama i ne spremamo ih na poslužitelj.</strong> Aplikacija ih koristi samo u trenutačnoj sesiji preglednika radi izrade pregleda, HTML dokumenta ili ispisa. Nakon zatvaranja kartice uneseni podaci više nisu dostupni u aplikaciji.</p>
-            <p>Ako želite sačuvati unesene poslodavce, knjigovodstvene urede i radnike za kasnije korištenje, izvezite ih u JSON datoteku. Tu datoteku možete ponovno uvesti tijekom nove sesije.</p>
+            <p>Ako želite sačuvati unesene poslodavce, knjigovodstvene urede i radnike za kasnije korištenje, izvezite ih u JSON datoteku. Tu datoteku možete ponovno uvesti tijekom nove sesije. U podržanim preglednicima (Chrome, Edge) dostupni su i gumbi <strong>Otvori datoteku</strong> i <strong>Spremi</strong> (Ctrl+S) koji rade s lokalnom datotekom izravno, poput drugih desktop alata: prvo spremanje traži lokaciju, a svako sljedeće spremanje (Ctrl+S) upisuje izravno u istu datoteku bez ponovnog preuzimanja.</p>
             <p>Predlošci i generirani dokumenti služe kao pomoćni nacrti. Ne jamčimo da je svaki ugovor ili drugi dokument potpun, ažuran ili usklađen sa svim odredbama hrvatskog prava za konkretan slučaj. Korisnik je odgovoran za provjeru sadržaja i po potrebi za savjetovanje s ovlaštenom stručnom osobom.</p>
-            <p>Sporedna djelatnost Milan Kelava ne preuzima odgovornost za izravnu ili neizravnu štetu, gubitke, posljedice ili sporove nastale korištenjem, izmjenom, potpisivanjem ili predajom generiranih dokumenata.</p>
+            <p>Aplikacija se pruža u zatečenom stanju („kakva jest”), bez ikakvih jamstava, izričitih ili impliciranih, uključujući jamstva neprekidnog rada, dostupnosti, sigurnosti ili odsutnosti pogrešaka. Sporedna djelatnost Milan Kelava ne preuzima odgovornost za izravnu ili neizravnu štetu, izmaklu dobit, gubitak podataka, prekid rada, posljedice ili sporove nastale korištenjem ili nemogućnošću korištenja aplikacije, odnosno korištenjem, izmjenom, potpisivanjem ili predajom generiranih dokumenata, u najvećoj mjeri dopuštenoj mjerodavnim propisima. Aplikacija se koristi na vlastitu odgovornost korisnika.</p>
+            <p>Prijedlozi za poboljšanje i primjedbe na rad aplikacije mogu se poslati na <a href="mailto:kokelava@gmail.com">kokelava@gmail.com</a>. Verzija aplikacije: <span id="footerVersion"></span>.</p>
           </section>
           <div class="stats-grid">
             <article class="stat">
@@ -186,6 +200,20 @@
 
           <!-- Picker sub-view -->
           <div id="documentsPickerView">
+            <div class="panel-title-row">
+              <h2>Odaberite vrstu dokumenta</h2>
+              <input class="search" id="documentSearch" placeholder="Pretraga predložaka (npr. otkaz, aneks, ERV)">
+            </div>
+            <div class="button-row changelog-toggle-row">
+              <button class="ghost-button" id="changelogToggleButton" type="button">Povijest izmjena predložaka</button>
+            </div>
+            <div class="panel changelog-panel hidden" id="changelogPanel">
+              <div class="panel-title-row">
+                <h2>Povijest izmjena predložaka</h2>
+                <button class="ghost-button" id="changelogCloseButton" type="button">Zatvori</button>
+              </div>
+              <div id="changelogList"></div>
+            </div>
             <div id="documentCategoryList"></div>
           </div>
 
@@ -195,7 +223,10 @@
             <button class="ghost-button" id="backToPickerButton" type="button">← Popis vrsta dokumenata</button>
           </div>
           <form class="panel document-panel" id="documentForm">
-            <h2>Ugovor o radu</h2>
+            <div class="panel-title-row">
+              <h2>Ugovor o radu</h2>
+              <span class="template-updated-badge" id="templateUpdatedBadge"></span>
+            </div>
             <!-- hidden type select used programmatically -->
             <div class="contract-editor visually-hidden">
               <p class="contract-line document-type-row">
@@ -311,12 +342,12 @@
               <div class="document-grid">
                 <label>Osnovna bruto plaća<input name="salary" class="money-input" value="0.00" inputmode="decimal"></label>
                 <label>Stimulativni dio plaće<input name="salary_bonus" class="money-input" value="0.00" inputmode="decimal"></label>
-                <label>Otežani uvjeti rada<input name="salary_increment_1" class="percent-input" data-minimum="20" value="20%"></label>
-                <label>Blagdani/neradni dani/Uskrs<input name="salary_increment_2" class="percent-input" data-minimum="30" value="30%"></label>
-                <label>Rad nedjeljom<input name="salary_increment_3" class="percent-input" data-minimum="50" value="50%"></label>
-                <label>Noćni rad<input name="salary_increment_4" class="percent-input" data-minimum="20" value="20%"></label>
-                <label>Prekovremeni rad<input name="salary_increment_5" class="percent-input" data-minimum="20" value="20%"></label>
-                <label>Druga smjena<input name="salary_increment_6" class="percent-input" data-minimum="20" value="20%"></label>
+                <label><span>Otežani uvjeti rada <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja osnovne plaće za rad u otežanim uvjetima (npr. buka, vlaga, visoke temperature). Vrijednost je zakonski minimum koji se može i povećati, ne smanjiti.">i</button></span><input name="salary_increment_1" class="percent-input" data-minimum="20" value="20%"></label>
+                <label><span>Blagdani/neradni dani/Uskrs <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja plaće za rad na blagdan, neradni dan određen zakonom ili na Uskrs. Vrijednost je zakonski minimum.">i</button></span><input name="salary_increment_2" class="percent-input" data-minimum="30" value="30%"></label>
+                <label><span>Rad nedjeljom <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja plaće za rad nedjeljom. Vrijednost je zakonski minimum.">i</button></span><input name="salary_increment_3" class="percent-input" data-minimum="50" value="50%"></label>
+                <label><span>Noćni rad <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja plaće za rad noću (obično 22-6h). Vrijednost je zakonski minimum.">i</button></span><input name="salary_increment_4" class="percent-input" data-minimum="20" value="20%"></label>
+                <label><span>Prekovremeni rad <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja plaće za sate rada iznad punog radnog vremena. Vrijednost je zakonski minimum.">i</button></span><input name="salary_increment_5" class="percent-input" data-minimum="20" value="20%"></label>
+                <label><span>Druga smjena <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja plaće kad se radi u smjeni koja rotira (npr. poslijepodnevna/noćna smjena kod smjenskog rada).">i</button></span><input name="salary_increment_6" class="percent-input" data-minimum="20" value="20%"></label>
               </div>
             </div>
 
@@ -370,8 +401,8 @@
                     <option>ne mogu</option>
                   </select>
                 </label>
-                <label>Otkazni rok poslodavac<input name="contract_termination_employer" id="terminationEmployer" type="number" min="0" step="1" value="15"></label>
-                <label>Otkazni rok radnik<input name="contract_termination_employee" id="terminationEmployee" type="number" min="0" step="1" value="15"></label>
+                <label><span>Otkazni rok poslodavac <button type="button" class="hint-icon" data-tooltip="Broj dana koje poslodavac mora najaviti radniku prije prestanka ugovora o radu. Zakonski minimumi prema Zakonu o radu ovise o godinama radnikovog staža.">i</button></span><input name="contract_termination_employer" id="terminationEmployer" type="number" min="0" step="1" value="15"></label>
+                <label><span>Otkazni rok radnik <button type="button" class="hint-icon" data-tooltip="Broj dana koje radnik mora najaviti poslodavcu prije nego što otkaže ugovor o radu.">i</button></span><input name="contract_termination_employee" id="terminationEmployee" type="number" min="0" step="1" value="15"></label>
                 <label>Ostala prava i obveze<input name="rights_and_obligations" value="Ostala prava i obveze utvrđuju se prema Zakonu o radu" required></label>
                 <label>Nadležni sud
                   <select name="court" id="courtSelect"></select>
@@ -482,10 +513,10 @@
                 <label>Opis godišnjeg odmora
                   <input name="annex_vacation_description" value="(-)">
                 </label>
-                <label><span><input name="annex_change_notice" type="checkbox"> Otkazni rok poslodavac</span>
+                <label><span><input name="annex_change_notice" type="checkbox"> Otkazni rok poslodavac <button type="button" class="hint-icon" data-tooltip="Broj dana koje poslodavac mora najaviti radniku prije prestanka ugovora o radu.">i</button></span>
                   <input name="annex_notice_employer" type="number" min="0" step="1" value="15">
                 </label>
-                <label>Otkazni rok radnik
+                <label><span>Otkazni rok radnik <button type="button" class="hint-icon" data-tooltip="Broj dana koje radnik mora najaviti poslodavcu prije nego što otkaže ugovor o radu.">i</button></span>
                   <input name="annex_notice_employee" type="number" min="0" step="1" value="15">
                 </label>
                 <label><span><input name="annex_change_rights" type="checkbox"> Ostala prava i obveze</span>
@@ -591,7 +622,7 @@
                 <label>Mjesečna naknada
                   <input name="services_monthly_fee" class="money-input" value="350.00" inputmode="decimal">
                 </label>
-                <label>PDV status naknade
+                <label><span>PDV status naknade <button type="button" class="hint-icon" data-tooltip="Označava je li iznos naknade iskazan bez PDV-a (+ PDV se dodaje), s uključenim PDV-om, ili knjigovodstveni ured nije u sustavu PDV-a pa se PDV ne obračunava.">i</button></span>
                   <select name="services_vat_status">
                     <option>+ PDV</option>
                     <option>s PDV-om</option>
@@ -601,14 +632,14 @@
                 <label>Završni račun / godišnja izvješća
                   <input name="services_annual_fee" class="money-input" value="350.00" inputmode="decimal">
                 </label>
-                <label>PDV status završnog računa
+                <label><span>PDV status završnog računa <button type="button" class="hint-icon" data-tooltip="Isto kao PDV status naknade, ali za jednokratnu naknadu za izradu završnog računa i godišnjih izvješća.">i</button></span>
                   <select name="services_annual_vat_status">
                     <option>+ PDV</option>
                     <option>s PDV-om</option>
                     <option>nije u sustavu PDV-a</option>
                   </select>
                 </label>
-                <label>Rok plaćanja
+                <label><span>Rok plaćanja <button type="button" class="hint-icon" data-tooltip="Broj dana od izdavanja računa u kojem klijent mora platiti naknadu.">i</button></span>
                   <select name="services_payment_due_days" id="servicesPaymentDueSelect"></select>
                 </label>
                 <label>Trajanje ugovora
@@ -620,7 +651,7 @@
                 <label class="services-duration-end hidden">Krajnji datum ugovora
                   <input name="services_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
                 </label>
-                <label>Otkazni rok
+                <label><span>Otkazni rok <button type="button" class="hint-icon" data-tooltip="Broj dana od primitka pisanog otkaza do prestanka ovog ugovora o uslugama.">i</button></span>
                   <select name="services_notice_period_days" id="servicesNoticePeriodSelect"></select>
                 </label>
                 <label>Nadležni sud
@@ -663,7 +694,7 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
                       <option value="employer">Poslodavac (iz baze)</option>
                     </select>
                   </label>
-                  <label class="span-2" data-pa-field="entity">Odabir iz baze
+                  <label class="span-2" data-pa-field="entity"><span>Odabir iz baze <button type="button" class="hint-icon" data-tooltip="Odaberi postojeći zapis iz popisa poslodavaca/radnika koje si već unio(la) u aplikaciju.">i</button></span>
                     <select name="pa_entity_id" id="paEntity"></select>
                   </label>
                   <label data-pa-field="adhoc">Ime / naziv tvrtke
@@ -699,7 +730,7 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
                       <option value="employee">Radnik (iz baze)</option>
                     </select>
                   </label>
-                  <label class="span-2" data-pb-field="entity">Odabir iz baze
+                  <label class="span-2" data-pb-field="entity"><span>Odabir iz baze <button type="button" class="hint-icon" data-tooltip="Odaberi postojeći zapis iz popisa poslodavaca/radnika koje si već unio(la) u aplikaciju.">i</button></span>
                     <select name="pb_entity_id" id="pbEntity"></select>
                   </label>
                   <label data-pb-field="adhoc">Ime / naziv tvrtke
@@ -773,7 +804,7 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
                 <label data-template-field="leaseAddress">Virtualna adresa
                   <input name="lease_address" value="Hanibala Lucića 12, 32270 Županja">
                 </label>
-                <label data-template-field="leaseCadastral">ZK / k.č. opis
+                <label data-template-field="leaseCadastral"><span>ZK / k.č. opis <button type="button" class="hint-icon" data-tooltip="Zemljišnoknjižni opis nekretnine: broj zemljišnoknjižnog uloška (z.k.ul.br.), katastarska općina (k.o.) i broj katastarske čestice (k.č.) na kojoj se nalazi adresa.">i</button></span>
                   <input name="lease_cadastral" value="z.k.ul.br. 4264, k.o. 336394 Županja, k.č. 3888/107">
                 </label>
                 <label data-template-field="leaseStart">Početak najma
@@ -813,7 +844,7 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
                 <label data-employment-field="workPlace">Mjesto rada<input name="employment_work_place" value="NASELJE/GRAD/OPĆINA U KOJEM SE RADI"></label>
                 <label data-employment-field="startDate">Početak rada<input name="employment_start_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
                 <label data-employment-field="endDate">Prestanak radnog odnosa<input name="employment_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-                <label data-employment-field="noticePeriod">Otkazni rok<input name="employment_notice_period" value="15 dana"></label>
+                <label data-employment-field="noticePeriod"><span>Otkazni rok <button type="button" class="hint-icon" data-tooltip="Trajanje otkaznog roka koje će biti navedeno u dokumentu (npr. „15 dana”). Zakonski minimumi ovise o godinama radnikovog staža.">i</button></span><input name="employment_notice_period" value="15 dana"></label>
                 <label data-employment-field="vacationYear">Godina godišnjeg odmora<input name="employment_vacation_year" type="number" min="2000" max="2100"></label>
                 <label data-employment-field="vacationTotal">Pripada godišnjeg odmora<select name="employment_vacation_total" id="employmentVacationTotalSelect"></select></label>
                 <label data-employment-field="vacationUsed">Iskorišteno godišnjeg odmora<select name="employment_vacation_used" id="employmentVacationUsedSelect"></select></label>
@@ -822,9 +853,9 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
                 <label data-employment-field="vacationTo">GO do<input name="employment_vacation_to" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
                 <label data-employment-field="paymentAmount">Iznos plaće / naknade / otpremnine<input name="employment_payment_amount" value="0,00 EUR"></label>
                 <label data-employment-field="probationPeriod">Probni rad<input name="employment_probation_period" value="1 mjesec"></label>
-                <label data-employment-field="probationNotice">Otkazni rok na probnom radu<input name="employment_probation_notice" value="7 dana"></label>
-                <label data-employment-field="employeeAge">Navršene godine života<input name="employment_employee_age" type="number" min="0" max="100" value="65"></label>
-                <label data-employment-field="pensionYears">Godine mirovinskog staža<input name="employment_pension_years" type="number" min="0" max="80" value="15"></label>
+                <label data-employment-field="probationNotice"><span>Otkazni rok na probnom radu <button type="button" class="hint-icon" data-tooltip="Kraći otkazni rok koji vrijedi ako se ugovor otkazuje dok je radnik još na probnom radu.">i</button></span><input name="employment_probation_notice" value="7 dana"></label>
+                <label data-employment-field="employeeAge"><span>Navršene godine života <button type="button" class="hint-icon" data-tooltip="Radnikova dob u trenutku prestanka radnog odnosa, relevantna za otkaz zbog ispunjenja uvjeta za starosnu mirovinu (65 godina).">i</button></span><input name="employment_employee_age" type="number" min="0" max="100" value="65"></label>
+                <label data-employment-field="pensionYears"><span>Godine mirovinskog staža <button type="button" class="hint-icon" data-tooltip="Broj godina mirovinskog (radnog) staža radnika, relevantan za otkaz zbog ispunjenja uvjeta za starosnu mirovinu (15 godina staža).">i</button></span><input name="employment_pension_years" type="number" min="0" max="80" value="15"></label>
               </div>
               <label data-employment-field="reason">Razlog / opis okolnosti
                 <textarea name="employment_reason" rows="4">Unesite konkretne činjenice i okolnosti na kojima se temelji dokument.</textarea>
@@ -878,6 +909,13 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
         <section class="view" id="gfiView">
           <form class="panel document-panel" id="gfiForm">
             <h2>GFI odluka / izvještaj</h2>
+            <div class="gfi-import-box">
+              <label class="gfi-file-label">
+                Učitaj GFI-POD Excel (.xls/.xlsx)
+                <input type="file" id="gfiFileInput" accept=".xls,.xlsx">
+              </label>
+              <p class="gfi-import-status" id="gfiImportStatus">Nije učitana nijedna datoteka. Polja ispod možete popuniti i ručno.</p>
+            </div>
             <div class="document-grid">
               <label>Tvrtka<input name="company_name" required></label>
               <label>Adresa<input name="address"></label>
@@ -890,10 +928,13 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
               <label>Porez na dobit<input name="gain_tax"></label>
               <label>Dobit nakon poreza<input name="gain_after_tax"></label>
               <label>Pokriće gubitka<input name="loss_coverage"></label>
+              <label>Mjesto potpisa (za bilješke)<input name="notes_sign_place"></label>
+              <label>Datum potpisa (za bilješke)<input name="notes_sign_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
             </div>
             <div class="button-row">
               <button class="primary-button" type="button" id="downloadGfiButton">Preuzmi HTML za print</button>
               <button class="ghost-button" type="button" id="downloadBlankGfiButton">Preuzmi prazan HTML</button>
+              <button class="primary-button" type="button" id="downloadGfiNotesButton">Preuzmi Bilješke (HTML)</button>
             </div>
           </form>
         </section>
@@ -901,6 +942,7 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="vendor/xlsx.full.min.js"></script>
     <script src="app.js" type="module"></script>
   </body>
 </html>

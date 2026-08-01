@@ -237,6 +237,7 @@ function salaryAndWorkSections(context) {
     p("3. U tijeku rada Radnik ima pravo koristiti dnevni odmor (stanku) u trajanju od 30 minuta."),
     p(`4. Tjedni odmor Radnik će koristiti ${b(`${context.weekly_time_off}.`)}`),
     p(`5. Radnik ima pravo na godišnji odmor u trajanju od ${b(`${vacationDaysText(context.vacation, context.vacation_description)}.`)}`),
+    p("6. Radnik ima pravo na obrazovanje, osposobljavanje i usavršavanje sukladno članku 54. Zakona o radu, u opsegu i na način koji odredi Poslodavac ovisno o potrebama organizacije rada, a o trošku Poslodavca."),
     center("V. Čuvanje poslovne tajne"),
     p("1, Radnik se obvezuje da će za vrijeme trajnja Ugovora o radu, a i njegovo prestanka, čuvati sve poslovne tajne Poslodavca i njegovih komitenata prema neovlaštenim osobama, koje su po svojoj prirodi povjerene i zaštićene, a koje su mu bile povjerene ili koje je mogao saznati na poslu.")
   ].join("");
@@ -973,13 +974,15 @@ function blankLabelForControl(control) {
   const label = control.closest("label");
   if (label) {
     const clone = label.cloneNode(true);
-    clone.querySelectorAll("input, select, textarea").forEach((item) => item.remove());
+    clone.querySelectorAll("input, select, textarea, .hint-icon").forEach((item) => item.remove());
     const text = clone.textContent.replace(/\s+/g, " ").trim();
     if (text) return text;
   }
   const line = control.closest(".contract-line");
   if (line) {
-    const parts = Array.from(line.querySelectorAll("span"))
+    const lineClone = line.cloneNode(true);
+    lineClone.querySelectorAll(".hint-icon").forEach((item) => item.remove());
+    const parts = Array.from(lineClone.querySelectorAll("span"))
       .map((span) => span.textContent.replace(/\s+/g, " ").trim())
       .filter(Boolean);
     if (parts.length) return parts.join(" ");
@@ -1212,6 +1215,13 @@ export function buildDocument() {
   return { ...(data.type === "part_time" ? buildPartTimeContractExact(context) : buildFullTimeContractExact(context)), parties };
 }
 
+function gfiEur(value) {
+  if (value === undefined || value === null || value === "") return "0,00 EUR";
+  const number = Number(String(value).replace(",", "."));
+  if (!Number.isFinite(number)) return `${value} EUR`;
+  return `${number.toLocaleString("hr-HR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR`;
+}
+
 export function buildGfiDocument() {
   const data = formToObject($("#gfiForm"));
   return {
@@ -1225,9 +1235,9 @@ export function buildGfiDocument() {
       "",
       `Na dan ${formatDate(data.report_date)} direktor ${data.director || ""} donosi odluku za poslovnu godinu ${data.report_year || ""}.`,
       "",
-      `Dobit prije poreza: ${data.gain_before_tax || "0,00"}`,
-      `Porez na dobit: ${data.gain_tax || "0,00"}`,
-      `Dobit nakon poreza: ${data.gain_after_tax || "0,00"}`,
+      `Dobit prije poreza: ${gfiEur(data.gain_before_tax)}`,
+      `Porez na dobit: ${gfiEur(data.gain_tax)}`,
+      `Dobit nakon poreza: ${gfiEur(data.gain_after_tax)}`,
       data.loss_coverage ? `Pokriće gubitka: ${data.loss_coverage}` : "Dobit se raspoređuje sukladno odluci članova društva.",
       "",
       "Direktor:",
