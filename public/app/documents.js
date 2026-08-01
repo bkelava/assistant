@@ -1,5 +1,5 @@
 import { $, state, labels, employmentDocumentDefinitions, employmentDocumentFieldSets, templateDocumentFieldSets, ervColumns, ervColumnDescriptions, dayNamesHr, blankControlLabels } from "./constants.js";
-import { escapeHtml, formatDate, normalizeMoney, normalizeTime24, safeMultiline, linesToListItems, joinDateOrDescription, vacationDaysText, htmlToText, numberWordHr, titleCaseDocument, formatAddress, getEmployer, getEmployee, partyDisplayName, partyOib, daysInMonth, croatianNonWorkingDays, humanizeFieldName, formToObject } from "./utils.js";
+import { escapeHtml, formatDate, normalizeMoney, parseMoney, formatMoney, normalizeTime24, safeMultiline, linesToListItems, joinDateOrDescription, vacationDaysText, htmlToText, numberWordHr, titleCaseDocument, formatAddress, getEmployer, getEmployee, partyDisplayName, partyOib, daysInMonth, croatianNonWorkingDays, humanizeFieldName, formToObject } from "./utils.js";
 
 // --- HTML primitives ---
 
@@ -28,8 +28,7 @@ export function ol(items) {
 }
 
 export function feeWithVatStatus(amount, vatStatus) {
-  const normalized = normalizeMoney(amount);
-  const amountLabel = `${normalized.replace(".", ",")} EUR`;
+  const amountLabel = `${normalizeMoney(amount)} EUR`;
   return vatStatus === "nije u sustavu PDV-a" ? `${amountLabel} (${vatStatus})` : `${amountLabel} ${vatStatus}`;
 }
 
@@ -1216,10 +1215,7 @@ export function buildDocument() {
 }
 
 function gfiEur(value) {
-  if (value === undefined || value === null || value === "") return "0,00 EUR";
-  const number = Number(String(value).replace(",", "."));
-  if (!Number.isFinite(number)) return `${value} EUR`;
-  return `${number.toLocaleString("hr-HR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR`;
+  return `${formatMoney(parseMoney(value))} EUR`;
 }
 
 export function buildGfiDocument() {

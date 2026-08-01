@@ -9,7 +9,7 @@ import {
   escapeHtml, toast, formatDate, normalizeCroatianDate, normalizeTime24,
   normalizeMoney, normalizePercent, syncDatePickerFromDisplay, numberOptions,
   formToObject, objectToForm, formatAddress, createId, clamp,
-  croatianNonWorkingDays, titleCaseDocument
+  croatianNonWorkingDays, titleCaseDocument, formatMoney, parseMoney
 } from "./utils.js";
 import { loadData, persist, writeSessionData, writeDrafts, importJsonData, isDirty } from "./storage.js";
 import { buildDocument, buildGfiDocument, buildBlankDocumentFromForm } from "./documents.js";
@@ -752,11 +752,11 @@ function fillGfiFormFromParsedData(gfiData) {
   gf.report_year.value = company.year;
   gf.report_date.value = formatDate(company.periodTo);
   const result = rdg[186];
-  gf.gain_before_tax.value = rdg[182] ? rdg[182].curr.toFixed(2) : "";
-  gf.gain_tax.value = rdg[185] ? rdg[185].curr.toFixed(2) : "";
-  gf.gain_after_tax.value = result ? result.curr.toFixed(2) : "";
+  gf.gain_before_tax.value = rdg[182] ? formatMoney(rdg[182].curr) : "";
+  gf.gain_tax.value = rdg[185] ? formatMoney(rdg[185].curr) : "";
+  gf.gain_after_tax.value = result ? formatMoney(result.curr) : "";
   gf.loss_coverage.value = result && result.curr < 0
-    ? `Gubitak u iznosu ${Math.abs(result.curr).toFixed(2)} EUR prenosi se u sljedeće razdoblje.`
+    ? `Gubitak u iznosu ${formatMoney(Math.abs(result.curr))} EUR prenosi se u sljedeće razdoblje.`
     : "";
   gf.notes_sign_place.value = company.city;
   $$(".date-hr-input").forEach(syncDatePickerFromDisplay);
@@ -765,10 +765,10 @@ function fillGfiFormFromParsedData(gfiData) {
 
 function recalcGfiRetainedGain() {
   const gf = $("#gfiForm").elements;
-  const total = Number(String(gf.gain_after_tax.value || "0").replace(",", ".")) || 0;
-  const payout = Number(String(gf.payout_to_members.value || "0").replace(",", ".")) || 0;
-  const coverage = Number(String(gf.retained_for_loss_coverage.value || "0").replace(",", ".")) || 0;
-  gf.retained_gain.value = (total - payout - coverage).toFixed(2);
+  const total = parseMoney(gf.gain_after_tax.value);
+  const payout = parseMoney(gf.payout_to_members.value);
+  const coverage = parseMoney(gf.retained_for_loss_coverage.value);
+  gf.retained_gain.value = formatMoney(total - payout - coverage);
 }
 
 function updateGfiDistributionUi(gfiData) {
@@ -784,21 +784,21 @@ function updateGfiDistributionUi(gfiData) {
   const isLoss = !!(result && result.curr < 0);
   box.classList.remove("hidden");
   if (isLoss) {
-    statusEl.textContent = `Utvrđen je GUBITAK u iznosu ${Math.abs(result.curr).toFixed(2)} EUR. Unesite kako će gubitak biti pokriven.`;
+    statusEl.textContent = `Utvrđen je GUBITAK u iznosu ${formatMoney(Math.abs(result.curr))} EUR. Unesite kako će gubitak biti pokriven.`;
     statusEl.classList.remove("success");
     statusEl.classList.add("warning");
     lossFields.classList.remove("hidden");
     gainFields.classList.add("hidden");
   } else {
     const gain = result ? result.curr : 0;
-    statusEl.textContent = `Utvrđena je DOBIT u iznosu ${gain.toFixed(2)} EUR. Rasporedite iznos na isplatu članovima i/ili zadržanu dobit.`;
+    statusEl.textContent = `Utvrđena je DOBIT u iznosu ${formatMoney(gain)} EUR. Rasporedite iznos na isplatu članovima i/ili zadržanu dobit.`;
     statusEl.classList.remove("warning");
     statusEl.classList.add("success");
     gainFields.classList.remove("hidden");
     lossFields.classList.add("hidden");
     const gf = $("#gfiForm").elements;
-    gf.payout_to_members.value = "0.00";
-    gf.retained_for_loss_coverage.value = "0.00";
+    gf.payout_to_members.value = "0,00";
+    gf.retained_for_loss_coverage.value = "0,00";
     recalcGfiRetainedGain();
   }
 }

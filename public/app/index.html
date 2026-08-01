@@ -340,8 +340,8 @@
             <div class="field-group contract-doc-section">
               <h3>Plaće i naknade</h3>
               <div class="document-grid">
-                <label>Osnovna bruto plaća<input name="salary" class="money-input" value="0.00" inputmode="decimal"></label>
-                <label>Stimulativni dio plaće<input name="salary_bonus" class="money-input" value="0.00" inputmode="decimal"></label>
+                <label>Osnovna bruto plaća<input name="salary" class="money-input" value="0,00" inputmode="decimal"></label>
+                <label>Stimulativni dio plaće<input name="salary_bonus" class="money-input" value="0,00" inputmode="decimal"></label>
                 <label><span>Otežani uvjeti rada <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja osnovne plaće za rad u otežanim uvjetima (npr. buka, vlaga, visoke temperature). Vrijednost je zakonski minimum koji se može i povećati, ne smanjiti.">i</button></span><input name="salary_increment_1" class="percent-input" data-minimum="20" value="20%"></label>
                 <label><span>Blagdani/neradni dani/Uskrs <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja plaće za rad na blagdan, neradni dan određen zakonom ili na Uskrs. Vrijednost je zakonski minimum.">i</button></span><input name="salary_increment_2" class="percent-input" data-minimum="30" value="30%"></label>
                 <label><span>Rad nedjeljom <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja plaće za rad nedjeljom. Vrijednost je zakonski minimum.">i</button></span><input name="salary_increment_3" class="percent-input" data-minimum="50" value="50%"></label>
@@ -463,10 +463,10 @@
                   <input name="annex_start_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
                 </label>
                 <label><span><input name="annex_change_salary" type="checkbox"> Osnovna bruto plaća</span>
-                  <input name="annex_salary" class="money-input" value="0.00" inputmode="decimal">
+                  <input name="annex_salary" class="money-input" value="0,00" inputmode="decimal">
                 </label>
                 <label>Stimulativni dio plaće
-                  <input name="annex_salary_bonus" class="money-input" value="0.00" inputmode="decimal">
+                  <input name="annex_salary_bonus" class="money-input" value="0,00" inputmode="decimal">
                 </label>
                 <label>Otežani uvjeti rada
                   <input name="annex_salary_increment_1" class="percent-input" data-minimum="20" value="20%">
@@ -620,7 +620,7 @@
                   <select name="services_document_delivery_day" id="servicesDeliveryDaySelect"></select>
                 </label>
                 <label>Mjesečna naknada
-                  <input name="services_monthly_fee" class="money-input" value="350.00" inputmode="decimal">
+                  <input name="services_monthly_fee" class="money-input" value="350,00" inputmode="decimal">
                 </label>
                 <label><span>PDV status naknade <button type="button" class="hint-icon" data-tooltip="Označava je li iznos naknade iskazan bez PDV-a (+ PDV se dodaje), s uključenim PDV-om, ili knjigovodstveni ured nije u sustavu PDV-a pa se PDV ne obračunava.">i</button></span>
                   <select name="services_vat_status">
@@ -630,7 +630,7 @@
                   </select>
                 </label>
                 <label>Završni račun / godišnja izvješća
-                  <input name="services_annual_fee" class="money-input" value="350.00" inputmode="decimal">
+                  <input name="services_annual_fee" class="money-input" value="350,00" inputmode="decimal">
                 </label>
                 <label><span>PDV status završnog računa <button type="button" class="hint-icon" data-tooltip="Isto kao PDV status naknade, ali za jednokratnu naknadu za izradu završnog računa i godišnjih izvješća.">i</button></span>
                   <select name="services_annual_vat_status">
@@ -814,7 +814,7 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
                   <input name="lease_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
                 </label>
                 <label data-template-field="leaseFee">Mjesečna zakupnina
-                  <input name="lease_fee" class="money-input" value="50.00" inputmode="decimal">
+                  <input name="lease_fee" class="money-input" value="50,00" inputmode="decimal">
                 </label>
                 <label data-template-field="leaseIban">IBAN zakupodavca
                   <input name="lease_iban" value="HR">
@@ -924,9 +924,9 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
               <label>Direktor<input name="director"></label>
               <label>Godina<input name="report_year" type="number" min="2000" max="2100"></label>
               <label>Datum izvještaja<input name="report_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-              <label>Dobit prije poreza<input name="gain_before_tax"></label>
-              <label>Porez na dobit<input name="gain_tax"></label>
-              <label>Dobit nakon poreza<input name="gain_after_tax"></label>
+              <label>Dobit prije poreza<input name="gain_before_tax" class="money-input" value="0,00" inputmode="decimal"></label>
+              <label>Porez na dobit<input name="gain_tax" class="money-input" value="0,00" inputmode="decimal"></label>
+              <label>Dobit nakon poreza<input name="gain_after_tax" class="money-input" value="0,00" inputmode="decimal"></label>
               <label>Mjesto potpisa (za bilješke)<input name="notes_sign_place"></label>
               <label>Datum potpisa (za bilješke)<input name="notes_sign_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
             </div>
@@ -938,8 +938,8 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
                 <label class="span-2">Pokriće gubitka<textarea name="loss_coverage" rows="3" placeholder="Opišite na koji način će se gubitak pokriti..."></textarea></label>
               </div>
               <div class="document-grid hidden" id="gfiGainFields">
-                <label>Isplata članovima društva<input name="payout_to_members" class="money-input" value="0.00" inputmode="decimal"></label>
-                <label>Zadržana dobit za pokriće gubitka iz prethodnih godina<input name="retained_for_loss_coverage" class="money-input" value="0.00" inputmode="decimal"></label>
+                <label>Isplata članovima društva<input name="payout_to_members" class="money-input" value="0,00" inputmode="decimal"></label>
+                <label>Zadržana dobit za pokriće gubitka iz prethodnih godina<input name="retained_for_loss_coverage" class="money-input" value="0,00" inputmode="decimal"></label>
                 <label>Zadržana dobit (preostatak)<input name="retained_gain" class="money-input" readonly></label>
               </div>
             </div>

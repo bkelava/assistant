@@ -1,5 +1,6 @@
 // Builds "Bilješke uz financijske izvještaje" HTML from parsed GFI-POD data (see gfi-parser.js).
 import { escapeHtml, htmlToText } from "./utils.js";
+import { buildGfiChartsHtml } from "./gfi-charts.js";
 
 function p(value, className = "") {
   return `<p class="${className}">${value}</p>`;
@@ -178,6 +179,15 @@ function balanceSheetHtml(bilanca, year) {
   `;
 }
 
+function chartsSectionHtml(rdg, bilanca, year) {
+  const charts = buildGfiChartsHtml(rdg, bilanca, year);
+  if (!charts) return "";
+  return `
+    ${centerTitle("GRAFIČKI PRIKAZI")}
+    ${charts}
+  `;
+}
+
 export function buildGfiNotesDocument(gfiData, options = {}) {
   const { company, bilanca, rdg } = gfiData;
   const year = company.year || new Date().getFullYear();
@@ -196,6 +206,7 @@ export function buildGfiNotesDocument(gfiData, options = {}) {
     ${significantPoliciesHtml()}
     ${financialResultsHtml(rdg, year)}
     ${balanceSheetHtml(bilanca, year)}
+    ${chartsSectionHtml(rdg, bilanca, year)}
     ${p("* * *")}
     ${p(`${place}, dana ${signDate || "____________"} godine`)}
     ${p(`Za ${company.companyName}, ovlaštena osoba Društva`)}
