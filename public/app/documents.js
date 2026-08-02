@@ -19,6 +19,13 @@ export function b(value) {
   return `<strong>${escapeHtml(value)}</strong>`;
 }
 
+// A free-text form field rendered as its own paragraph: bold when the user
+// actually typed something (real form input), plain when falling back to the
+// static template default (not user input, so not bold).
+export function freeTextParagraph(value, fallback) {
+  return value ? p(`<strong>${safeMultiline(value)}</strong>`) : p(fallback);
+}
+
 export function ul(items) {
   return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
@@ -250,7 +257,7 @@ function closingSections(context, copiesText) {
     center("VIII. Zaključne odredbe"),
     p(`1. Za slučaj spora, stranke ugovaraju mjesnu nadležnost suda u ${b(`${context.court}.`)}`),
     p(`2. Ovaj Ugovor stupa na snagu ${b(start.endsWith(".") ? start : `${start}.`)}`),
-    p(`3. Ovaj je Ugovor sastavljen u ${copiesText}`)
+    p(`3. Ovaj je Ugovor sastavljen u ${b(copiesText)}`)
   ].join("");
 }
 
@@ -366,7 +373,7 @@ function standardAnnexChanges(data) {
     changes.push({ reference: "članka VII.", text: `${b(data.annex_rights_and_obligations)}.` });
   }
   linesToListItems(data.annex_other_changes).forEach((item) => {
-    changes.push({ reference: "dodatnih odredbi osnovnog Ugovora o radu", text: safeMultiline(item) });
+    changes.push({ reference: "dodatnih odredbi osnovnog Ugovora o radu", text: `<strong>${safeMultiline(item)}</strong>` });
   });
   return changes;
 }
@@ -479,7 +486,7 @@ export function buildErvDocument(context) {
     <p class="erv-acronyms"><strong>Akronimi:</strong> ${escapeHtml(explanation)}</p>
     ${signatureHtml(context)}
   `;
-  return { title: "EVIDENCIJA O RADNOM VREMENU", html, body: htmlToText(html) };
+  return { title: "EVIDENCIJA O RADNOM VREMENU", html, body: htmlToText(html), orientation: d.erv_orientation };
 }
 
 // --- Accounting services ---
@@ -652,7 +659,7 @@ function buildWorkOrderDocument(data) {
     ${p(`Mjesto troška: ${b(data.work_order_cost_place || "")}`)}
     ${p(`Nositelj troška: ${b(data.work_order_cost_owner || "")}`)}
     ${center("Opis rada")}
-    ${p(safeMultiline(data.work_order_description || ""))}
+    ${p(`<strong>${safeMultiline(data.work_order_description || "")}</strong>`)}
     ${twoPartySignature("Ispostavio", issuer.name, "Naručitelj", client.name)}
   `;
   return { title: "RADNI NALOG", html, body: htmlToText(html) };
@@ -786,17 +793,17 @@ function buildProbationTermination(context) {
     p(`Radniku ${b(context.employeeInfo)} otkazuje se Ugovor o radu sklopljen dana ${b(context.contractDate)} za poslove ${b(context.jobTitle)}, jer tijekom probnog rada nije zadovoljio očekivanja radnog mjesta.`),
     p(`Radni odnos prestaje istekom otkaznog roka u trajanju od ${b(context.probationNotice)}, koji počinje teći danom dostave ove Odluke.`),
     center("Obrazloženje"),
-    p(safeMultiline(context.reason || `Tijekom probnog rada u trajanju od ${context.probationPeriod} utvrđeno je da radnik ne ostvaruje očekivane rezultate i ne zadovoljava zahtjeve radnog mjesta.`))
+    freeTextParagraph(context.reason, `Tijekom probnog rada u trajanju od ${context.probationPeriod} utvrđeno je da radnik ne ostvaruje očekivane rezultate i ne zadovoljava zahtjeve radnog mjesta.`)
   ]);
 }
 
 function buildWorkObligationWarning(context) {
   return makeEmployerDecision(context, "UPOZORENJE", "NA OBVEZE IZ RADNOG ODNOSA", [
     p(`Radnik ${b(context.employeeInfo)}, zaposlen na temelju Ugovora o radu sklopljenog dana ${b(context.contractDate)} za poslove ${b(context.jobTitle)}, upozorava se da je povrijedio obveze iz radnog odnosa.`),
-    p(safeMultiline(context.violation)),
+    p(`<strong>${safeMultiline(context.violation)}</strong>`),
     p("U slučaju nastavka povrede radnih obveza radniku prijeti mogućnost otkaza Ugovora o radu zbog skrivljenog ponašanja."),
     center("Obrazloženje"),
-    p(safeMultiline(context.reason || "Na temelju raspoložive dokumentacije i saznanja Poslodavca utvrđeno je postojanje opisane povrede obveza iz radnog odnosa."))
+    freeTextParagraph(context.reason, "Na temelju raspoložive dokumentacije i saznanja Poslodavca utvrđeno je postojanje opisane povrede obveza iz radnog odnosa.")
   ]);
 }
 
@@ -806,8 +813,8 @@ function buildMisconductNotice(context) {
     p(`Radni odnos prestaje istekom otkaznog roka u trajanju od ${b(context.noticePeriod)}, koji počinje teći danom dostave ove Odluke.`),
     vacationParagraph(context),
     center("Obrazloženje"),
-    p(safeMultiline(context.violation)),
-    p(safeMultiline(context.reason || "Radnik je prethodno upozoren na obveze iz radnog odnosa i mogućnost otkaza u slučaju nastavka povrede tih obveza."))
+    p(`<strong>${safeMultiline(context.violation)}</strong>`),
+    freeTextParagraph(context.reason, "Radnik je prethodno upozoren na obveze iz radnog odnosa i mogućnost otkaza u slučaju nastavka povrede tih obveza.")
   ]);
 }
 
@@ -817,7 +824,7 @@ function buildPersonalNotice(context) {
     p(`Radni odnos prestaje istekom otkaznog roka u trajanju od ${b(context.noticePeriod)}, koji počinje teći danom dostave ove Odluke.`),
     vacationParagraph(context),
     center("Obrazloženje"),
-    p(safeMultiline(context.reason || "Zbog trajnih osobina ili sposobnosti radnika isti nije u mogućnosti uredno izvršavati svoje obveze iz radnog odnosa."))
+    freeTextParagraph(context.reason, "Zbog trajnih osobina ili sposobnosti radnika isti nije u mogućnosti uredno izvršavati svoje obveze iz radnog odnosa.")
   ]);
 }
 
@@ -828,7 +835,7 @@ function buildBusinessNotice(context, definition) {
     vacationParagraph(context),
     p(`Radnik ima pravo na otpremninu odnosno drugu pripadajuću isplatu u iznosu od ${b(context.paymentAmount)}, ako su za to ispunjene zakonske pretpostavke.`),
     center("Obrazloženje"),
-    p(safeMultiline(context.reason || `Zbog ${definition.businessReason} prestala je potreba za obavljanjem poslova radnika pod uvjetima iz sklopljenog ugovora o radu.`))
+    freeTextParagraph(context.reason, `Zbog ${definition.businessReason} prestala je potreba za obavljanjem poslova radnika pod uvjetima iz sklopljenog ugovora o radu.`)
   ]);
 }
 
@@ -836,9 +843,9 @@ function buildChangedContractOffer(context) {
   return makeEmployerDecision(context, "ODLUKU", "O OTKAZU S PONUDOM IZMIJENJENOG UGOVORA O RADU", [
     p(`Radniku ${b(context.employeeInfo)} otkazuje se Ugovor o radu sklopljen dana ${b(context.contractDate)} za poslove ${b(context.jobTitle)}, uz istodobnu ponudu sklapanja izmijenjenog ugovora o radu.`),
     p(`Ako radnik prihvati ponudu, radni odnos nastavlja se pod uvjetima iz izmijenjenog ugovora. Ako radnik ponudu ne prihvati, radni odnos prestaje istekom otkaznog roka od ${b(context.noticePeriod)}.`),
-    p(safeMultiline(context.changedContractSummary)),
+    p(`<strong>${safeMultiline(context.changedContractSummary)}</strong>`),
     center("Obrazloženje"),
-    p(safeMultiline(context.reason || "Zbog promijenjenih potreba organizacije rada potrebno je izmijeniti ugovorene uvjete rada."))
+    freeTextParagraph(context.reason, "Zbog promijenjenih potreba organizacije rada potrebno je izmijeniti ugovorene uvjete rada.")
   ]);
 }
 
@@ -849,7 +856,7 @@ function buildEmployeeRegularNotice(context) {
     p(`Radnik redovito otkazuje Ugovor o radu sklopljen dana ${b(context.contractDate)} za obavljanje poslova ${b(context.jobTitle)}.`),
     p(`Otkazni rok iznosi ${b(context.noticePeriod)} i počinje teći danom dostave ovog otkaza Poslodavcu.`),
     p(`Radni odnos prestaje dana ${b(context.endDate)}.`),
-    p(safeMultiline(context.reason || "Radnik otkazuje ugovor o radu iz osobnih razloga.")),
+    freeTextParagraph(context.reason, "Radnik otkazuje ugovor o radu iz osobnih razloga."),
     employeeOnlySignature(context)
   ]);
 }
@@ -859,8 +866,8 @@ function buildEmployerExtraordinaryNotice(context) {
     p(`Radniku ${b(context.employeeInfo)} izvanredno se otkazuje Ugovor o radu sklopljen dana ${b(context.contractDate)} za poslove ${b(context.jobTitle)}.`),
     p(`Radni odnos prestaje danom dostave ove Odluke, odnosno dana ${b(context.endDate)}.`),
     center("Obrazloženje"),
-    p(safeMultiline(context.violation)),
-    p(safeMultiline(context.reason || "Zbog osobito teške povrede obveze iz radnog odnosa nastavak radnog odnosa nije moguć."))
+    p(`<strong>${safeMultiline(context.violation)}</strong>`),
+    freeTextParagraph(context.reason, "Zbog osobito teške povrede obveze iz radnog odnosa nastavak radnog odnosa nije moguć.")
   ]);
 }
 
@@ -871,7 +878,7 @@ function buildEmployeeExtraordinaryNotice(context) {
     p(`Radnik izvanredno otkazuje Ugovor o radu sklopljen dana ${b(context.contractDate)} za obavljanje poslova ${b(context.jobTitle)}.`),
     p(`Radni odnos prestaje danom dostave ovog otkaza, odnosno dana ${b(context.endDate)}.`),
     center("Obrazloženje"),
-    p(safeMultiline(context.reason || "Zbog osobito važne činjenice nastavak radnog odnosa nije moguć.")),
+    freeTextParagraph(context.reason, "Zbog osobito važne činjenice nastavak radnog odnosa nije moguć."),
     employeeOnlySignature(context)
   ]);
 }
@@ -1220,26 +1227,28 @@ function gfiEur(value) {
 
 export function buildGfiDocument() {
   const data = formToObject($("#gfiForm"));
+  const year = data.report_year || new Date().getFullYear();
+  const html = `
+    ${p(b(data.company_name || ""))}
+    ${p(`${data.address || ""}, ${data.city || ""}`)}
+    ${p(`OIB: ${b(data.oib || "")}`)}
+    ${centerTitle("ODLUKA O UTVRĐIVANJU GODIŠNJIH FINANCIJSKIH IZVJEŠTAJA")}
+    ${p(`Na dan ${b(formatDate(data.report_date))} direktor ${b(data.director || "")} donosi odluku za poslovnu godinu ${b(String(year))}.`)}
+    ${p(`Dobit prije poreza: ${b(gfiEur(data.gain_before_tax))}`)}
+    ${p(`Porez na dobit: ${b(gfiEur(data.gain_tax))}`)}
+    ${p(`Dobit nakon poreza: ${b(gfiEur(data.gain_after_tax))}`)}
+    ${p(data.loss_coverage ? `Pokriće gubitka: ${b(data.loss_coverage)}` : "Dobit se raspoređuje sukladno odluci članova društva.")}
+    <div class="signature-block single-signature">
+      <div class="signature-card">
+        <div class="signature-line"></div>
+        <div class="signature-name">${escapeHtml(data.director || "")}</div>
+      </div>
+    </div>
+  `;
   return {
     title: "GFI dokument",
-    body: [
-      "ODLUKA O UTVRDIVANJU GODISNJIH FINANCIJSKIH IZVJESTAJA",
-      "",
-      `${data.company_name || ""}`,
-      `${data.address || ""}, ${data.city || ""}`,
-      `OIB: ${data.oib || ""}`,
-      "",
-      `Na dan ${formatDate(data.report_date)} direktor ${data.director || ""} donosi odluku za poslovnu godinu ${data.report_year || ""}.`,
-      "",
-      `Dobit prije poreza: ${gfiEur(data.gain_before_tax)}`,
-      `Porez na dobit: ${gfiEur(data.gain_tax)}`,
-      `Dobit nakon poreza: ${gfiEur(data.gain_after_tax)}`,
-      data.loss_coverage ? `Pokriće gubitka: ${data.loss_coverage}` : "Dobit se raspoređuje sukladno odluci članova društva.",
-      "",
-      "Direktor:",
-      "",
-      "____________________________",
-      `${data.director || ""}`
-    ].join("\n")
+    html,
+    body: htmlToText(html),
+    parties: [data.company_name].filter(Boolean)
   };
 }

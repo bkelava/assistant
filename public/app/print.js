@@ -8,6 +8,8 @@ const PAGE_LAYOUTS = {
 const CANVAS_ROOT_CLASS = "pdf-canvas-source";
 
 function pageLayoutFor(documentData) {
+  if (documentData.orientation === "landscape") return PAGE_LAYOUTS.wide;
+  if (documentData.orientation === "portrait") return PAGE_LAYOUTS.narrow;
   return documentData.html?.includes("erv-table") ? PAGE_LAYOUTS.wide : PAGE_LAYOUTS.narrow;
 }
 
@@ -23,13 +25,13 @@ function sharedStyleRules(logoSrc, rootSelector) {
     .print-header { position: relative; z-index: 1; display: flex; justify-content: flex-end; align-items: flex-start; min-height: 22mm; margin-bottom: 2mm; }
     h1 { position: relative; z-index: 1; text-align: center; font-size: 17px; line-height: 1.22; margin: 0 0 16px; text-transform: uppercase; }
     main { position: relative; z-index: 1; text-align: justify; }
-    .watermark { position: fixed; top: 50%; left: 50%; width: 160mm; height: 160mm; background-image: url('${logoSrc}'); background-repeat: no-repeat; background-size: contain; background-position: center; opacity: 0.07; pointer-events: none; z-index: 0; transform: translate(-50%, -50%) rotate(-30deg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .watermark { position: fixed; top: 50%; left: 50%; width: 160mm; height: 160mm; background-image: url('${logoSrc}'); background-repeat: no-repeat; background-size: contain; background-position: center; opacity: 0.12; pointer-events: none; z-index: 0; transform: translate(-50%, -50%) rotate(-30deg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .print-brand { width: 22mm; height: 22mm; text-align: right; }
     .print-brand img { display: block; width: 22mm; height: 22mm; object-fit: contain; margin-left: auto; }
-    p { margin: 0 0 6px; text-align: justify; orphans: 3; widows: 3; }
+    p { margin: 0 0 6px; text-align: justify; orphans: 3; widows: 3; break-inside: avoid; page-break-inside: avoid; }
     ul, ol { margin: 0 0 8px 22px; padding: 0; }
-    li { margin: 0 0 3px; text-align: justify; }
-    .center { text-align: center; }
+    li { margin: 0 0 3px; text-align: justify; break-inside: avoid; page-break-inside: avoid; }
+    .center { text-align: center; font-weight: 700; }
     .title { font-weight: 700; }
     strong { font-weight: 700; }
     .signature-block { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; margin-top: 28px; align-items: end; break-inside: avoid; page-break-inside: avoid; }
@@ -176,7 +178,7 @@ function drawWatermarkOnAllPages(pdf, logoSrc) {
   for (let i = 1; i <= pageCount; i += 1) {
     pdf.setPage(i);
     pdf.saveGraphicsState();
-    pdf.setGState(pdf.GState({ opacity: 0.07 }));
+    pdf.setGState(pdf.GState({ opacity: 0.12 }));
     pdf.addImage(logoSrc, x, y, size, size);
     pdf.restoreGraphicsState();
   }

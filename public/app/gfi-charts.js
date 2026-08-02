@@ -71,11 +71,24 @@ const SHORT_TERM_LIABILITY_ROWS = [
   [124, "Ostale kratkoročne obveze"]
 ];
 
-function rowsFromAop(table, defs) {
+export { MATERIAL_ASSET_ROWS, RECEIVABLES_ROWS, LONG_TERM_LIABILITY_ROWS, SHORT_TERM_LIABILITY_ROWS };
+
+export function rowsFromAop(table, defs) {
   return defs.map(([aop, label]) => {
     const row = table[aop];
     return { label, prev: row ? row.prev : 0, curr: row ? row.curr : 0 };
   });
+}
+
+// Returns a function that hands out sequential chart numbers (1, 2, 3, ...) —
+// shared across a whole document so "Grafikon N." stays consistent regardless
+// of which charts end up with no data and get skipped.
+export function createChartCounter() {
+  let n = 0;
+  return () => {
+    n += 1;
+    return n;
+  };
 }
 
 function wrapLabel(text) {
@@ -99,9 +112,9 @@ function svgText(x, y, text, { anchor = "start", size = FONT_SIZE_LABEL, fill = 
   return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" font-family="Arial, sans-serif" font-weight="${weight}" fill="${fill}">${escapeHtml(text)}</text>`;
 }
 
-function chartHeader(title, prevYear, currYear) {
+function chartHeader(caption, prevYear, currYear) {
   return `
-    ${svgText(0, 14, title, { size: 13, weight: 700 })}
+    ${svgText(0, 14, caption, { size: 13, weight: 700 })}
     <rect x="0" y="21" width="10" height="10" rx="2" fill="${COLOR_PREV}"></rect>
     ${svgText(16, 30, `${prevYear}.`, { size: 10.5, fill: INK_SECONDARY })}
     <rect x="70" y="21" width="10" height="10" rx="2" fill="${COLOR_CURR}"></rect>
@@ -110,9 +123,14 @@ function chartHeader(title, prevYear, currYear) {
 }
 
 // rows: [{ label, prev, curr }]. Rows where both years round to zero are dropped.
-export function groupedBarChartSvg({ title, rows, year }) {
+// `chartNumber` is only called (consuming a sequential number) once the chart is
+// confirmed to have data, so numbering has no gaps for skipped/empty charts.
+// Returns { svg: "", number: null } when there's nothing to plot.
+export function groupedBarChartSvg({ title, rows, year, chartNumber }) {
   const filtered = rows.filter((row) => Math.abs(row.prev) >= 0.005 || Math.abs(row.curr) >= 0.005);
-  if (!filtered.length) return "";
+  if (!filtered.length) return { svg: "", number: null, title };
+  const number = chartNumber();
+  const caption = `Grafikon ${number}. ${title}`;
   const prevYear = year - 1;
   const currYear = year;
 
@@ -161,46 +179,22 @@ export function groupedBarChartSvg({ title, rows, year }) {
   const totalHeight = y + 4;
   const baselineLineX = LABEL_COL_WIDTH + baselineX;
 
-  return `
+  const svg = `
     <div class="gfi-chart-block">
-      <svg viewBox="0 0 ${VIEWBOX_WIDTH} ${totalHeight}" style="width:100%; height:auto; display:block;" role="img" aria-label="${escapeHtml(title)}">
-        ${chartHeader(title, prevYear, currYear)}
+      <svg viewBox="0 0 ${VIEWBOX_WIDTH} ${totalHeight}" style="width:100%; height:auto; display:block;" role="img" aria-label="${escapeHtml(caption)}">
+        ${chartHeader(caption, prevYear, currYear)}
         <line x1="${baselineLineX}" y1="${TOP_OFFSET - 4}" x2="${baselineLineX}" y2="${totalHeight - 4}" stroke="${BASELINE_COLOR}" stroke-width="1"></line>
         ${rowsSvg}
       </svg>
     </div>
   `;
+  return { svg, number, title };
 }
 
-export function buildGfiChartsHtml(rdg, bilanca, year) {
-  const rdgRow = (aop) => ({ prev: rdg[aop]?.prev || 0, curr: rdg[aop]?.curr || 0 });
-  const bilRow = (aop) => ({ prev: bilanca[aop]?.prev || 0, curr: bilanca[aop]?.curr || 0 });
-
-  const charts = [
-    groupedBarChartSvg({ title: "Ukupni prihodi", rows: [{ label: "Ukupni prihodi", ...rdgRow(180) }], year }),
-    groupedBarChartSvg({ title: "Ukupni rashodi", rows: [{ label: "Ukupni rashodi", ...rdgRow(181) }], year }),
-    groupedBarChartSvg({
-      title: "Prihodi, rashodi i rezultat poslovanja",
-      rows: [
-        { label: "Ukupni prihodi", ...rdgRow(180) },
-        { label: "Ukupni rashodi", ...rdgRow(181) },
-        { label: "Dobit ili gubitak razdoblja", ...rdgRow(186) }
-      ],
-      year
-    }),
-    groupedBarChartSvg({ title: "Struktura materijalne imovine", rows: rowsFromAop(bilanca, MATERIAL_ASSET_ROWS), year }),
-    groupedBarChartSvg({ title: "Struktura kratkotrajnih potraživanja", rows: rowsFromAop(bilanca, RECEIVABLES_ROWS), year }),
-    groupedBarChartSvg({
-      title: "Dugoročne i kratkoročne obveze",
-      rows: [
-        { label: "Dugoročne obveze", ...bilRow(98) },
-        { label: "Kratkoročne obveze", ...bilRow(110) }
-      ],
-      year
-    }),
-    groupedBarChartSvg({ title: "Struktura dugoročnih obveza", rows: rowsFromAop(bilanca, LONG_TERM_LIABILITY_ROWS), year }),
-    groupedBarChartSvg({ title: "Struktura kratkoročnih obveza", rows: rowsFromAop(bilanca, SHORT_TERM_LIABILITY_ROWS), year })
-  ].filter(Boolean);
-
-  return charts.join("");
+// A short paragraph pointing the reader from the surrounding text to the chart
+// that was just placed, e.g. "Grafički prikaz je dan na Grafikonu 3.". Returns
+// "" when the chart had no data (chart.number is null).
+export function chartReferenceHtml(chart) {
+  if (!chart || !chart.number) return "";
+  return `<p>Grafički prikaz kretanja ovih pozicija dan je na <strong>Grafikonu ${chart.number}.</strong></p>`;
 }

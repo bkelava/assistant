@@ -28,28 +28,28 @@ export function buildGfiDistributionDocument(gfiData, formValues = {}) {
   const bodyHtml = isLoss
     ? `
       ${p(`Uprava društva ${b(company.companyName)} donijela je odluku o pokriću gubitka koji je nastao u poslovnoj ${year}. godini u iznosu od ${b(eur(Math.abs(result ? result.curr : 0)))}.`)}
-      ${p(escapeHtml(formValues.lossCoverageText || "Gubitak se prenosi u sljedeće razdoblje.").replace(/\n/g, "<br>"))}
+      ${p(`<strong>${escapeHtml(formValues.lossCoverageText || "Gubitak se prenosi u sljedeće razdoblje.").replace(/\n/g, "<br>")}</strong>`)}
     `
     : `
       ${p(`Uprava društva ${b(company.companyName)} donijela je odluku o uporabi ostvarene dobiti za poslovnu ${year}. godinu, kako slijedi:`)}
-      ${p(`Dobit prije poreza: ${eur(formValues.gainBeforeTax)}`)}
-      ${p(`Porez na dobit: ${eur(formValues.gainTax)}`)}
-      ${p(`Dobit nakon poreza: ${eur(formValues.gainAfterTax)}`)}
-      ${p(`Isplata članovima društva: ${eur(formValues.payoutToMembers)}`)}
-      ${p(`Zadržana dobit za pokriće gubitka iz prethodnih godina: ${eur(formValues.retainedForLossCoverage)}`)}
-      ${p(`Zadržana dobit: ${eur(formValues.retainedGain)}`)}
+      ${p(`Dobit prije poreza: ${b(eur(formValues.gainBeforeTax))}`)}
+      ${p(`Porez na dobit: ${b(eur(formValues.gainTax))}`)}
+      ${p(`Dobit nakon poreza: ${b(eur(formValues.gainAfterTax))}`)}
+      ${p(`Isplata članovima društva: ${b(eur(formValues.payoutToMembers))}`)}
+      ${p(`Zadržana dobit za pokriće gubitka iz prethodnih godina: ${b(eur(formValues.retainedForLossCoverage))}`)}
+      ${p(`Zadržana dobit: ${b(eur(formValues.retainedGain))}`)}
     `;
 
   const html = `
     ${p(b(company.companyName))}
-    ${p(`${company.street}`)}
-    ${p(`${company.postal} ${company.city}`)}
-    ${p(`OIB: ${company.oib}`)}
+    ${p(b(company.street))}
+    ${p(b(`${company.postal} ${company.city}`))}
+    ${p(`OIB: ${b(company.oib)}`)}
     ${centerTitle(heading)}
     ${bodyHtml}
     ${p("* * *")}
-    ${p(`${signPlace}, dana ${signDate || "____________"} godine`)}
-    ${p(`Za ${company.companyName}, ovlaštena osoba Društva`)}
+    ${p(`${b(signPlace)}, dana ${signDate ? b(signDate) : "____________"} godine`)}
+    ${p(`Za ${b(company.companyName)}, ovlaštena osoba Društva`)}
     <div class="signature-block single-signature">
       <div class="signature-card">
         <div class="signature-line"></div>
