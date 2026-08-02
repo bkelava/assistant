@@ -107,16 +107,31 @@ button {
 }
 
 .back-link {
-  display: inline-block;
-  margin: -18px 0 20px;
-  color: #8a9bb5;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(248, 251, 255, 0.12);
+  color: #b8c5d8;
+  font-size: 13px;
   text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.back-link-arrow {
+  transition: transform 0.15s ease;
 }
 
 .back-link:hover {
-  color: #b8c5d8;
-  text-decoration: underline;
+  background: var(--nav-soft);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.back-link:hover .back-link-arrow {
+  transform: translateX(-3px);
 }
 
 .nav-list {
