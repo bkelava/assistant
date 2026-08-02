@@ -1,7 +1,7 @@
 // Local-file persistence modeled after draw.io: open a JSON file once, then every
 // subsequent save writes straight back into that same file (no re-download, no dialog).
-import { state } from "./constants.js";
-import { applyImportedData, markSaved } from "./storage.js";
+import { state } from "../core/constants.js";
+import { applyImportedData, markSaved } from "../core/storage.js";
 
 let fileHandle = null;
 let fileName = null;

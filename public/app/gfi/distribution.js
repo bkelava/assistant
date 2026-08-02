@@ -1,6 +1,6 @@
 // Builds "Odluka o raspodjeli dobiti i pokriću gubitka" HTML from parsed GFI-POD data (see gfi-parser.js)
 // and the loss/gain fields the user fills in on the GFI form (see ui.js updateGfiDistributionUi).
-import { escapeHtml, htmlToText, parseMoney, formatMoney } from "./utils.js";
+import { escapeHtml, htmlToText, parseMoney, formatMoney } from "../core/utils.js";
 
 function p(value, className = "") {
   return `<p class="${className}">${value}</p>`;

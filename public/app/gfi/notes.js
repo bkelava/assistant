@@ -1,9 +1,9 @@
 // Builds "Bilješke uz financijske izvještaje" HTML from parsed GFI-POD data (see gfi-parser.js).
-import { escapeHtml, htmlToText } from "./utils.js";
+import { escapeHtml, htmlToText } from "../core/utils.js";
 import {
   groupedBarChartSvg, chartReferenceHtml, createChartCounter, rowsFromAop,
   MATERIAL_ASSET_ROWS, RECEIVABLES_ROWS, LONG_TERM_LIABILITY_ROWS, SHORT_TERM_LIABILITY_ROWS
-} from "./gfi-charts.js";
+} from "./charts.js";
 
 function p(value, className = "") {
   return `<p class="${className}">${value}</p>`;

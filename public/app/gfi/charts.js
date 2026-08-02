@@ -1,7 +1,7 @@
 // Builds SVG bar charts for the "Bilješke uz financijske izvještaje" document
 // from parsed GFI-POD data (see gfi-parser.js). AOP sub-item codes below are
 // verified against the official Bilanca form layout (fixed government form).
-import { escapeHtml, formatMoney } from "./utils.js";
+import { escapeHtml, formatMoney } from "../core/utils.js";
 
 const COLOR_PREV = "#2a78d6";
 const COLOR_CURR = "#eb6834";

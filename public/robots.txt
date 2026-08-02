@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /assets/
 
-Sitemap: https://kelava.hr/sitemap.xml
+Sitemap: https://kokelava.hr/sitemap.xml

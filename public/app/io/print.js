@@ -1,4 +1,4 @@
-import { escapeHtml, fileSlug, toast } from "./utils.js";
+import { escapeHtml, fileSlug, toast } from "../core/utils.js";
 
 const PAGE_LAYOUTS = {
   narrow: { widthMm: 210, heightMm: 297, marginMm: [16, 16, 20] },
@@ -101,7 +101,7 @@ export function buildPrintableHtml(documentData, logoSrc) {
 
 export async function logoDataUrl() {
   try {
-    const response = await fetch("logo.png");
+    const response = await fetch("/assets/img/logo.png");
     const blob = await response.blob();
     return await new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -110,7 +110,7 @@ export async function logoDataUrl() {
       reader.readAsDataURL(blob);
     });
   } catch {
-    return "logo.png";
+    return "/assets/img/logo.png";
   }
 }
 
@@ -141,6 +141,6 @@ export function openDocument(documentData) {
     toast("Preglednik je blokirao novi prozor.");
     return;
   }
-  win.document.write(buildPrintableHtml(documentData, new URL("logo.png", window.location.href).href));
+  win.document.write(buildPrintableHtml(documentData, new URL("/assets/img/logo.png", window.location.href).href));
   win.document.close();
 }
