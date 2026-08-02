@@ -64,4 +64,4 @@ npm run db:migrate:remote
 npm run deploy
 ```
 
-Generated documents are rendered client-side (via the vendored `html2pdf.bundle.min.js`, see `public/app/print.js`) and downloaded as ready-to-file PDFs with the app logo embedded. No server or Cloudflare binding is required, so this works identically under `npm run dev` and once deployed.
+Generated documents are rendered client-side as standalone HTML files (see `public/app/print.js`) with the app logo embedded, and downloaded directly as `.html`. Opening the downloaded file shows an "Ispiši / spremi PDF" button that uses the browser's native print dialog to save it as PDF. No server or Cloudflare binding is required, so this works identically under `npm run dev` and once deployed.

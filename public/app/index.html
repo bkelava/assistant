@@ -88,7 +88,7 @@
               <span>1. Unesi poslodavca</span>
               <span>2. Unesi radnika po potrebi</span>
               <span>3. Odaberi vrstu dokumenta</span>
-              <span>4. Spremi nacrt ili preuzmi PDF</span>
+              <span>4. Spremi nacrt ili preuzmi dokument</span>
             </div>
           </div>
         </section>
@@ -589,14 +589,6 @@
                 <span>MJESEC</span>
                 <select name="erv_month" id="ervMonthSelect"></select>
               </p>
-              <p class="contract-line">
-                <span>ORIJENTACIJA ISPISA</span>
-                <select name="erv_orientation" id="ervOrientation">
-                  <option value="auto" selected>Automatski (pejzaž, preporučeno)</option>
-                  <option value="portrait">Portret (okomito)</option>
-                  <option value="landscape">Pejzaž (vodoravno)</option>
-                </select>
-              </p>
               <label>Hrvatski neradni dani u odabranom mjesecu
                 <textarea name="erv_non_working_days" id="ervNonWorkingDays" rows="4" readonly></textarea>
               </label>
@@ -883,8 +875,8 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
             </div>
 
             <div class="button-row">
-              <button class="primary-button" type="button" id="downloadDocumentButton">Preuzmi dokument (PDF)</button>
-              <button class="ghost-button" type="button" id="downloadBlankDocumentButton">Preuzmi prazan obrazac (PDF)</button>
+              <button class="primary-button" type="button" id="downloadDocumentButton">Preuzmi dokument</button>
+              <button class="ghost-button" type="button" id="downloadBlankDocumentButton">Preuzmi prazan obrazac</button>
               <button class="ghost-button" type="button" id="previewButton">Pregled</button>
               <button class="ghost-button" type="button" id="saveDraftButton">Spremi nacrt</button>
               <button class="ghost-button" type="button" id="resetContractButton">Vrati polja na izvorno</button>
@@ -932,11 +924,12 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
               <label>Direktor<input name="director"></label>
               <label>Godina<input name="report_year" type="number" min="2000" max="2100"></label>
               <label>Datum izvještaja<input name="report_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
+            </div>
+
+            <div class="document-grid" id="gfiGainSummaryFields">
               <label>Dobit prije poreza<input name="gain_before_tax" class="money-input" value="0,00" inputmode="decimal"></label>
               <label>Porez na dobit<input name="gain_tax" class="money-input" value="0,00" inputmode="decimal"></label>
               <label>Dobit nakon poreza<input name="gain_after_tax" class="money-input" value="0,00" inputmode="decimal"></label>
-              <label>Mjesto potpisa (za bilješke)<input name="notes_sign_place"></label>
-              <label>Datum potpisa (za bilješke)<input name="notes_sign_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
             </div>
 
             <div class="gfi-import-box hidden" id="gfiDistributionBox">
@@ -953,10 +946,9 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
             </div>
 
             <div class="button-row">
-              <button class="primary-button" type="button" id="downloadGfiButton">Preuzmi GFI za ispis (PDF)</button>
-              <button class="ghost-button" type="button" id="downloadBlankGfiButton">Preuzmi prazan obrazac (PDF)</button>
-              <button class="primary-button" type="button" id="downloadGfiNotesButton">Preuzmi bilješke (PDF)</button>
-              <button class="primary-button" type="button" id="downloadGfiDistributionButton">Preuzmi odluku o raspodjeli dobiti (PDF)</button>
+              <button class="primary-button" type="button" id="downloadGfiButton">Preuzmi GFI za ispis</button>
+              <button class="primary-button" type="button" id="downloadGfiNotesButton">Preuzmi bilješke</button>
+              <button class="primary-button" type="button" id="downloadGfiDistributionButton">Preuzmi odluku o raspodjeli dobiti</button>
             </div>
           </form>
         </section>
@@ -965,7 +957,6 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="vendor/xlsx.full.min.js"></script>
-    <script src="vendor/html2pdf.bundle.min.js"></script>
     <script src="app.js" type="module"></script>
   </body>
 </html>

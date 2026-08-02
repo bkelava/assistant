@@ -9,11 +9,11 @@ import {
   escapeHtml, toast, formatDate, normalizeCroatianDate, normalizeTime24,
   normalizeMoney, normalizePercent, syncDatePickerFromDisplay, numberOptions,
   formToObject, objectToForm, formatAddress, createId, clamp,
-  croatianNonWorkingDays, titleCaseDocument, formatMoney, parseMoney
+  croatianNonWorkingDays, titleCaseDocument, formatMoney, parseMoney, croatianDateTimeFromDate
 } from "./utils.js";
 import { loadData, persist, writeSessionData, writeDrafts, importJsonData, isDirty } from "./storage.js";
 import { buildDocument, buildGfiDocument, buildBlankDocumentFromForm } from "./documents.js";
-import { downloadPdf } from "./print.js";
+import { downloadPrintableHtml } from "./print.js";
 import { parseGfiFile } from "./gfi-parser.js";
 import { buildGfiNotesDocument } from "./gfi-notes.js";
 import { buildGfiDistributionDocument } from "./gfi-distribution.js";
@@ -87,7 +87,7 @@ function clearFieldInvalid(event) {
 async function withBusyButton(button, fn) {
   const original = button.textContent;
   button.disabled = true;
-  button.textContent = "Generiram PDF...";
+  button.textContent = "Priprema dokumenta...";
   try {
     await fn();
   } finally {
@@ -117,12 +117,12 @@ function bindForms() {
   $("#documentForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!validateForm(event.currentTarget)) return;
-    await downloadPdf(buildDocument());
+    await downloadPrintableHtml(buildDocument());
   });
   $("#gfiForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!validateForm(event.currentTarget)) return;
-    await downloadPdf(buildGfiDocument());
+    await downloadPrintableHtml(buildGfiDocument());
   });
   $("#documentForm").addEventListener("input", clearFieldInvalid);
   $("#documentForm").addEventListener("change", clearFieldInvalid);
@@ -150,27 +150,23 @@ function bindForms() {
   $("#gfiForm").elements.retained_for_loss_coverage.addEventListener("input", recalcGfiRetainedGain);
   $("#downloadDocumentButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
     if (!validateForm($("#documentForm"))) return;
-    await downloadPdf(buildDocument());
+    await downloadPrintableHtml(buildDocument());
   }));
   $("#downloadBlankDocumentButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
-    await downloadPdf(buildBlankDocumentFromForm($("#documentForm"), $("#documentForm h2").textContent, $("#contractType").value));
+    await downloadPrintableHtml(buildBlankDocumentFromForm($("#documentForm"), $("#documentForm h2").textContent, $("#contractType").value));
   }));
   $("#downloadGfiButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
     if (!validateForm($("#gfiForm"))) return;
-    await downloadPdf(buildGfiDocument());
-  }));
-  $("#downloadBlankGfiButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
-    await downloadPdf(buildBlankDocumentFromForm($("#gfiForm"), "GFI ODLUKA / IZVJEŠTAJ", "gfi"));
+    await downloadPrintableHtml(buildGfiDocument());
   }));
   $("#downloadGfiNotesButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
     if (!gfiParsedData) {
       toast("Prvo učitajte GFI-POD Excel datoteku.");
       return;
     }
-    const gf = $("#gfiForm").elements;
-    await downloadPdf(buildGfiNotesDocument(gfiParsedData, {
-      signPlace: gf.notes_sign_place.value,
-      signDate: gf.notes_sign_date.value
+    await downloadPrintableHtml(buildGfiNotesDocument(gfiParsedData, {
+      signPlace: gfiParsedData.company.city,
+      signDate: croatianDateTimeFromDate(new Date())
     }));
   }));
   $("#downloadGfiDistributionButton").addEventListener("click", (event) => withBusyButton(event.currentTarget, async () => {
@@ -186,9 +182,9 @@ function bindForms() {
       gf.loss_coverage.focus();
       return;
     }
-    await downloadPdf(buildGfiDistributionDocument(gfiParsedData, {
-      signPlace: gf.notes_sign_place.value,
-      signDate: gf.notes_sign_date.value,
+    await downloadPrintableHtml(buildGfiDistributionDocument(gfiParsedData, {
+      signPlace: gfiParsedData.company.city,
+      signDate: croatianDateTimeFromDate(new Date()),
       lossCoverageText: gf.loss_coverage.value,
       gainBeforeTax: gf.gain_before_tax.value,
       gainTax: gf.gain_tax.value,
@@ -758,7 +754,6 @@ function fillGfiFormFromParsedData(gfiData) {
   gf.loss_coverage.value = result && result.curr < 0
     ? `Gubitak u iznosu ${formatMoney(Math.abs(result.curr))} EUR prenosi se u sljedeće razdoblje.`
     : "";
-  gf.notes_sign_place.value = company.city;
   $$(".date-hr-input").forEach(syncDatePickerFromDisplay);
   updateGfiDistributionUi(gfiData);
 }
@@ -776,8 +771,10 @@ function updateGfiDistributionUi(gfiData) {
   const statusEl = $("#gfiDistributionStatus");
   const lossFields = $("#gfiLossFields");
   const gainFields = $("#gfiGainFields");
+  const gainSummaryFields = $("#gfiGainSummaryFields");
   if (!gfiData || !gfiData.rdg) {
     box.classList.add("hidden");
+    gainSummaryFields.classList.remove("hidden");
     return;
   }
   const result = gfiData.rdg[186];
@@ -789,6 +786,7 @@ function updateGfiDistributionUi(gfiData) {
     statusEl.classList.add("warning");
     lossFields.classList.remove("hidden");
     gainFields.classList.add("hidden");
+    gainSummaryFields.classList.add("hidden");
   } else {
     const gain = result ? result.curr : 0;
     statusEl.textContent = `Utvrđena je DOBIT u iznosu ${formatMoney(gain)} EUR. Rasporedite iznos na isplatu članovima i/ili zadržanu dobit.`;
@@ -796,6 +794,7 @@ function updateGfiDistributionUi(gfiData) {
     statusEl.classList.add("success");
     gainFields.classList.remove("hidden");
     lossFields.classList.add("hidden");
+    gainSummaryFields.classList.remove("hidden");
     const gf = $("#gfiForm").elements;
     gf.payout_to_members.value = "0,00";
     gf.retained_for_loss_coverage.value = "0,00";

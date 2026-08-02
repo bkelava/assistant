@@ -486,7 +486,7 @@ export function buildErvDocument(context) {
     <p class="erv-acronyms"><strong>Akronimi:</strong> ${escapeHtml(explanation)}</p>
     ${signatureHtml(context)}
   `;
-  return { title: "EVIDENCIJA O RADNOM VREMENU", html, body: htmlToText(html), orientation: d.erv_orientation };
+  return { title: "EVIDENCIJA O RADNOM VREMENU", html, body: htmlToText(html) };
 }
 
 // --- Accounting services ---
@@ -1247,6 +1247,7 @@ export function buildGfiDocument() {
   `;
   return {
     title: "GFI dokument",
+    hideHeading: true,
     html,
     body: htmlToText(html),
     parties: [data.company_name].filter(Boolean)

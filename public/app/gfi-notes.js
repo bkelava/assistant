@@ -253,7 +253,7 @@ export function buildGfiNotesDocument(gfiData, options = {}) {
     ${financialResultsHtml(rdg, year, chartNumber)}
     ${balanceSheetHtml(bilanca, year, chartNumber)}
     ${p("* * *")}
-    ${p(`${b(place)}, dana ${signDate ? b(signDate) : "____________"} godine`)}
+    ${p(`${b(place)}, dana ${signDate ? b(signDate) : "____________"}`)}
     ${p(`Za ${b(company.companyName)}, ovlaštena osoba Društva`)}
     <div class="signature-block single-signature">
       <div class="signature-card">
