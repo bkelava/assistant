@@ -1,6 +1,6 @@
 // Keep in sync with the "version" field in package.json — this static site has no
 // build step to copy it automatically.
-export const appVersion = "1.0.1";
+export const appVersion = "1.0.3";
 
 export const emptySessionData = {
   employers: [],

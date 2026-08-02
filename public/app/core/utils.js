@@ -75,6 +75,13 @@ export function croatianDateFromDate(date) {
   return `${day}.${month}.${date.getFullYear()}.`;
 }
 
+export function croatianDateTimeFromDate(date) {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${croatianDateFromDate(date)} u ${hours}:${minutes}:${seconds}`;
+}
+
 export function normalizeCroatianDate(value) {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) return "";
@@ -108,11 +115,39 @@ export function normalizeTime24(value) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+// Formats a JS number as Croatian money text: "." groups thousands, "," is the decimal mark.
+export function formatMoney(value) {
+  const number = Number(value) || 0;
+  const rounded = Math.abs(number) < 0.005 ? 0 : number;
+  return rounded.toLocaleString("hr-HR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Parses Croatian-formatted money text ("1.234,56") back into a JS number.
+// Numbers pass through unchanged (they're never in "." = thousands notation).
+export function parseMoney(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const raw = String(value ?? "").trim();
+  if (!raw) return 0;
+  const negative = raw.startsWith("-");
+  const cleaned = raw.replace(/[^\d,]/g, "").replace(",", ".");
+  const number = Number(cleaned);
+  return Number.isFinite(number) ? (negative ? -Math.abs(number) : number) : 0;
+}
+
+// Onblur normalizer for <input class="money-input">. Pure-digit typing keeps the
+// existing keypad-style "last two digits are cents" convenience (e.g. "150000" ->
+// "1.500,00"); anything already containing "," or "." is treated as an explicit
+// Croatian-formatted value and just reformatted, not re-masked.
 export function normalizeMoney(value) {
-  const digits = String(value || "0").replace(/\D/g, "");
+  const raw = String(value ?? "").trim();
+  if (!raw) return "0,00";
+  if (/[.,]/.test(raw)) return formatMoney(parseMoney(raw));
+  const negative = raw.startsWith("-");
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "0,00";
   const padded = digits.padStart(3, "0");
-  const whole = String(Number(padded.slice(0, -2)));
-  return `${whole}.${padded.slice(-2)}`;
+  const number = Number(`${padded.slice(0, -2)}.${padded.slice(-2)}`);
+  return formatMoney(negative ? -number : number);
 }
 
 export function normalizePercent(value, minimum) {

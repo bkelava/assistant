@@ -1,5 +1,9 @@
 // Builds "Bilješke uz financijske izvještaje" HTML from parsed GFI-POD data (see gfi-parser.js).
-import { escapeHtml, htmlToText } from "./utils.js";
+import { escapeHtml, htmlToText } from "../core/utils.js";
+import {
+  groupedBarChartSvg, chartReferenceHtml, createChartCounter, rowsFromAop,
+  MATERIAL_ASSET_ROWS, RECEIVABLES_ROWS, LONG_TERM_LIABILITY_ROWS, SHORT_TERM_LIABILITY_ROWS
+} from "./charts.js";
 
 function p(value, className = "") {
   return `<p class="${className}">${value}</p>`;
@@ -17,7 +21,7 @@ function b(value) {
 function eur(value) {
   const number = Number(value || 0);
   const rounded = Math.abs(number) < 0.005 ? 0 : number;
-  return `${rounded.toLocaleString("hr-HR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+  return `<strong>${rounded.toLocaleString("hr-HR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</strong>`;
 }
 
 function pctFmt(value) {
@@ -35,7 +39,7 @@ function changeSentence(label, prev, curr, year) {
   }
   const diff = curr - prev;
   const pct = Math.abs(diff) < 0.005 ? 0 : (diff / Math.abs(prev)) * 100;
-  return `Pozicija „${label}” u ${year}. godini iznosi ${eur(curr)} (u ${prevYear}. godini iznosila je ${eur(prev)}), što predstavlja promjenu od ${pctFmt(pct)} % odnosno ${eur(diff)}.`;
+  return `Pozicija „${label}” u ${year}. godini iznosi ${eur(curr)} (u ${prevYear}. godini iznosila je ${eur(prev)}), što predstavlja promjenu od <strong>${pctFmt(pct)} %</strong> odnosno ${eur(diff)}.`;
 }
 
 function sectionParagraphs(table, items, year) {
@@ -109,7 +113,7 @@ function basicCompanyDataHtml(company) {
     ${p(`Status autonomnosti Društva: ${b(company.autonomy)}.`)}
     ${p(`Prosječan broj zaposlenih tijekom prethodne, ${prevYear}. godine, bio je ${b(company.employeesPrev)}, a prosječan broj zaposlenih tijekom tekuće ${year}. godine je ${b(company.employeesCurr)} zaposlenih.`)}
     ${p(`U ${prevYear}. godini Društvo je poslovalo ${b(`${company.monthsPrev} mjeseci`)}, a u ${year}. godini ${b(`${company.monthsCurr} mjeseci`)}.`)}
-    ${p(`Godišnji financijski izvještaji Društva sastavljeni su za razdoblje ${b(company.periodFrom)} do ${b(company.periodTo)} godine, ${company.audited === "DA" ? "izvještaji su revidirani" : "izvještaji nisu revidirani"}, a predaju se sukladno svrsi: ${company.purposeLabel.toLowerCase()}.`)}
+    ${p(`Godišnji financijski izvještaji Društva sastavljeni su za razdoblje ${b(company.periodFrom)} do ${b(company.periodTo)} godine, ${company.audited === "DA" ? "izvještaji su revidirani" : "izvještaji nisu revidirani"}, a predaju se sukladno svrsi: ${b(company.purposeLabel.toLowerCase())}.`)}
   `;
 }
 
@@ -156,25 +160,76 @@ function significantPoliciesHtml() {
   `;
 }
 
-function financialResultsHtml(rdg, year) {
+function financialResultsHtml(rdg, year, chartNumber) {
+  const revenueChart = groupedBarChartSvg({
+    title: "Ukupni prihodi",
+    rows: [{ label: "Ukupni prihodi", prev: rdg[180]?.prev || 0, curr: rdg[180]?.curr || 0 }],
+    year,
+    chartNumber
+  });
+  const expenseChart = groupedBarChartSvg({
+    title: "Ukupni rashodi",
+    rows: [{ label: "Ukupni rashodi", prev: rdg[181]?.prev || 0, curr: rdg[181]?.curr || 0 }],
+    year,
+    chartNumber
+  });
+  const resultChart = groupedBarChartSvg({
+    title: "Prihodi, rashodi i rezultat poslovanja",
+    rows: [
+      { label: "Ukupni prihodi", prev: rdg[180]?.prev || 0, curr: rdg[180]?.curr || 0 },
+      { label: "Ukupni rashodi", prev: rdg[181]?.prev || 0, curr: rdg[181]?.curr || 0 },
+      { label: "Dobit ili gubitak razdoblja", prev: rdg[186]?.prev || 0, curr: rdg[186]?.curr || 0 }
+    ],
+    year,
+    chartNumber
+  });
   return `
     ${centerTitle("BILJEŠKE UZ RAČUN DOBITI I GUBITKA")}
     ${center("Prihodi")}
     ${sectionParagraphs(rdg, REVENUE_ITEMS, year)}
+    ${chartReferenceHtml(revenueChart)}
+    ${revenueChart.svg}
     ${center("Rashodi")}
     ${sectionParagraphs(rdg, EXPENSE_ITEMS, year)}
+    ${chartReferenceHtml(expenseChart)}
+    ${expenseChart.svg}
     ${center("Poslovni rezultat")}
     ${sectionParagraphs(rdg, RESULT_ITEMS, year)}
+    ${chartReferenceHtml(resultChart)}
+    ${resultChart.svg}
   `;
 }
 
-function balanceSheetHtml(bilanca, year) {
+function balanceSheetHtml(bilanca, year, chartNumber) {
+  const materialChart = groupedBarChartSvg({ title: "Struktura materijalne imovine", rows: rowsFromAop(bilanca, MATERIAL_ASSET_ROWS), year, chartNumber });
+  const receivablesChart = groupedBarChartSvg({ title: "Struktura kratkotrajnih potraživanja", rows: rowsFromAop(bilanca, RECEIVABLES_ROWS), year, chartNumber });
+  const liabilitiesSummaryChart = groupedBarChartSvg({
+    title: "Dugoročne i kratkoročne obveze",
+    rows: [
+      { label: "Dugoročne obveze", prev: bilanca[98]?.prev || 0, curr: bilanca[98]?.curr || 0 },
+      { label: "Kratkoročne obveze", prev: bilanca[110]?.prev || 0, curr: bilanca[110]?.curr || 0 }
+    ],
+    year,
+    chartNumber
+  });
+  const longTermChart = groupedBarChartSvg({ title: "Struktura dugoročnih obveza", rows: rowsFromAop(bilanca, LONG_TERM_LIABILITY_ROWS), year, chartNumber });
+  const shortTermChart = groupedBarChartSvg({ title: "Struktura kratkoročnih obveza", rows: rowsFromAop(bilanca, SHORT_TERM_LIABILITY_ROWS), year, chartNumber });
   return `
     ${centerTitle("BILJEŠKE UZ BILANCU")}
     ${center("Aktiva")}
     ${sectionParagraphs(bilanca, ASSET_ITEMS, year)}
+    ${chartReferenceHtml(materialChart)}
+    ${materialChart.svg}
+    ${chartReferenceHtml(receivablesChart)}
+    ${receivablesChart.svg}
     ${center("Pasiva")}
     ${sectionParagraphs(bilanca, LIABILITY_ITEMS, year)}
+    ${chartReferenceHtml(liabilitiesSummaryChart)}
+    ${liabilitiesSummaryChart.svg}
+    ${chartReferenceHtml(longTermChart)}
+    ${longTermChart.svg}
+    ${chartReferenceHtml(shortTermChart)}
+    ${shortTermChart.svg}
   `;
 }
 
@@ -183,22 +238,23 @@ export function buildGfiNotesDocument(gfiData, options = {}) {
   const year = company.year || new Date().getFullYear();
   const place = options.signPlace || company.city || "";
   const signDate = options.signDate || "";
+  const chartNumber = createChartCounter();
   const html = `
-    ${p(`${b(company.companyName)}`)}
-    ${p(`${company.street}`)}
-    ${p(`${company.postal} ${company.city}`)}
-    ${p(`OIB: ${company.oib}`)}
+    ${p(b(company.companyName))}
+    ${p(b(company.street))}
+    ${p(b(`${company.postal} ${company.city}`))}
+    ${p(`OIB: ${b(company.oib)}`)}
     ${centerTitle("BILJEŠKE")}
     ${centerTitle("UZ GODIŠNJE FINANCIJSKE IZVJEŠTAJE")}
     ${centerTitle(`ZA ${year}. GODINU`)}
     ${basicCompanyDataHtml(company)}
     ${accountingBasisHtml(company)}
     ${significantPoliciesHtml()}
-    ${financialResultsHtml(rdg, year)}
-    ${balanceSheetHtml(bilanca, year)}
+    ${financialResultsHtml(rdg, year, chartNumber)}
+    ${balanceSheetHtml(bilanca, year, chartNumber)}
     ${p("* * *")}
-    ${p(`${place}, dana ${signDate || "____________"} godine`)}
-    ${p(`Za ${company.companyName}, ovlaštena osoba Društva`)}
+    ${p(`${b(place)}, dana ${signDate ? b(signDate) : "____________"}`)}
+    ${p(`Za ${b(company.companyName)}, ovlaštena osoba Društva`)}
     <div class="signature-block single-signature">
       <div class="signature-card">
         <div class="signature-line"></div>

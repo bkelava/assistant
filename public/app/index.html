@@ -11,8 +11,9 @@
     <div class="app-shell">
       <aside class="sidebar" aria-label="Glavni izbornik">
         <div class="brand">
-          <span class="brand-mark"><img src="logo.png" alt="Kelava"></span>
+          <span class="brand-mark"><img src="/assets/img/logo.png" alt="Kelava računovodstvo — logo"></span>
         </div>
+        <a class="back-link" href="/">← Natrag na glavnu stranicu</a>
         <nav class="nav-list">
           <button class="nav-item active" data-view="dashboard">Pregled</button>
           <button class="nav-item" data-view="employers">Poslodavci</button>
@@ -54,7 +55,7 @@
           </section>
           <section class="panel disclaimer-panel" aria-labelledby="disclaimerTitle">
             <h2 id="disclaimerTitle">Važna napomena prije korištenja</h2>
-            <p><strong>Podaci koje unesete ne šalju se nama i ne spremamo ih na poslužitelj.</strong> Aplikacija ih koristi samo u trenutačnoj sesiji preglednika radi izrade pregleda, HTML dokumenta ili ispisa. Nakon zatvaranja kartice uneseni podaci više nisu dostupni u aplikaciji.</p>
+            <p><strong>Podaci koje unesete (poslodavci, radnici, knjigovodstveni uredi) ne šalju se na poslužitelj i koriste se samo u trenutačnoj sesiji preglednika.</strong> Nacrti dokumenata čuvaju se lokalno u vašem pregledniku (localStorage) i ostaju dostupni i nakon zatvaranja kartice — ali samo na ovom uređaju i pregledniku. Za sigurnosnu kopiju koristite Izvoz JSON.</p>
             <p>Ako želite sačuvati unesene poslodavce, knjigovodstvene urede i radnike za kasnije korištenje, izvezite ih u JSON datoteku. Tu datoteku možete ponovno uvesti tijekom nove sesije. U podržanim preglednicima (Chrome, Edge) dostupni su i gumbi <strong>Otvori datoteku</strong> i <strong>Spremi</strong> (Ctrl+S) koji rade s lokalnom datotekom izravno, poput drugih desktop alata: prvo spremanje traži lokaciju, a svako sljedeće spremanje (Ctrl+S) upisuje izravno u istu datoteku bez ponovnog preuzimanja.</p>
             <p>Predlošci i generirani dokumenti služe kao pomoćni nacrti. Ne jamčimo da je svaki ugovor ili drugi dokument potpun, ažuran ili usklađen sa svim odredbama hrvatskog prava za konkretan slučaj. Korisnik je odgovoran za provjeru sadržaja i po potrebi za savjetovanje s ovlaštenom stručnom osobom.</p>
             <p>Aplikacija se pruža u zatečenom stanju („kakva jest”), bez ikakvih jamstava, izričitih ili impliciranih, uključujući jamstva neprekidnog rada, dostupnosti, sigurnosti ili odsutnosti pogrešaka. Sporedna djelatnost Milan Kelava ne preuzima odgovornost za izravnu ili neizravnu štetu, izmaklu dobit, gubitak podataka, prekid rada, posljedice ili sporove nastale korištenjem ili nemogućnošću korištenja aplikacije, odnosno korištenjem, izmjenom, potpisivanjem ili predajom generiranih dokumenata, u najvećoj mjeri dopuštenoj mjerodavnim propisima. Aplikacija se koristi na vlastitu odgovornost korisnika.</p>
@@ -88,7 +89,7 @@
               <span>1. Unesi poslodavca</span>
               <span>2. Unesi radnika po potrebi</span>
               <span>3. Odaberi vrstu dokumenta</span>
-              <span>4. Spremi nacrt ili preuzmi PDF</span>
+              <span>4. Spremi nacrt ili preuzmi dokument</span>
             </div>
           </div>
         </section>
@@ -340,8 +341,8 @@
             <div class="field-group contract-doc-section">
               <h3>Plaće i naknade</h3>
               <div class="document-grid">
-                <label>Osnovna bruto plaća<input name="salary" class="money-input" value="0.00" inputmode="decimal"></label>
-                <label>Stimulativni dio plaće<input name="salary_bonus" class="money-input" value="0.00" inputmode="decimal"></label>
+                <label>Osnovna bruto plaća<input name="salary" class="money-input" value="0,00" inputmode="decimal"></label>
+                <label>Stimulativni dio plaće<input name="salary_bonus" class="money-input" value="0,00" inputmode="decimal"></label>
                 <label><span>Otežani uvjeti rada <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja osnovne plaće za rad u otežanim uvjetima (npr. buka, vlaga, visoke temperature). Vrijednost je zakonski minimum koji se može i povećati, ne smanjiti.">i</button></span><input name="salary_increment_1" class="percent-input" data-minimum="20" value="20%"></label>
                 <label><span>Blagdani/neradni dani/Uskrs <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja plaće za rad na blagdan, neradni dan određen zakonom ili na Uskrs. Vrijednost je zakonski minimum.">i</button></span><input name="salary_increment_2" class="percent-input" data-minimum="30" value="30%"></label>
                 <label><span>Rad nedjeljom <button type="button" class="hint-icon" data-tooltip="Postotak uvećanja plaće za rad nedjeljom. Vrijednost je zakonski minimum.">i</button></span><input name="salary_increment_3" class="percent-input" data-minimum="50" value="50%"></label>
@@ -463,10 +464,10 @@
                   <input name="annex_start_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
                 </label>
                 <label><span><input name="annex_change_salary" type="checkbox"> Osnovna bruto plaća</span>
-                  <input name="annex_salary" class="money-input" value="0.00" inputmode="decimal">
+                  <input name="annex_salary" class="money-input" value="0,00" inputmode="decimal">
                 </label>
                 <label>Stimulativni dio plaće
-                  <input name="annex_salary_bonus" class="money-input" value="0.00" inputmode="decimal">
+                  <input name="annex_salary_bonus" class="money-input" value="0,00" inputmode="decimal">
                 </label>
                 <label>Otežani uvjeti rada
                   <input name="annex_salary_increment_1" class="percent-input" data-minimum="20" value="20%">
@@ -620,7 +621,7 @@
                   <select name="services_document_delivery_day" id="servicesDeliveryDaySelect"></select>
                 </label>
                 <label>Mjesečna naknada
-                  <input name="services_monthly_fee" class="money-input" value="350.00" inputmode="decimal">
+                  <input name="services_monthly_fee" class="money-input" value="350,00" inputmode="decimal">
                 </label>
                 <label><span>PDV status naknade <button type="button" class="hint-icon" data-tooltip="Označava je li iznos naknade iskazan bez PDV-a (+ PDV se dodaje), s uključenim PDV-om, ili knjigovodstveni ured nije u sustavu PDV-a pa se PDV ne obračunava.">i</button></span>
                   <select name="services_vat_status">
@@ -630,7 +631,7 @@
                   </select>
                 </label>
                 <label>Završni račun / godišnja izvješća
-                  <input name="services_annual_fee" class="money-input" value="350.00" inputmode="decimal">
+                  <input name="services_annual_fee" class="money-input" value="350,00" inputmode="decimal">
                 </label>
                 <label><span>PDV status završnog računa <button type="button" class="hint-icon" data-tooltip="Isto kao PDV status naknade, ali za jednokratnu naknadu za izradu završnog računa i godišnjih izvješća.">i</button></span>
                   <select name="services_annual_vat_status">
@@ -814,7 +815,7 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
                   <input name="lease_end_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy.">
                 </label>
                 <label data-template-field="leaseFee">Mjesečna zakupnina
-                  <input name="lease_fee" class="money-input" value="50.00" inputmode="decimal">
+                  <input name="lease_fee" class="money-input" value="50,00" inputmode="decimal">
                 </label>
                 <label data-template-field="leaseIban">IBAN zakupodavca
                   <input name="lease_iban" value="HR">
@@ -875,8 +876,8 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
             </div>
 
             <div class="button-row">
-              <button class="primary-button" type="button" id="downloadDocumentButton">Preuzmi HTML za print</button>
-              <button class="ghost-button" type="button" id="downloadBlankDocumentButton">Preuzmi prazan HTML</button>
+              <button class="primary-button" type="button" id="downloadDocumentButton">Preuzmi dokument</button>
+              <button class="ghost-button" type="button" id="downloadBlankDocumentButton">Preuzmi prazan obrazac</button>
               <button class="ghost-button" type="button" id="previewButton">Pregled</button>
               <button class="ghost-button" type="button" id="saveDraftButton">Spremi nacrt</button>
               <button class="ghost-button" type="button" id="resetContractButton">Vrati polja na izvorno</button>
@@ -924,17 +925,31 @@ dodatna savjetovanja izvan redovnog opsega rada</textarea>
               <label>Direktor<input name="director"></label>
               <label>Godina<input name="report_year" type="number" min="2000" max="2100"></label>
               <label>Datum izvještaja<input name="report_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
-              <label>Dobit prije poreza<input name="gain_before_tax"></label>
-              <label>Porez na dobit<input name="gain_tax"></label>
-              <label>Dobit nakon poreza<input name="gain_after_tax"></label>
-              <label>Pokriće gubitka<input name="loss_coverage"></label>
-              <label>Mjesto potpisa (za bilješke)<input name="notes_sign_place"></label>
-              <label>Datum potpisa (za bilješke)<input name="notes_sign_date" class="date-hr-input" type="text" inputmode="numeric" maxlength="11" placeholder="dd.MM.yyyy."></label>
             </div>
+
+            <div class="document-grid" id="gfiGainSummaryFields">
+              <label>Dobit prije poreza<input name="gain_before_tax" class="money-input" value="0,00" inputmode="decimal"></label>
+              <label>Porez na dobit<input name="gain_tax" class="money-input" value="0,00" inputmode="decimal"></label>
+              <label>Dobit nakon poreza<input name="gain_after_tax" class="money-input" value="0,00" inputmode="decimal"></label>
+            </div>
+
+            <div class="gfi-import-box hidden" id="gfiDistributionBox">
+              <h3>Raspodjela dobiti / pokriće gubitka</h3>
+              <p class="gfi-import-status" id="gfiDistributionStatus"></p>
+              <div class="document-grid hidden" id="gfiLossFields">
+                <label class="span-2">Pokriće gubitka<textarea name="loss_coverage" rows="3" placeholder="Opišite na koji način će se gubitak pokriti..."></textarea></label>
+              </div>
+              <div class="document-grid hidden" id="gfiGainFields">
+                <label>Isplata članovima društva<input name="payout_to_members" class="money-input" value="0,00" inputmode="decimal"></label>
+                <label>Zadržana dobit za pokriće gubitka iz prethodnih godina<input name="retained_for_loss_coverage" class="money-input" value="0,00" inputmode="decimal"></label>
+                <label>Zadržana dobit (preostatak)<input name="retained_gain" class="money-input" readonly></label>
+              </div>
+            </div>
+
             <div class="button-row">
-              <button class="primary-button" type="button" id="downloadGfiButton">Preuzmi HTML za print</button>
-              <button class="ghost-button" type="button" id="downloadBlankGfiButton">Preuzmi prazan HTML</button>
-              <button class="primary-button" type="button" id="downloadGfiNotesButton">Preuzmi Bilješke (HTML)</button>
+              <button class="primary-button" type="button" id="downloadGfiButton">Preuzmi GFI za ispis</button>
+              <button class="primary-button" type="button" id="downloadGfiNotesButton">Preuzmi bilješke</button>
+              <button class="primary-button" type="button" id="downloadGfiDistributionButton">Preuzmi odluku o raspodjeli dobiti</button>
             </div>
           </form>
         </section>
